@@ -6,7 +6,7 @@ from . import __version__
 from .lib import DAGR
 
 class DAGRCli():
-    NAME = __file__
+    NAME = __name__
     VERSION = __version__
     docstring = """
 {} v{}
