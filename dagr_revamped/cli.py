@@ -6,9 +6,7 @@ from . import __version__
 from .lib import DAGR
 
 class DAGRCli():
-    NAME = __name__
-    VERSION = __version__
-    docstring = """
+    """
 {} v{}
 
 Usage:
@@ -39,9 +37,11 @@ Options:
     --version                               Show version.
 
 """
+    NAME = __package__
+    VERSION = __version__
 
     def __init__(self):
-        arguments = docopt(self.docstring.format(DAGRCli.NAME, DAGRCli.VERSION), version=DAGRCli.VERSION)
+        arguments = docopt(self.__doc__.format(self.NAME, self.VERSION), version=self.VERSION)
         mode_val_args = ['--album', '--collection','--query', '--category']
         modes = [m for m in DAGR.MODES.keys() if arguments.get('--'+m)]
         mode_val = next((arguments.get(v) for v in mode_val_args if arguments.get(v)), None)
