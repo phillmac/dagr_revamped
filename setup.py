@@ -19,6 +19,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     entry_points={
-        'console_scripts': ['dagr.py=dagr_revamped.cli:main']
+        'console_scripts': ['dagr.py=dagr_revamped.__main__:main']
     }
 )
