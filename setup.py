@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 import re
-import dagr_revamped
+from dagr_revamped import __version__
 from setuptools import setup, find_packages
-
-__version__ = dagr_revamped.__version__
 
 setup(
     name='dagr_revamped',

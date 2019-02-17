@@ -6,16 +6,18 @@ from . import __version__
 from .lib import DAGR
 
 class DAGRCli():
+    NAME = __file__
+    VERSION = __version__
     docstring = """
-DaGR.
+{} v{}
 
 Usage:
-    dagr.py bulk [-mrot -d DIRECTORY -p PROGRESS] [-v | -vv | --debug] FILENAMES ...
-    dagr.py [-fgs] [-mrot -d DIRECTORY -p PROGRESS] [-v | -vv | --debug] DEVIANT ...
-    dagr.py (-a ALBUM) [-mrot -d DIRECTORY -p PROGRESS] [-v | -vv | --debug] DEVIANT
-    dagr.py (-c COLLECTION) [-mrot -d DIRECTORY -p PROGRESS] [-v | -vv | --debug] DEVIANT
-    dagr.py (-q QUERY) [-mrot -d DIRECTORY -p PROGRESS] [-v | -vv | --debug] DEVIANT
-    dagr.py (-k CATEGORY) [-mrot -d DIRECTORY -p PROGRESS] [-v | -vv | --debug] DEVIANT
+    dagr.py bulk [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] FILENAMES ...
+    dagr.py [-fgs] [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT ...
+    dagr.py (-a ALBUM) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT
+    dagr.py (-c COLLECTION) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT
+    dagr.py (-q QUERY) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT
+    dagr.py (-k CATEGORY) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT
 
 Options:
     -a ALBUM --album=ALBUM                  Rip artworks in album
@@ -32,25 +34,23 @@ Options:
     -r --reverse                            Rip artworks in reverse order
     -t --test                               Skip downloading artwork, just print the url instead
     -v --verbose                            Show more detail, -vv for debug
-    --debug                                 Show still more detail
+    --debug                                 Show still more detail, same as -vv
     -h --help                               Show this screen.
     --version                               Show version.
 
 """
 
     def __init__(self):
-        arguments = docopt(self.docstring, version=__version__)
-        mode_args = ['album', 'collection', 'query', 'category', 'favs', 'scraps', 'gallery']
+        arguments = docopt(self.docstring.format(DAGRCli.NAME, DAGRCli.VERSION), version=DAGRCli.VERSION)
         mode_val_args = ['--album', '--collection','--query', '--category']
-        modes = [m for m in mode_args if arguments.get('--'+m)]
+        modes = [m for m in DAGR.MODES.keys() if arguments.get('--'+m)]
         mode_val = next((arguments.get(v) for v in mode_val_args if arguments.get(v)), None)
         log_level = None
-        if arguments.get('--debug') or arguments.get('--verbose') > 1:
+        ll_map = {0: logging.WARN, 1: logging.INFO, 2:logging.DEBUG, 3:5}
+        if arguments.get('--debug'):
             log_level = logging.DEBUG
-        elif arguments.get('--verbose'):
-            log_level = logging.INFO
         else:
-            log_level=logging.WARN
+            log_level = ll_map.get(arguments.get('--verbose'), logging.WARN)
         self.args = {
             'modes': modes, 'mode_val': mode_val,
             'bulk': arguments.get('bulk'),
