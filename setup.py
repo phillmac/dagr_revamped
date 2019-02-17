@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 setup(
     name='dagr_revamped',
     version=__version__,
-    description='A deviantArt image downloader script written in Python',
+    description='A deviantArt Ripper script written in Python',
     author='Phillip Mackintosh',
     url='https://github.com/phillmac/dagr',
     packages=find_packages(),
