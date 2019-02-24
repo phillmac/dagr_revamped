@@ -13,7 +13,8 @@ setup(
     packages=find_packages(),
     install_requires=[
         'MechanicalSoup >= 0.10.0',
-        'docopt >=0.6.2'
+        'docopt =0.6.2',
+        'pluginbase = 1.0.0'
         ],
     classifiers=[
         'Programming Language :: Python :: 3',

@@ -1,38 +1,42 @@
 import sys
-import json
 import logging
 from docopt import docopt
+from pprint import pprint, pformat
 from . import __version__
 from .lib import DAGR
+from .config import DAGRConfig
 
 class DAGRCli():
     """
 {} v{}
 
 Usage:
-    dagr.py bulk [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] FILENAMES ...
-    dagr.py [-fgs] [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT ...
-    dagr.py (-a ALBUM) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT
-    dagr.py (-c COLLECTION) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT
-    dagr.py (-q QUERY) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT
-    dagr.py (-k CATEGORY) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|-vvv|--debug] DEVIANT
+    dagr.py bulk [-mrotu -d DIRECTORY -p PROGRESS --filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES ...
+    dagr.py config CONF_CMD [CONF_FILE] [-v|-vv|--debug=DEBUGLVL]
+    dagr.py [-fgs] [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT ...
+    dagr.py (-a ALBUM) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT
+    dagr.py (-c COLLECTION) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT
+    dagr.py (-q QUERY) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT
+    dagr.py (-k CATEGORY) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT
 
 Options:
-    -a ALBUM --album=ALBUM                  Rip artworks in album
-    -c COLLECTION --collection=COLLECTION   Rip artworks in collection
+    -a ALBUM --album=ALBUM                  Rip deviations in album
+    -c COLLECTION --collection=COLLECTION   Rip deviations in collection
     -q QUERY --query=QUERY                  Rip gallery with query filter
     -k CATEGORY --category=CATEGORY         Rip gallery with category filter
-    -f --favs                               Rip artworks in favourites
+    -f --favs                               Rip deviations in favourites
+    --filter=filter                         Filter bulk deviants by name. Comma seperated list
     -g --gallery                            Rip atrworks in gallery
-    -s --scraps                             Rip artworks in scraps
-    -d DIRECTORY --directory=DIRECTORY      Output directory for artworks
+    -s --scraps                             Rip deviations in scraps
+    -d DIRECTORY --directory=DIRECTORY      Output directory for deviations
     -p PROGRESS --progress=PROGRESS         Save progress regulary
-    -m --mature                             Rip artworks with the mature content flag set
-    -o --overwrite                          Overwrite already existing artworks
-    -r --reverse                            Rip artworks in reverse order
-    -t --test                               Skip downloading artwork, just print the url instead
+    -m --mature                             Rip deviations with the mature content flag set
+    -o --overwrite                          Overwrite already existing deviations
+    -r --reverse                            Rip deviations in reverse order
+    -t --test                               Skip downloading deviations, just print the url instead
+    -u --unfindable                         List non-existant albums, collections, galleries, etc
     -v --verbose                            Show more detail, -vv for debug
-    --debug                                 Show still more detail, same as -vv
+    --debug=DEBUGLVL                        Show still more detail
     -h --help                               Show this screen.
     --version                               Show version.
 
@@ -41,38 +45,53 @@ Options:
     VERSION = __version__
 
     def __init__(self):
-        arguments = docopt(self.__doc__.format(self.NAME, self.VERSION), version=self.VERSION)
+        self.warnings = []
+        self.arguments = arguments = docopt(self.__doc__.format(self.NAME, self.VERSION), version=self.VERSION)
         mode_val_args = ['--album', '--collection','--query', '--category']
-        modes = [m for m in DAGR.MODES.keys() if arguments.get('--'+m)]
+        modes = [m for m in DAGR.MODES if arguments.get('--'+m)]
+        if arguments.get('--unfindable'): modes.append('unfindable')
         mode_val = next((arguments.get(v) for v in mode_val_args if arguments.get(v)), None)
-        log_level = None
-        ll_map = {0: logging.WARN, 1: logging.INFO, 2:logging.DEBUG, 3:5}
-        if arguments.get('--debug'):
-            log_level = logging.DEBUG
-        else:
-            log_level = ll_map.get(arguments.get('--verbose'), logging.WARN)
+        ll_map = {0:logging.WARN, 1:logging.INFO, 2: 15, 3:logging.DEBUG, 4:5, 5:4}
+        try:
+            ll_arg = int(arguments.get('--debug') or arguments.get('--verbose'))
+        except Exception:
+            self.warnings.append('Unrecognized debug level')
+        log_level = ll_map.get(ll_arg, logging.WARN)
         self.args = {
             'modes': modes, 'mode_val': mode_val,
             'bulk': arguments.get('bulk'),
             'deviants': arguments.get('DEVIANT'),
             'filenames': arguments.get('FILENAMES'),
+            'filter': arguments.get('--filter'),
             'directory': arguments.get('--directory'),
             'mature': arguments.get('--mature'),
             'overwrite': arguments.get('--overwrite'),
             'progress': arguments.get('--progress'),
+            'reverse': arguments.get('--reverse'),
             'test': arguments.get('--test'),
+            'config': arguments.get('config'),
+            'conf_cmd': arguments.get('CONF_CMD'),
+            'conf_file': arguments.get('CONF_FILE'),
             'log_level': log_level
         }
 
 
 def main():
     logfmt = '%(asctime)s - %(levelname)s - %(message)s'
-    cli_args = DAGRCli().args
-    logging.basicConfig(format=logfmt, stream=sys.stdout, level=cli_args.get('log_level'))
+    cli = DAGRCli()
+    logging.basicConfig(format=logfmt, stream=sys.stdout, level=cli.args.get('log_level'))
     logger = logging.getLogger(__name__)
-    logger.debug(json.dumps(cli_args, indent=4, sort_keys=True))
-    ripper = DAGR(**cli_args)
-    ripper.run()
+    logger.log(level=5, msg=pformat(cli.arguments))
+    logger.debug(pformat(cli.args))
+    for warning in cli.warnings:
+        logger.warn(warning)
+    if cli.args.get('config'):
+        config = DAGRConfig(cli.args)
+        config.conf_cmd()
+    else:
+        ripper = DAGR(**cli.args)
+        ripper.run()
+        ripper.print_errors()
     if __name__ == '__main__':
         logging.shutdown()
 
