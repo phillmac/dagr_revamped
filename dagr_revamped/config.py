@@ -1,5 +1,6 @@
 import os
 import json
+import platform
 import logging
 from copy import deepcopy
 from configparser import ConfigParser, NoSectionError
@@ -173,7 +174,6 @@ class DAGRConfig():
         return  dict((str(key), arguments.get(mapping.get(key)))
                 for key in mapping.keys() if arguments.get(mapping.get(key)))
 
-
     def __init__(self, arguments):
         logger = logging.getLogger(__name__)
         self.arguments = arguments
@@ -261,3 +261,23 @@ class DAGRConfig():
     def conf_files(self):
         print('Loaded conf files {}'.format(pformat(self.__conf_files)))
         return True
+
+
+class DagrDockerConfig():
+    REQUIRED = [
+        'MYSQL_CONN'
+    ]
+
+    OPTIONAL = [
+    ]
+
+    def __init__(self):
+        self.mysql_conn = None
+        for req in self.REQUIRED:
+            val = os.getenv(req)
+            if val is None: raise ValueError('Environment var {} must be set'.format(req))
+            self.__dict__.update({req.lower(), val})
+        for opt in self.OPTIONAL:
+            val = os.getenv(req)
+            if val is None: continue
+            self.__dict__.update({opt.lower(), val})

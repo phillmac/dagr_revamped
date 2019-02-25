@@ -22,6 +22,9 @@ setup(
         'Operating System :: OS Independent',
     ],
     entry_points={
-        'console_scripts': ['dagr.py=dagr_revamped.__main__:main']
+        'console_scripts': [
+            'dagr.py=dagr_revamped.__main__:main',
+            'dagr-docker.py=dagr_revamped.docker:main'
+            ]
     }
 )
