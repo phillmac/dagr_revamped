@@ -34,7 +34,7 @@ class PluginManager():
         self.__funcs[cat][name] = func
 
     def get_funcs(self, cat):
-        return deepcopy(list(self.__funcs.get(cat).values()))
+        return deepcopy(list(self.__funcs.get(cat).items()))
 
     def register_findlink(self, name, func):
         self.__register('findlink', name, func)

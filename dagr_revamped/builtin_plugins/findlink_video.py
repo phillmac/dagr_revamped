@@ -13,10 +13,10 @@ from calmjs.parse import es5 as calmjs_es5
 from calmjs.parse.walkers import Walker as calmjs_walker
 
 def setup(manager):
-    manager.register_findlink('find_video', find_video)
+    manager.register_findlink('std_video', find_video)
 
 def find_video(current_page):
-        current_page = pickle.loads(current_page)
+        #current_page = pickle.loads(current_page)
         try:
             script = filter_page_scripts(current_page, 'deviantART.pageData=')
             best_res = extract_nested_assign(script,['deviantART.pageData', '"film"', '"sizes"'])[-1]

@@ -1,30 +1,122 @@
 import os
+import sys
 import json
 import logging
+from io import StringIO
+from pathlib import Path
 from copy import deepcopy
 from configparser import ConfigParser, NoSectionError
-from io import StringIO
 from pprint import pprint, pformat
-from os.path import (
-    abspath,
-    basename,
-    expanduser,
-    exists as path_exists,
-    join as path_join,
-)
+from .dagr_logging import log as dagr_log
 
-class DAGRConfig():
+
+class DAGRBaseConf():
+
+    def __init__(self, *args, **kwargs):
+        self.__include = kwargs.get('include') or []
+        self.__conf_name = kwargs.get('conf_name')
+        self.__settings = {}
+        self.__ini_files = self.find_configs('.ini')
+        self.__json_files = self.find_configs('.json')
+        self.__ini_config = self.load_ini_config()
+        self.__json_config = self.load_json_config()
+        self.__conf_files = self.__ini_files + self.__json_files
+        dagr_log(__name__, logging.DEBUG, 'Loaded config files {}'.format(pformat(self.__conf_files)))
+
+    def find_configs(self, ext):
+        usr_dir = Path('~/.config/dagr').expanduser()
+        locations  = [Path.cwd(), usr_dir] + self.__include
+        dagr_log(__name__, 5, 'Looking for configs in {}'.format(locations))
+        return [cnf for cnf in
+                (search.joinpath(self.__conf_name or 'dagr_settings').with_suffix(ext).resolve() for search in locations)
+                    if cnf.exists()]
+
+    def load_ini_config(self):
+        if self.__ini_files:
+            config = ConfigParser(allow_no_value=True)
+            config.read(self.__ini_files)
+            return config
+
+    def load_json_config(self):
+        settings = {}
+        for json_file in self.__json_files:
+            with open (json_file, 'r') as fh:
+                settings = dict_merge(settings, json.load(fh))
+        return settings
+
+    def get_ini_section(self, section):
+        if not self.__ini_config:
+            return {}
+        try:
+            return dict((key, value)
+                    for key, value in self.__ini_config.items(section))
+        except:
+            return {}
+
+    def get_json_section(self, section):
+        return deepcopy(self.__json_config.get(section))
+
+    def get(self, section, key=None):
+        section = str(section).lower()
+        if section in self.__settings:
+            if key is None:
+                return self.__settings.get(section)
+            key = str(key).lower()
+            return self.__settings.get(section).get(key)
+        raise ValueError('Section {} does not exist'.format(section))
+
+    def set_key(self, section, key, value):
+        pass
+
+    def set_section(self, section, value):
+        self.__settings[section] = value
+
+    def get_all(self):
+        return deepcopy(self.__settings)
+
+    def get_conf_files(self):
+        return deepcopy(self.__conf_files)
+
+    def merge_configs(self, section_names, conf_calbacks):
+        for sec_name in section_names:
+            conf_sections = (cb(sec_name) for cb in conf_calbacks)
+            self.__settings[sec_name.lower()] = merge_all(*conf_sections)
+
+
+class DAGRConfig(DAGRBaseConf):
     DEFAULTS = {
+        "Logging": {
+            'Format':'%(asctime)s - %(levelname)s - %(message)s'
+        },
+        'Logging.Extra': {
+            4:'TRACE',
+            5:'TRACE',
+            15:'INFO',
+            25:'INFO',
+        },
+        'Logging.Map': {
+            0:logging.WARN,
+            1:logging.INFO,
+            2: 15,
+            3:logging.DEBUG,
+            4:5,
+            5:4
+        },
         'Conf': {
             'Version': '0.1.0'
-        },
+            },
         'DeviantArt': {
             'BaseUrl': 'https://www.deviantart.com',
             'ArtRegex':(r"https://www\.deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
             'MatureContent': False,
-            'Modes': 'album,collection,query,scraps,favs,gallery,search',
-            'MaxPages': 10000
-        },
+            'Modes': 'album,collection,query,scraps,favs,gallery,search,page',
+            'MValArgs': 'album,collection,query,category,page',
+            'NDModes': 'search',
+            'MaxPages': 15000,
+            },
+        'DeviantArt.FindLink': {
+            'FallbackOrder': 'img full,meta,img normal'
+            },
         'DeviantArt.Modes.Album':{
             'url_fmt': '{base_url}/{deviant_lower}/gallery/{mval}?offset={offset}'
             },
@@ -55,28 +147,37 @@ class DAGRConfig():
             'DeviantArt.Modes.Search':{
                 'url_fmt': '{base_url}?q={mval}&offset={offset}'
             },
+             'DeviantArt.Modes.Page':{
+                'url_fmt': '{base_url}/{deviant_lower}/art/{mval}'
+            },
         'DeviantArt.Offsets':{
             'Folder': 10,
             'Page': 24,
             'Search': 10
-        },
+            },
         'Dagr': {
             'OutputDirectory': '~/dagr',
             'Overwrite': False,
+            'Reverse': False,
+            #'RecursionLimit': 10000,
             'SaveProgress': 50,
             'Verbose': False,
-            'Reverse': False,
-            'RecursionLimit': 10000
-        },
+            },
         'Dagr.SubDirs':{
             'UseOldFormat': False,
             'Move': False
-        },
+            },
         'Dagr.Cache': {
             'Artists': '.artists',
             'FileNames': '.filenames',
-            'DownloadedPages': '.dagr_downloaded_pages'
-        },
+            'DownloadedPages': '.dagr_downloaded_pages',
+            'Settings': '.settings',
+            'Verified':  '.verified',
+            'ShortUrls': False
+            },
+        'Dagr.BS4.Config': {
+            'Features': 'lxml'
+            },
         'Dagr.MimeTypes': {
             'image/vnd.adobe.photoshop': '.psd',
             'image/photoshop': '.psd',
@@ -89,22 +190,28 @@ class DAGRConfig():
             'application/zip': '.zip',
             'image/x-ms-bmp': '.bmp',
             'application/x-shockwave-flash': '.swf'
-        },
+            },
         'Dagr.Plugins': {
             'Disabled': ''
-        },
+            },
         'Dagr.Plugins.Locations': {
             'Default': '~/.config/dagr/plugins'
-        },
-        'Dagr.RetryExceptionNames': {
+            },
+        'Dagr.Retry':{
+            'SleepDuration': 0.5
+            },
+        'Dagr.Retry.ExceptionNames': {
             'OSError': True,
             'ChunkedEncodingError': True,
             'ConnectionError': True
-        }
+            },
+        'Dagr.Verify':{
+            'DebugLocation':'#Trash/Verify'
+            }
     }
     OVERRIDES = {
         'Dagr': {
-            'OutputDirectory': os.getcwd()
+            'OutputDirectory': Path.cwd()
         }
     }
     SETTINGS_MAP = {
@@ -116,131 +223,60 @@ class DAGRConfig():
                 'Reverse': 'reverse'
             },
             'DeviantArt': {
-                'MatureContent': 'mature'
+                'MatureContent': 'mature',
+                'MaxPages': 'maxpages'
             }
     }
-    def load_ini_config(self):
-        ini_files = DAGRConfig.find_configs('.ini')
-        self.__ini_files = ini_files
-        if ini_files:
-            config = ConfigParser(allow_no_value=True)
-            config.read(ini_files)
-            return config
 
-    def load_json_config(self):
-        json_files = DAGRConfig.find_configs('.json')
-        settings = {}
-        for json_file in json_files:
-            self.__json_files.append(json_file)
-            with open (json_file, 'r') as fh:
-                settings = DAGRConfig.merge(settings, json.load(fh))
-        return settings
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__arguments = None
+        self.merge_configs(self.DEFAULTS.keys(), (
+            self.get_ini_section,
+            self.get_json_section,
+            self.OVERRIDES.get,
+            self.DEFAULTS.get,
+        ))
 
-    @staticmethod
-    def find_configs(ext):
-        logger =logging.getLogger(__name__)
-        usr_dir = expanduser('~/.config/dagr')
-        cwd = os.getcwd()
-        locations  = [cwd, usr_dir]
-        logger.log(level=5, msg='Looking for configs in {}'.format(locations))
-        return [cf_path for cf_path in
-                (abspath(path_join(search, 'dagr_settings'+ ext)) for search in locations)
-                    if path_exists(cf_path)]
+    def set_args(self, arguments):
+        self.__arguments = arguments
+        self.merge_configs(self.DEFAULTS.keys(), (
+            self.get_args_mapped,
+            self.get
+        ))
+        dagr_log(__name__, 5, 'Config: {}'.format(pformat(self.get_all())))
 
-    @staticmethod
-    def merge(dict_1, dict_2):
-        """Merge two dictionaries.
-        Values that evaluate to true take priority over falsy values.
-        `dict_1` takes priority over `dict_2`.
-        """
-        return dict((str(key).lower(), dict_1.get(key) or dict_1.get(key.lower()) or dict_2.get(key) or dict_2.get(key.lower()))
-                    for key in set(dict_2) | set(dict_1))
-
-    @staticmethod
-    def merge_all(*dicts):
-        logger = logging.getLogger(__name__)
-        result = {}
-        for item in filter(lambda d: d, dicts):
-            logger.log(level=5, msg=('Merging {}, {}'.format(result, item)))
-            result = DAGRConfig.merge(result, item)
-        logger.log(level=4, msg=('Result: {}'.format(result, item)))
-        return result
-
-    @staticmethod
-    def get_args_mapped(arguments, section):
-        mapping = DAGRConfig.SETTINGS_MAP.get(section)
+    def get_args_mapped(self, section):
+        if not self.__arguments: return {}
+        mapping = self.SETTINGS_MAP.get(section)
         if not mapping: return {}
-        return  dict((str(key), arguments.get(mapping.get(key)))
-                for key in mapping.keys() if arguments.get(mapping.get(key)))
+        return  dict((str(key), self.__arguments.get(mapping.get(key)))
+                for key in mapping.keys() if self.__arguments.get(mapping.get(key)))
 
+    def get_modes(self):
+        modes = [s.strip() for s in self.get('deviantart', 'modes').split(',')]
+        mval_args = [s.strip() for s in self.get('deviantart', 'mvalargs').split(',')]
+        return modes, mval_args
 
-    def __init__(self, arguments):
-        logger = logging.getLogger(__name__)
-        self.arguments = arguments
-        self.__settings = {}
-        self.__ini_files = []
-        self.__json_files = []
-        self.__ini_config = self.load_ini_config()
-        self.__json_config = self.load_json_config()
-        self.__conf_files = self.__ini_files + self.__json_files
-        for section in self.DEFAULTS.keys():
-            defaults = self.DEFAULTS.get(section)
-            overrides = self.OVERRIDES.get(section)
-            json_section =  self.__json_config.get(section)
-            ini_section = self.get_ini_section(section)
-            args_mapped = self.get_args_mapped(arguments, section)
-            self.__settings.update({section.lower():
-                self.merge_all(
-                    args_mapped,
-                    json_section,
-                    ini_section,
-                    overrides,
-                    defaults)})
-        logger.debug('Loaded config files {}'.format(pformat(self.__conf_files)))
-        logger.log(level=5, msg='Config: {}'.format(pformat(self.__settings)))
+    def get_log_level(self):
+        if self.get('dagr', 'debug') and self.__arguments.get('log_level') < 3: return 3
+        if self.get('dagr', 'verbose') and self.__arguments.get('log_level') < 1: return 1
+        return self.__arguments.get('log_level')
 
-    def get(self, section, value=None):
-        true_vals = ['true', 'yes', 'on', '1']
-        false_vals = ['false', 'no', 'off', '0']
-        section = section.lower()
-        if section in self.__settings:
-            if value is None:
-                return self.__settings.get(section)
-            value = value.lower()
-            val = self.__settings.get(section).get(value)
-            if isinstance(val, str):
-                if val.lower() in true_vals: return True
-                if val.lower() in false_vals: return False
-                try: return int(val)
-                except: pass
-                try: return float(val)
-                except: pass
-            return val
-        raise ValueError('Section {} does not exist'.format(section))
-
-    def get_all(self):
-        return deepcopy(self.__settings)
-
-    def get_ini_section(self, section):
-        if not self.__ini_config:
-            return {}
-        try:
-            return dict((key, value)
-                    for key, value in self.__ini_config.items(section))
-        except NoSectionError:
-            return {}
+    def map_log_level(self):
+        return self.get('logging.map', self.get_log_level())
 
     def conf_cmd(self):
         conf_cmd_maping = {
             'print': self.conf_print,
             'files': self.conf_files
         }
-        cmd = self.arguments.get('conf_cmd')
+        cmd = self.__arguments.get('conf_cmd')
         if conf_cmd_maping.get(cmd)(): return
         print('Unrecognized {}'.format(cmd))
 
     def conf_print(self):
-        fname = self.arguments.get('conf_file')
+        fname = self.__arguments.get('conf_file')
         if not fname:
             pprint(self.__settings)
         elif fname == '.ini':
@@ -252,12 +288,55 @@ class DAGRConfig():
                 with open(f, 'r') as fh:
                     pprint(fh.read())
         else:
-            for f in self.__conf_files:
-                if fname == basename(f):
-                   with open(f, 'r') as fh:
+            for f in self.get_conf_files():
+                if fname == f.name:
+                   with f.open('r') as fh:
                     pprint(fh.read())
         return True
 
     def conf_files(self):
-        print('Loaded conf files {}'.format(pformat(self.__conf_files)))
+        print('Loaded conf files {}'.format(pformat(self.get_conf_files())))
         return True
+
+def dict_merge(dict_1, dict_2):
+    """Merge two dictionaries.
+    Values that evaluate to true take priority over falsy values.
+    `dict_1` takes priority over `dict_2`.
+    """
+    dict_1 = normalize_dict(dict_1)
+    dict_2 = normalize_dict(dict_2)
+    return dict((key, dict_1.get(key) or dict_2.get(key))
+            for key in set(dict_2) | set(dict_1))
+
+def merge_all(*dicts):
+    result = {}
+    for item in filter(lambda d: d, dicts):
+        dagr_log(__name__, 5, 'Merging {}, {}'.format(result, item))
+        result = dict_merge(result, item)
+    dagr_log(__name__, 4, 'Result: {}'.format(result))
+    return result
+
+def normalize_dict(d):
+    return dict((str(k).lower(), convert_val(v)) for k,v in d.items())
+
+def convert_val(val):
+    if isinstance(val, str):
+        true_vals = ['true', 'yes', 'on', '1']
+        false_vals = ['false', 'no', 'off', '0']
+        if val.lower() in true_vals: return True
+        if val.lower() in false_vals: return False
+        try: return int(val)
+        except: pass
+        try: return float(val)
+        except: pass
+    return val
+
+
+class DARGConfigCli():
+    """
+Usage:
+dagr.py config CONF_CMD [CONF_FILE] [-v|-vv|--debug=DEBUGLVL]
+
+Options:
+
+"""

@@ -1,9 +1,9 @@
 import pickle
 def setup(manager):
-    manager.register_findlink_b('find_flash_video', find_flash_video)
+    manager.register_findlink_b('flash_video', find_flash_video)
 
 def find_flash_video(browser):
-    browser = pickle.loads(browser)
+    #browser = pickle.loads(browser)
     current_page = browser.get_current_page()
     iframe_search = current_page.find('iframe', {'class': 'flashtime'})
     if iframe_search:

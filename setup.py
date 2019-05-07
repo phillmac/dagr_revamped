@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import re
 from dagr_revamped import __version__
 from setuptools import setup, find_packages
 
@@ -22,6 +21,11 @@ setup(
         'Operating System :: OS Independent',
     ],
     entry_points={
-        'console_scripts': ['dagr.py=dagr_revamped.__main__:main']
+        'console_scripts': [
+            'dagr.py=dagr_revamped.cli:main',
+            'dagr-bulk.py=dagr_revamped.bulk:main',
+            'dagr-utils.py=dagr_revamped.utils:main',
+            'dagr-config.py=dagr_revamped.config:main'
+            ]
     }
 )
