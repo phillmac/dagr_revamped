@@ -8,7 +8,7 @@ setup(
     version=__version__,
     description='A deviantArt Ripper script written in Python',
     author='Phillip Mackintosh',
-    url='https://github.com/phillmac/dagr',
+    url='https://github.com/phillmac/dagr_revamped',
     packages=find_packages(),
     install_requires=[
         'MechanicalSoup >= 0.10.0',
