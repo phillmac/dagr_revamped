@@ -14,6 +14,7 @@ setup(
         'MechanicalSoup >= 0.10.0',
         'docopt == 0.6.2',
         'pluginbase == 1.0.0'
+        'portalocker == 1.4.0'
         ],
     classifiers=[
         'Programming Language :: Python :: 3',
