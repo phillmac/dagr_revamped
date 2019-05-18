@@ -16,6 +16,9 @@ setup(
         'pluginbase == 1.0.0',
         'portalocker == 1.4.0'
         ],
+    extras_require={
+        'calmjs':  ["calmjs==3.3.1"]
+    },
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: MIT License',
