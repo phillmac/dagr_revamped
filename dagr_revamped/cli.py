@@ -4,7 +4,7 @@ from docopt import docopt
 from pprint import pprint, pformat
 from .lib import DAGR
 from .config import DAGRConfig
-from . import __version__
+from .version import version
 from .dagr_logging import init_logging, log as dagr_log
 
 class DAGRCli():
@@ -51,7 +51,7 @@ Options:
 
 """
     NAME = __package__
-    VERSION = __version__
+    VERSION = version
 
     def __init__(self, config):
         self.arguments = arguments = docopt(self.__doc__.format(self.NAME, self.VERSION), version=self.VERSION)
