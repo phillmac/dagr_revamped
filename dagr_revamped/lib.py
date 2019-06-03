@@ -128,6 +128,7 @@ class DAGR():
         self.__logger.info('Test mode: {}'.format(self.test))
         self.__logger.info('Verify mode: {}'.format(self.verifybest or self.verifyexists))
         self.__logger.info('Unfindable mode: {}'.format(self.unfindable))
+        self.__logger.info('Loaded plugins: {}'.format(pformat(self.pl_manager.loaded_plugins)))
         self.browser_init()
         while self.keep_running():
             if None in wq.keys():

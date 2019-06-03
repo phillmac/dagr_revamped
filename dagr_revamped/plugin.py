@@ -13,6 +13,7 @@ class PluginManager():
         self.__config = app.config.get('dagr.plugins')
         self.__disabled = self.__config.get('disabled') or []
         self.__funcs = {}
+        self.__loaded_plugins = []
         plugin_base = PluginBase(package='{}.plugins'.format(__package__),
             searchpath=[os.path.join(here, 'builtin_plugins')])
         if self.__locations:
@@ -25,8 +26,13 @@ class PluginManager():
                 try:
                     plugin = self.source.load_plugin(plugin_name)
                     plugin.setup(self)
+                    self.__loaded_plugins.append(plugin_name)
                 except DagrImportError:
                     logging.warning('Unable to import plugin {}'.format(plugin_name), exc_info=True)
+
+    @property
+    def loaded_plugins(self):
+        return self.__loaded_plugins
 
     def __register(self, cat, name, func):
         if not cat in self.__funcs:

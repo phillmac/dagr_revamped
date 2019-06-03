@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
-from dagr_revamped import __version__
 from setuptools import setup, find_packages
 
+version = None
+exec(open('dagr_revamped/version.py').read())
+with open('README.md', 'r') as fh:
+    long_description = fh.read()
 setup(
     name='dagr_revamped',
-    version=__version__,
+    version=version,
     description='A deviantArt Ripper script written in Python',
     author='Phillip Mackintosh',
     url='https://github.com/phillmac/dagr_revamped',
