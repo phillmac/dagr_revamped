@@ -147,8 +147,9 @@ class DAGR():
         if deviant:
             try:
                 deviant, group = self.get_deviant(deviant)
-            except DagrException:
-                self.__logger.warning('Deviant {} not found or deactivated!'.format(deviant))
+            except DagrException as ex:
+                self.__logger.warning('Deviant {} not found or deactivated!: {}'.format(deviant, ex))
+                self.handle_download_error(deviant, ex)
                 return
         self.__logger.log(level=5, msg='Ripping {} : {}'.format(deviant or '', modes))
         directory = Path(self.outdir()).expanduser().resolve()
@@ -335,12 +336,15 @@ class DAGR():
             return deviant, True
         group = False
         html = self.get('https://www.deviantart.com/{}/'.format(deviant)).text
-        search = re.search(r'<title>.[A-Za-z0-9-]*', html,
-                            re.IGNORECASE).group(0)[7:]
-        deviant = re.sub('[^a-zA-Z0-9_-]+', '', search)
-        if re.search('<dt class="f h">Group</dt>', html):
-            group = True
-        return deviant, group
+        try:
+            search = re.search(r'<title>.[A-Za-z0-9-]*', html,
+                                re.IGNORECASE).group(0)[7:]
+            deviant = re.sub('[^a-zA-Z0-9_-]+', '', search)
+            if re.search('<dt class="f h">Group</dt>', html):
+                group = True
+            return deviant, group
+        except:
+            raise DagrException('Unable to get deviant info')
 
     def get(self, url):
         tries = {}
