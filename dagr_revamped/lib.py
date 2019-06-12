@@ -10,12 +10,14 @@ from io import StringIO
 from copy import deepcopy
 from pprint import pformat
 from bs4.element import Tag
+from datetime import datetime
 from bs4 import BeautifulSoup
 from .config import DAGRConfig
 from email.utils import parsedate
 from .plugin import PluginManager
 from time import mktime, sleep, time
 from pathlib import Path, PurePosixPath
+from dateutil.parser import parse as date_parse
 from requests import codes as req_codes, Response
 from mimetypes import (
     guess_extension, add_type as add_mimetype,
@@ -39,6 +41,8 @@ class DAGR():
         self.modes                      = kwargs.get('modes')
         self.mode_vals                  = kwargs.get('mode_val')
         self.maxpages                   = kwargs.get('maxpages')
+        self.refresh_only               = kwargs.get('refreshonly')
+        self.refresh_only_days          = kwargs.get('refreshonlydays')
         self.bulk                       = bool(kwargs.get('bulk'))
         self.test                       = bool(kwargs.get('test'))
         self.isdeviant                  = bool(kwargs.get('isdeviant'))
@@ -84,6 +88,7 @@ class DAGR():
             wq = load_bulk_files(self.filenames)
             wq = convert_queue(self.config, wq)
             wq = self.filter_deviants(wq)
+            wq = self.find_refresh(wq)
         else:
             wq = {}
             for deviant in self.deviants:
@@ -95,6 +100,53 @@ class DAGR():
 
         self.__logger.log(level=4, msg=pformat(wq))
         return wq
+
+    def find_refresh(self, queue):
+        if not (self.refresh_only or self.refresh_only_days): return queue
+        sq              = {**queue}
+        seconds         = None
+        if self.refresh_only_days:
+            seconds     = int(self.refresh_only_days) * 86400
+        elif self.refresh_only:
+            now         = datetime.now().timestamp()
+            refresh_ts  = date_parse(self.refresh_only).timestamp()
+            seconds     = now - refresh_ts
+        if not seconds > 0: return queue
+        if None in sq.keys():
+            nd = sq.pop(None)
+        while sq:
+            try:
+                deviant         = next(iter(sorted(sq.keys(), reverse=self.reverse())))
+                modes           = sq.pop(deviant)
+                deviant, group  = self.get_deviant(deviant)
+                for mode, mode_vals in modes.items():
+                    if mode_vals:
+                        for mval in mode_vals:
+                            if self.check_lastcrawl(seconds, mode, deviant, mval):
+                                return {deviant:{mode:[mval]}}
+                    else:
+                        if self.check_lastcrawl(seconds, mode, deviant):
+                            return {deviant:{mode:None}}
+            except DagrException:
+                pass
+        return {}
+
+
+    def check_lastcrawl(self, seconds, mode, deviant=None, mval=None):
+        base_dir = get_base_dir(self.config, mode, deviant, mval)
+        crawl_mode = 'full' if self.maxpages is None else 'short'
+        if base_dir.exists():
+            cache = self.cache(self.config, base_dir)
+            last_crawled = cache.last_crawled.get(crawl_mode)
+            if last_crawled == 'never': return True
+            compare_seconds = datetime.now().timestamp() - last_crawled
+            if compare_seconds > seconds: return True
+        else:
+            self.__logger.warning('Skipping missing dir {}'.format(base_dir))
+        return False
+
+
+
 
     def filter_deviants(self, queue):
         if self.filter is None or not self.filter: return queue
@@ -136,7 +188,7 @@ class DAGR():
                 self.rip(nd, None)
             try:
                 deviant = next(iter(sorted(wq.keys(), reverse=self.reverse())))
-                modes =  wq.pop(deviant)
+                modes   = wq.pop(deviant)
             except StopIteration:
                 break
             self.rip(modes, deviant)
@@ -335,6 +387,7 @@ class DAGR():
         if self.isgroup:
             return deviant, True
         group = False
+        self.browser_init()
         html = self.get('https://www.deviantart.com/{}/'.format(deviant)).text
         try:
             search = re.search(r'<title>.[A-Za-z0-9-]*', html,
@@ -695,10 +748,10 @@ class DAGRCache():
         self.fn_name            = self.settings.get('filenames', '.filenames')
         self.ep_name            = self.settings.get('downloadedpages', '.dagr_downloaded_pages')
         self.artists_name       = self.settings.get('artists', '.artists')
-        self.crawled_name     = self.settings.get('crawled', '.crawled')
+        self.crawled_name       = self.settings.get('crawled', '.crawled')
         self.files_list         = next(self.__load_cache(filenames=self.fn_name))
         self.existing_pages     = next(self.__load_cache(existing_pages=self.ep_name))
-        self.last_crawled     = next(self.__load_cache(last_crawled=self.crawled_name))
+        self.last_crawled       = next(self.__load_cache(last_crawled=self.crawled_name))
         self.downloaded_pages   = []
         if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
             self.__convert_urls()
