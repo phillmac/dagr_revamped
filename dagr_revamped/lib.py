@@ -6,8 +6,6 @@ import logging
 import threading
 import portalocker
 from os import utime
-from time import sleep
-from time import mktime
 from io import StringIO
 from copy import deepcopy
 from pprint import pformat
@@ -16,6 +14,7 @@ from bs4 import BeautifulSoup
 from .config import DAGRConfig
 from email.utils import parsedate
 from .plugin import PluginManager
+from time import mktime, sleep, time
 from pathlib import Path, PurePosixPath
 from requests import codes as req_codes, Response
 from mimetypes import (
@@ -685,19 +684,21 @@ class DagrException(Exception):
 
 class DAGRCache():
     def __init__(self, dagr_config, base_dir):
-        self.__logger = logging.getLogger(__name__)
+        self.__logger           = logging.getLogger(__name__)
         if not isinstance(base_dir, Path):
-            base_dir = Path(base_dir)
-        self.base_dir = base_dir
-        self.dagr_config = dagr_config
-        self.settings_name = self.dagr_config.get('dagr.cache','settings') or '.settings'
-        self.settings = next(self.__load_cache(use_backup=False, settings=self.settings_name))
-        self.fn_name = self.settings.get('filenames') or '.filenames'
-        self.ep_name = self.settings.get('downloadedpages') or '.dagr_downloaded_pages'
-        self.artists_name = self.settings.get('artists') or '.artists'
-        self.files_list = next(self.__load_cache(filenames=self.fn_name))
-        self.existing_pages = next(self.__load_cache(existing_pages=self.ep_name))
-        self.downloaded_pages = []
+            base_dir            = Path(base_dir)
+        self.base_dir           = base_dir
+        self.dagr_config        = dagr_config
+        self.settings_name      = self.dagr_config.get('dagr.cache','settings') or '.settings'
+        self.settings           = next(self.__load_cache(use_backup=False, settings=self.settings_name))
+        self.fn_name            = self.settings.get('filenames', '.filenames')
+        self.ep_name            = self.settings.get('downloadedpages', '.dagr_downloaded_pages')
+        self.artists_name       = self.settings.get('artists', '.artists')
+        self.crawled_name     = self.settings.get('crawled', '.crawled')
+        self.files_list         = next(self.__load_cache(filenames=self.fn_name))
+        self.existing_pages     = next(self.__load_cache(existing_pages=self.ep_name))
+        self.last_crawled     = next(self.__load_cache(last_crawled=self.crawled_name))
+        self.downloaded_pages   = []
         if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
             self.__convert_urls()
 
@@ -731,7 +732,8 @@ class DAGRCache():
             'settings': lambda: self.dagr_config.get('dagr.cache'),
             'filenames': filenames,
             'existing_pages': lambda: [],
-            'artists': lambda: {}
+            'artists': lambda: {},
+            'last_crawled': lambda : {'short': 'never', 'full': 'never'}
         }
         for cache_type, cache_file in kwargs.items():
             cache_contents = self.__load_cache_file(cache_file, use_backup=use_backup)
@@ -816,7 +818,7 @@ class DAGRCache():
             self.downloaded_pages = True
         return rn_count
 
-    def save(self, save_artists=False):
+    def save(self, save_artists=False, full_crawl=False):
         fn_missing = not self.__fn_exists()
         ep_missing = not self.__ep_exists()
         artists_missing = not self.__artists_exists()
@@ -824,6 +826,10 @@ class DAGRCache():
         fix_fn = fn_missing and bool(self.files_list)
         fix_ep = ep_missing and bool(self.existing_pages)
         fix_artists = artists_missing and bool(self.files_list) and bool(self.existing_pages)
+        if full_crawl:
+            self.last_crawled['full'] = time()
+        else:
+            self.last_crawled['short'] = time()
         if settings_missing:
             self.__update_cache(self.settings_name, self.settings, False)
         if self.downloaded_pages or fix_fn:
@@ -833,6 +839,7 @@ class DAGRCache():
         if save_artists:
             if self.downloaded_pages or fix_artists or save_artists == 'force':
                 self.update_artists()
+        self.__update_cache(self.crawled_name, self.last_crawled, False)
         self.__logger.log(level=5, msg=pformat(locals()))
 
     def add_link(self, link):

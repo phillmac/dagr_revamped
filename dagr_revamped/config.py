@@ -168,6 +168,7 @@ class DAGRConfig(DAGRBaseConf):
             'Move': False
             },
         'Dagr.Cache': {
+            'Crawled': '.crawled',
             'Artists': '.artists',
             'FileNames': '.filenames',
             'DownloadedPages': '.dagr_downloaded_pages',
