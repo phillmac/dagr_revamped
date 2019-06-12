@@ -38,6 +38,7 @@ class DAGR():
         self.filter                     = None if kwargs.get('filter') is None else [s.strip().lower() for s in kwargs.get('filter').split(',')]
         self.modes                      = kwargs.get('modes')
         self.mode_vals                  = kwargs.get('mode_val')
+        self.maxpages                   = kwargs.get('maxpages')
         self.bulk                       = bool(kwargs.get('bulk'))
         self.test                       = bool(kwargs.get('test'))
         self.isdeviant                  = bool(kwargs.get('isdeviant'))
@@ -313,7 +314,7 @@ class DAGR():
         if self.fixartists:
             cache.save('force')
         else:
-            cache.save(True)
+            cache.save(True, self.maxpages is None)
 
     def handle_download_error(self, link, link_error):
         error_string = str(link_error)
