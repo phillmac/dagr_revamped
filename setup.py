@@ -13,6 +13,7 @@ setup(
     author='Phillip Mackintosh',
     url='https://github.com/phillmac/dagr_revamped',
     packages=find_packages(),
+    package_data={'dagr_revamped': ['builtin_plugins/*']},
     install_requires=[
         'MechanicalSoup >= 0.10.0',
         'docopt == 0.6.2',
