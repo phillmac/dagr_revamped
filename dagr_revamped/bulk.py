@@ -33,6 +33,7 @@ Options:
     --refreshonly=DATE                      Crawl deviants that have not been crawled since DATE
     --refreshonlydays=DAYS                  Crawl deviants that have not been crawled in DAYS days
     --debug=DEBUGLVL                        Show even more detail.
+    --showqueue                             Display inital queue contents. Requires at least -v or --debug=1.
     -h --help                               Display this screen.
     --version                               Display version.
 
@@ -70,7 +71,8 @@ Options:
             'verifyexists': arguments.get('--verifyexists'),
             'conf_cmd': arguments.get('CONF_CMD'),
             'conf_file': arguments.get('CONF_FILE'),
-            'log_level': ll_arg
+            'log_level': ll_arg,
+            'showqueue': arguments.get('--showqueue')
         }
 
 
