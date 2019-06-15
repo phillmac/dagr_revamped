@@ -118,6 +118,7 @@ class DAGR():
                 deviant         = next(iter(sorted(sq.keys(), reverse=self.reverse())))
                 modes           = sq.pop(deviant)
                 deviant, group  = self.get_deviant(deviant)
+                if group: continue
                 for mode, mode_vals in modes.items():
                     if mode_vals:
                         for mval in mode_vals:
