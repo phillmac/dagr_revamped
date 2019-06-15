@@ -10,12 +10,14 @@ from io import StringIO
 from copy import deepcopy
 from pprint import pformat
 from bs4.element import Tag
+from datetime import datetime
 from bs4 import BeautifulSoup
 from .config import DAGRConfig
 from email.utils import parsedate
 from .plugin import PluginManager
 from time import mktime, sleep, time
 from pathlib import Path, PurePosixPath
+from dateutil.parser import parse as date_parse
 from requests import codes as req_codes, Response
 from mimetypes import (
     guess_extension, add_type as add_mimetype,
@@ -39,6 +41,8 @@ class DAGR():
         self.modes                      = kwargs.get('modes')
         self.mode_vals                  = kwargs.get('mode_val')
         self.maxpages                   = kwargs.get('maxpages')
+        self.refresh_only               = kwargs.get('refreshonly')
+        self.refresh_only_days          = kwargs.get('refreshonlydays')
         self.bulk                       = bool(kwargs.get('bulk'))
         self.test                       = bool(kwargs.get('test'))
         self.isdeviant                  = bool(kwargs.get('isdeviant'))
@@ -49,6 +53,7 @@ class DAGR():
         self.verifybest                 = bool(kwargs.get('verifybest'))
         self.verifyexists               = bool(kwargs.get('verifyexists'))
         self.unfindable                 = bool(kwargs.get('unfindable'))
+        self.show_queue                 = bool(kwargs.get('showqueue'))
         self.base_url                   = lambda: self.config.get('deviantart', 'baseurl')
         self.fallbackorder              = lambda: list(s.strip() for s in self.config.get('deviantart.findlink', 'fallbackorder').split(','))
         self.mature                     = lambda: self.config.get('deviantart','maturecontent')
@@ -84,6 +89,7 @@ class DAGR():
             wq = load_bulk_files(self.filenames)
             wq = convert_queue(self.config, wq)
             wq = self.filter_deviants(wq)
+            wq = self.find_refresh(wq)
         else:
             wq = {}
             for deviant in self.deviants:
@@ -92,9 +98,55 @@ class DAGR():
                         update_d(wq, {deviant:{mode:[self.mode_vals]}})
                     else:
                         update_d(wq, {deviant:{mode:[]}})
-
-        self.__logger.log(level=4, msg=pformat(wq))
+        self.__logger.log(level=logging.INFO if self.show_queue else 4, msg='Work queue: {}'.format(pformat(wq)))
         return wq
+
+    def find_refresh(self, queue):
+        if not (self.refresh_only or self.refresh_only_days): return queue
+        sq              = {**queue}
+        seconds         = None
+        if self.refresh_only_days:
+            seconds     = int(self.refresh_only_days) * 86400
+        elif self.refresh_only:
+            now         = datetime.now().timestamp()
+            refresh_ts  = date_parse(self.refresh_only).timestamp()
+            seconds     = now - refresh_ts
+        if not seconds > 0: return queue
+        if None in sq.keys(): sq.pop(None)
+        while sq:
+            try:
+                deviant         = next(iter(sorted(sq.keys(), reverse=self.reverse())))
+                modes           = sq.pop(deviant)
+                deviant, group  = self.get_deviant(deviant)
+                if group: continue
+                for mode, mode_vals in modes.items():
+                    if mode_vals:
+                        for mval in mode_vals:
+                            if self.check_lastcrawl(seconds, mode, deviant, mval):
+                                return {deviant:{mode:[mval]}}
+                    else:
+                        if self.check_lastcrawl(seconds, mode, deviant):
+                            return {deviant:{mode:None}}
+            except DagrException:
+                pass
+        return {}
+
+    def check_lastcrawl(self, seconds, mode, deviant=None, mval=None):
+        base_dir = get_base_dir(self.config, mode, deviant, mval)
+        crawl_mode = 'full' if self.maxpages is None else 'short'
+        if base_dir.exists():
+            cache = self.cache(self.config, base_dir)
+            last_crawled = cache.last_crawled.get(crawl_mode)
+            if last_crawled == 'never':
+                self.__logger.debug('{}: never crawled'.format(base_dir))
+                return True
+            compare_seconds = datetime.now().timestamp() - last_crawled
+            if compare_seconds > seconds:
+                self.__logger.debug('{}: comp: {}, seconds: {}, compare_seconds > seconds:{}'.format(base_dir, compare_seconds,seconds,compare_seconds > seconds))
+                return True
+        else:
+            self.__logger.warning('Skipping missing dir {}'.format(base_dir))
+        return False
 
     def filter_deviants(self, queue):
         if self.filter is None or not self.filter: return queue
@@ -136,7 +188,7 @@ class DAGR():
                 self.rip(nd, None)
             try:
                 deviant = next(iter(sorted(wq.keys(), reverse=self.reverse())))
-                modes =  wq.pop(deviant)
+                modes   = wq.pop(deviant)
             except StopIteration:
                 break
             self.rip(modes, deviant)
@@ -204,11 +256,14 @@ class DAGR():
                 if not self.keep_running():
                     unlink_lockfile(lock_path)
                     return
+                cache = self.cache(self.config, base_dir)
                 if not pages and not self.nocrawl:
                     self.__logger.log(level=15, msg='{} had no deviations'.format(msg_formatted))
+                    cache.save_crawled(self.maxpages is None)
                     return
                 self.__logger.log(level=15, msg='Total deviations in {} found: {}'.format(msg_formatted, len(pages)))
-                self.process_deviations(base_dir, pages)
+                self.process_deviations(base_dir, cache, pages)
+                cache.save_crawled(self.maxpages is None)
             unlink_lockfile(lock_path)
         except (portalocker.exceptions.LockException,portalocker.exceptions.AlreadyLocked):
             self.__logger.warning('Skipping locked directory {}'.format(base_dir))
@@ -220,7 +275,8 @@ class DAGR():
         lock_path = base_dir.joinpath('.lock')
         try:
             with portalocker.Lock(lock_path, fail_when_locked = True):
-                self.process_deviations(base_dir, [url_fmt.format(**locals())])
+                cache = self.cache(self.config, base_dir)
+                self.process_deviations(base_dir, cache, [url_fmt.format(**locals())])
             unlink_lockfile(lock_path)
         except (portalocker.exceptions.LockException,portalocker.exceptions.AlreadyLocked):
             self.__logger.warning('Skipping locked directory {}'.format(base_dir))
@@ -292,10 +348,9 @@ class DAGR():
         self.__logger.debug('Found folders {}'.format(pformat(folders)))
         return folders
 
-    def process_deviations(self, base_dir, pages):
+    def process_deviations(self, base_dir, cache, pages):
         if not isinstance(base_dir, Path):
             base_dir = Path(base_dir)
-        cache = self.cache(self.config, base_dir)
         if self.nocrawl:
             pages = cache.existing_pages
         if not (self.overwrite() or self.fixmissing or self.verifybest):
@@ -311,10 +366,7 @@ class DAGR():
             dp = self.deviantion_pocessor(self, base_dir, cache, link)
             dp.process_deviation()
             if not self.keep_running(): return
-        if self.fixartists:
-            cache.save('force')
-        else:
-            cache.save(True, self.maxpages is None)
+        cache.save('force' if self.fixartists else True)
 
     def handle_download_error(self, link, link_error):
         error_string = str(link_error)
@@ -335,6 +387,7 @@ class DAGR():
         if self.isgroup:
             return deviant, True
         group = False
+        self.browser_init()
         html = self.get('https://www.deviantart.com/{}/'.format(deviant)).text
         try:
             search = re.search(r'<title>.[A-Za-z0-9-]*', html,
@@ -695,10 +748,10 @@ class DAGRCache():
         self.fn_name            = self.settings.get('filenames', '.filenames')
         self.ep_name            = self.settings.get('downloadedpages', '.dagr_downloaded_pages')
         self.artists_name       = self.settings.get('artists', '.artists')
-        self.crawled_name     = self.settings.get('crawled', '.crawled')
+        self.crawled_name       = self.settings.get('crawled', '.crawled')
         self.files_list         = next(self.__load_cache(filenames=self.fn_name))
         self.existing_pages     = next(self.__load_cache(existing_pages=self.ep_name))
-        self.last_crawled     = next(self.__load_cache(last_crawled=self.crawled_name))
+        self.last_crawled       = next(self.__load_cache(last_crawled=self.crawled_name))
         self.downloaded_pages   = []
         if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
             self.__convert_urls()
@@ -819,7 +872,7 @@ class DAGRCache():
             self.downloaded_pages = True
         return rn_count
 
-    def save(self, save_artists=False, full_crawl=False):
+    def save(self, save_artists=False):
         fn_missing = not self.__fn_exists()
         ep_missing = not self.__ep_exists()
         artists_missing = not self.__artists_exists()
@@ -827,10 +880,6 @@ class DAGRCache():
         fix_fn = fn_missing and bool(self.files_list)
         fix_ep = ep_missing and bool(self.existing_pages)
         fix_artists = artists_missing and bool(self.files_list) and bool(self.existing_pages)
-        if full_crawl:
-            self.last_crawled['full'] = time()
-        else:
-            self.last_crawled['short'] = time()
         if settings_missing:
             self.__update_cache(self.settings_name, self.settings, False)
         if self.downloaded_pages or fix_fn:
@@ -840,8 +889,14 @@ class DAGRCache():
         if save_artists:
             if self.downloaded_pages or fix_artists or save_artists == 'force':
                 self.update_artists()
-        self.__update_cache(self.crawled_name, self.last_crawled, False)
         self.__logger.log(level=5, msg=pformat(locals()))
+
+    def save_crawled(self, full_crawl=False):
+        if full_crawl:
+            self.last_crawled['full'] = time()
+        else:
+            self.last_crawled['short'] = time()
+        self.__update_cache(self.crawled_name, self.last_crawled, False)
 
     def add_link(self, link):
         if self.settings.get('shorturls'):
