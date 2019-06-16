@@ -111,7 +111,9 @@ class DAGR():
             now         = datetime.now().timestamp()
             refresh_ts  = date_parse(self.refresh_only).timestamp()
             seconds     = now - refresh_ts
-        if not seconds > 0: return queue
+        if not seconds > 0:
+            self.__logger.warning('Refresh-only seconds must be greater then 0')
+            return queue
         if None in sq.keys(): sq.pop(None)
         while sq:
             try:
@@ -128,7 +130,7 @@ class DAGR():
                         if self.check_lastcrawl(seconds, mode, deviant):
                             return {deviant:{mode:None}}
             except DagrException:
-                pass
+                self.__logger.debug('Exception while finding refresh: ', exc_info=True)
         return {}
 
     def check_lastcrawl(self, seconds, mode, deviant=None, mval=None):
