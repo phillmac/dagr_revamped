@@ -267,7 +267,7 @@ class DAGR():
                 cache = self.cache(self.config, base_dir)
                 if not pages and not self.nocrawl:
                     self.__logger.log(level=15, msg='{} had no deviations'.format(msg_formatted))
-                    cache.save_crawled(self.maxpages is None)
+                    if not self.nocrawl: cache.save_crawled(self.maxpages is None)
                     return
                 self.__logger.log(level=15, msg='Total deviations in {} found: {}'.format(msg_formatted, len(pages)))
                 self.process_deviations(base_dir, cache, pages)
