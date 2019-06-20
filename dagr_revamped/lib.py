@@ -395,17 +395,19 @@ class DAGR():
         if self.isgroup:
             return deviant, True
         group = False
-        html = self.get('https://www.deviantart.com/{}/'.format(deviant)).text
         try:
-            search = re.search(r'<title>.[A-Za-z0-9-]*', html,
-                                re.IGNORECASE).group(0)[7:]
-            deviant = re.sub('[^a-zA-Z0-9_-]+', '', search)
-            if re.search('<dt class="f h">Group</dt>', html):
+            resp = self.browser.open('https://www.deviantart.com/{}/'.format(deviant))
+            if not resp.status_code == req_codes.ok:
+                raise DagrException('incorrect status code - {}'.format(resp.status_code))
+            current_page = self.browser.get_current_page()
+            page_title = current_page.title.string
+            deviant = re.sub('[^a-zA-Z0-9_-]+', '', page_title)
+            if re.search('<dt class="f h">Group</dt>', resp.text):
                 group = True
             return deviant, group
         except:
-            self.__logger.log(level=5, msg=html)
-            raise DagrException('Unable to get deviant info')
+            self.__logger.log(level=5, msg='Unable to get deviant info', exc_info=True)
+        raise DagrException('Unable to get deviant info')
 
     def get(self, url):
         tries = {}
