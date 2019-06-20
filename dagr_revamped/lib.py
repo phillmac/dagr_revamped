@@ -404,7 +404,7 @@ class DAGR():
                 group = True
             return deviant, group
         except:
-            self.__logger.trace(html)
+            self.__logger.log(level=5, msg=html)
             raise DagrException('Unable to get deviant info')
 
     def get(self, url):
