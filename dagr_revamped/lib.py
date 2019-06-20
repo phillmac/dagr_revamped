@@ -400,8 +400,9 @@ class DAGR():
             if not resp.status_code == req_codes.ok:
                 raise DagrException('incorrect status code - {}'.format(resp.status_code))
             current_page = self.browser.get_current_page()
-            page_title = current_page.title.string
+            page_title = re.search(r'[A-Za-z0-9-]*', current_page.title.string).group(0)
             deviant = re.sub('[^a-zA-Z0-9_-]+', '', page_title)
+
             if re.search('<dt class="f h">Group</dt>', resp.text):
                 group = True
             return deviant, group
