@@ -114,19 +114,24 @@ class DAGR():
         if not seconds > 0:
             self.__logger.warning('Refresh-only seconds must be greater then 0')
             return queue
+        self.__logger.info('Refresh seconds: {}'.format(seconds))
         if None in sq.keys(): sq.pop(None)
         while sq:
             try:
                 deviant         = next(iter(sorted(sq.keys(), reverse=self.reverse())))
                 modes           = sq.pop(deviant)
                 deviant, group  = self.get_deviant(deviant)
-                if group: continue
+                if group:
+                    self.__logger.info('Skipping unsupported group {}'.format(deviant))
+                    continue
                 for mode, mode_vals in modes.items():
                     if mode_vals:
                         for mval in mode_vals:
+                            self.__logger.debug('Checking {}: {}: {}'.format(deviant, mode, mval))
                             if self.check_lastcrawl(seconds, mode, deviant, mval):
                                 return {deviant:{mode:[mval]}}
                     else:
+                        self.__logger.debug('Checking {}: {}'.format(deviant, mode))
                         if self.check_lastcrawl(seconds, mode, deviant):
                             return {deviant:{mode:None}}
             except DagrException:
