@@ -70,6 +70,7 @@ class DAGR():
         self.deviantion_pocessor        = kwargs.get('processor') or DeviantionProcessor
         self.cache                      = kwargs.get('cache') or DAGRCache
         self.init_mimetypes()
+        self.browser_init()
         if self.deviants or self.bulk and self.filenames:
             self.__work_queue = self.__build_queue()
 
@@ -180,6 +181,7 @@ class DAGR():
         if not self.get_queue():
             raise ValueError('Empty work queue')
         wq = self.get_queue()
+        self.__logger.info('Mature mode: {}' .format(self.mature()))
         self.__logger.info('Fix missing mode: {}'.format(self.fixmissing))
         self.__logger.info('Fix artists mode: {}'.format(self.fixartists))
         self.__logger.info('No crawl mode: {}'.format(self.nocrawl))
@@ -188,7 +190,6 @@ class DAGR():
         self.__logger.info('Verify mode: {}'.format(self.verifybest or self.verifyexists))
         self.__logger.info('Unfindable mode: {}'.format(self.unfindable))
         self.__logger.info('Loaded plugins: {}'.format(pformat(self.pl_manager.loaded_plugins)))
-        self.browser_init()
         while self.keep_running():
             if None in wq.keys():
                 nd = wq.pop(None)
@@ -394,7 +395,6 @@ class DAGR():
         if self.isgroup:
             return deviant, True
         group = False
-        self.browser_init()
         html = self.get('https://www.deviantart.com/{}/'.format(deviant)).text
         try:
             search = re.search(r'<title>.[A-Za-z0-9-]*', html,
