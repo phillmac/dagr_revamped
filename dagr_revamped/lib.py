@@ -55,7 +55,7 @@ class DAGR():
         self.unfindable                 = bool(kwargs.get('unfindable'))
         self.show_queue                 = bool(kwargs.get('showqueue'))
         self.base_url                   = lambda: self.config.get('deviantart', 'baseurl')
-        self.fallbackorder              = lambda: list(s.strip() for s in self.config.get('deviantart.findlink', 'fallbackorder').split(','))
+        self.fallbackorder              = lambda: list(s.strip() for s in self.config.get('dagr.findlink', 'fallbackorder').split(','))
         self.mature                     = lambda: self.config.get('deviantart','maturecontent')
         self.outdir                     = lambda: self.config.get('dagr', 'outputdirectory')
         self.overwrite                  = lambda: self.config.get('dagr', 'overwrite')
