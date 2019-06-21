@@ -680,6 +680,11 @@ class DeviantionProcessor():
             self.__logger.log(level=5, msg='Found literature')
             self.__file_link, self.__found_type = self.browser.get_url(), 'literature'
             return self.__file_link, self.__found_type
+        lit_class = current_page.find('div', {'class': '_2JHSA'})
+        if lit_class and lit_class.text.lower() == 'literature':
+            self.__logger.log(level=5, msg='Found eclipse literature')
+            self.__file_link, self.__found_type = self.browser.get_url(), 'literature'
+            return self.__file_link, self.__found_type
         journal = current_page.find('div', {'class': 'journal-wrapper'})
         if journal:
             self.__logger.log(level=5, msg='Found journal')
