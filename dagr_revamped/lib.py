@@ -740,6 +740,7 @@ class DeviantionProcessor():
             debug_output = (self.base_dir
                 .joinpath(self.__findlink_debug_loc)
                 .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(self.page_link)))
+                .expanduser().resolve()
                 .with_suffix('html'))
             self.__logger.info('Dumping html to {}'.format(debug_output))
             debug_output.write_bytes(resp.content)
