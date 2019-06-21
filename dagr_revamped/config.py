@@ -280,7 +280,7 @@ class DAGRConfig(DAGRBaseConf):
     def conf_print(self):
         fname = self.__arguments.get('conf_file')
         if not fname:
-            pprint(self.__settings)
+            pprint(self.get_all())
         elif fname == '.ini':
             for f in self.__ini_files:
                 with open(f, 'r') as fh:
