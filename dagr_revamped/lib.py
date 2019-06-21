@@ -669,6 +669,11 @@ class DeviantionProcessor():
             self.__logger.log(level=5, msg='Found download button')
             self.__file_link, self.__found_type = img_link, 'download'
             return self.__file_link, self.__found_type
+        img_link = current_page.find('a', {'href': re.compile('deviantart.com/download')})
+        if img_link:
+            self.__logger.log(level=5, msg='Found eclipse download button')
+            self.__file_link, self.__found_type = img_link, 'download'
+            return self.__file_link, self.__found_type
         self.__logger.log(level=15, msg='Download link not found, falling back to alternate methods')
         page_title = current_page.find('span', {'itemprop': 'title'})
         if page_title and page_title.text == 'Literature':
