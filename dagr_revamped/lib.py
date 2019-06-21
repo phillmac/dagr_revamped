@@ -267,11 +267,12 @@ class DAGR():
                 cache = self.cache(self.config, base_dir)
                 if not pages and not self.nocrawl:
                     self.__logger.log(level=15, msg='{} had no deviations'.format(msg_formatted))
-                    if not self.nocrawl and not self.test: cache.save_crawled(self.maxpages is None)
+                    if self.test: return
+                    cache.save_crawled(self.maxpages is None)
                     return
                 self.__logger.log(level=15, msg='Total deviations in {} found: {}'.format(msg_formatted, len(pages)))
                 self.process_deviations(base_dir, cache, pages)
-                cache.save_crawled(self.maxpages is None)
+                if  not self.nocrawl and not self.test: cache.save_crawled(self.maxpages is None)
             unlink_lockfile(lock_path)
         except (portalocker.exceptions.LockException,portalocker.exceptions.AlreadyLocked):
             self.__logger.warning('Skipping locked directory {}'.format(base_dir))
