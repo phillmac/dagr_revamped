@@ -738,10 +738,10 @@ class DeviantionProcessor():
                 raise DagrException('maybe a mature deviation/' +
                                     'unable to find downloadable deviation')
         if self.__findlink_debug_loc:
-            debug_output = (self.base_dir
-                .joinpath(self.__findlink_debug_loc)
+            debug_folder = self.base_dir.joinpath(self.__findlink_debug_loc).expanduser().resolve()
+            if not debug_folder.exists(): debug_folder.mkdir(parents=True)
+            debug_output = (debug_folder
                 .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(self.page_link)))
-                .expanduser().resolve()
                 .with_suffix('.html'))
             self.__logger.info('Dumping html to {}'.format(debug_output))
             debug_output.write_bytes(resp.content)
