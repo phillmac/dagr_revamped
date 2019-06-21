@@ -469,7 +469,8 @@ class DeviantionProcessor():
         self.__dest = dest
         self.__response = kwargs.get('response')
         self.__file_ext = kwargs.get('file_ext')
-        self.__verify_debug_loc = self.config.get('dagr.verify','debuglocation')
+        self.__verify_debug_loc     = self.config.get('dagr.verify','debuglocation')
+        self.__findlink_debug_loc   = self.config.get('dagr.findlink','debuglocation')
         self.__content_type = None
         self.__mature_error = None
 
@@ -735,6 +736,12 @@ class DeviantionProcessor():
             else:
                 raise DagrException('maybe a mature deviation/' +
                                     'unable to find downloadable deviation')
+        if self.__findlink_debug_loc:
+            debug_output = (self.base_dir
+                .joinpath(self.__findlink_debug_loc)
+                .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(self.page_link)))
+                .with_suffix('html'))
+            debug_output.write_bytes(resp.content)
         raise DagrException('all attemps to find a link failed')
 
 
