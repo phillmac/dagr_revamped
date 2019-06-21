@@ -66,7 +66,8 @@ class DAGRBaseConf():
         raise ValueError('Section {} does not exist'.format(section))
 
     def set_key(self, section, key, value):
-        pass
+        if section in self.__settings:
+            self.__settings[section][key] = value
 
     def set_section(self, section, value):
         self.__settings[section] = value
