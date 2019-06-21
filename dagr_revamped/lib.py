@@ -741,6 +741,7 @@ class DeviantionProcessor():
                 .joinpath(self.__findlink_debug_loc)
                 .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(self.page_link)))
                 .with_suffix('html'))
+            self.__logger.info('Dumping html to {}'.format(debug_output))
             debug_output.write_bytes(resp.content)
         raise DagrException('all attemps to find a link failed')
 
