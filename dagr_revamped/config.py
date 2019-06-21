@@ -114,9 +114,6 @@ class DAGRConfig(DAGRBaseConf):
             'NDModes': 'search',
             'MaxPages': 15000,
             },
-        'DeviantArt.FindLink': {
-            'FallbackOrder': 'img full,meta,img normal'
-            },
         'DeviantArt.Modes.Album':{
             'url_fmt': '{base_url}/{deviant_lower}/gallery/{mval}?offset={offset}'
             },
@@ -207,8 +204,12 @@ class DAGRConfig(DAGRBaseConf):
             'ConnectionError': True
             },
         'Dagr.Verify':{
-            'DebugLocation':'#Trash/Verify'
-            }
+            'DebugLocation': ''
+            },
+        'Dagr.FindLink': {
+            'DebugLocation': '',
+            'FallbackOrder': 'img full,meta,img normal'
+            },
     }
     OVERRIDES = {
         'Dagr': {
