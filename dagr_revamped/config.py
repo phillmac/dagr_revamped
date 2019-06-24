@@ -171,6 +171,7 @@ class DAGRConfig(DAGRBaseConf):
             'Artists': '.artists',
             'FileNames': '.filenames',
             'DownloadedPages': '.dagr_downloaded_pages',
+            'NoLink': '.nolink',
             'Settings': '.settings',
             'Verified':  '.verified',
             'ShortUrls': False

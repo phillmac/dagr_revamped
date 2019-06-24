@@ -755,6 +755,7 @@ class DeviantionProcessor():
                 .with_suffix('.html'))
             self.__logger.info('Dumping html to {}'.format(debug_output))
             debug_output.write_bytes(resp.content)
+        self.cache.add_nolink(self.page_link)
         raise DagrException('all attemps to find a link failed')
 
 
@@ -780,9 +781,11 @@ class DAGRCache():
         self.ep_name            = self.settings.get('downloadedpages', '.dagr_downloaded_pages')
         self.artists_name       = self.settings.get('artists', '.artists')
         self.crawled_name       = self.settings.get('crawled', '.crawled')
+        self.nolink_name        = self.settings.get('nolink', '.nolink')
         self.files_list         = next(self.__load_cache(filenames=self.fn_name))
         self.existing_pages     = next(self.__load_cache(existing_pages=self.ep_name))
         self.last_crawled       = next(self.__load_cache(last_crawled=self.crawled_name))
+        self.no_link            = next(self.__load_cache(no_link=self.nolink_name))
         self.downloaded_pages   = []
         if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
             self.__convert_urls()
@@ -818,7 +821,8 @@ class DAGRCache():
             'filenames': filenames,
             'existing_pages': lambda: [],
             'artists': lambda: {},
-            'last_crawled': lambda : {'short': 'never', 'full': 'never'}
+            'last_crawled': lambda : {'short': 'never', 'full': 'never'},
+            'no_link': lambda: []
         }
         for cache_type, cache_file in kwargs.items():
             cache_contents = self.__load_cache_file(cache_file, use_backup=use_backup)
@@ -917,6 +921,8 @@ class DAGRCache():
             self.__update_cache(self.fn_name, self.files_list)
         if self.downloaded_pages or fix_ep:
             self.__update_cache(self.ep_name, self.existing_pages)
+        if self.no_link:
+            self.__update_cache(self.nolink_name, self.no_link)
         if save_artists:
             if self.downloaded_pages or fix_artists or save_artists == 'force':
                 self.update_artists()
@@ -927,8 +933,11 @@ class DAGRCache():
             self.last_crawled['full'] = time()
         else:
             self.last_crawled['short'] = time()
-        self.__update_cache(self.crawled_name, self.last_crawled, False)
+        self.__update_cache(self.crawled_name, self.last_crawled)
 
+    def add_nolink(self, page):
+        if not page in self.no_link:
+            self.no_link.append(page)
     def add_link(self, link):
         if self.settings.get('shorturls'):
             link = shorten_url(link)
