@@ -924,8 +924,6 @@ class DAGRCache():
             self.__update_cache(self.fn_name, self.files_list)
         if self.downloaded_pages or fix_ep:
             self.__update_cache(self.ep_name, self.existing_pages)
-        if self.no_link:
-            self.__update_cache(self.nolink_name, self.no_link)
         if save_artists:
             if self.downloaded_pages or fix_artists or save_artists == 'force':
                 self.update_artists()
