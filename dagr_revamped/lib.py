@@ -269,10 +269,13 @@ class DAGR():
                     self.__logger.log(level=15, msg='{} had no deviations'.format(msg_formatted))
                     if self.test: return
                     cache.save_crawled(self.maxpages is None)
+                    cache.save_nolink()
                     return
                 self.__logger.log(level=15, msg='Total deviations in {} found: {}'.format(msg_formatted, len(pages)))
                 self.process_deviations(base_dir, cache, pages)
-                if  not self.nocrawl and not self.test: cache.save_crawled(self.maxpages is None)
+                if  not self.nocrawl and not self.test:
+                    cache.save_crawled(self.maxpages is None)
+                    cache.save_nolink()
             unlink_lockfile(lock_path)
         except (portalocker.exceptions.LockException,portalocker.exceptions.AlreadyLocked):
             self.__logger.warning('Skipping locked directory {}'.format(base_dir))
@@ -785,19 +788,19 @@ class DAGRCache():
         self.files_list         = next(self.__load_cache(filenames=self.fn_name))
         self.existing_pages     = next(self.__load_cache(existing_pages=self.ep_name))
         self.last_crawled       = next(self.__load_cache(last_crawled=self.crawled_name))
-        self.no_link            = next(self.__load_cache(no_link=self.nolink_name))
+        self.no_link            = next(self.__load_cache(no_link=self.nolink_name, warn_not_found=False))
         self.downloaded_pages   = []
         if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
             self.__convert_urls()
 
-    def __load_cache_file(self, cache_file, use_backup=True):
+    def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
         full_path = self.base_dir.joinpath(cache_file)
         backup = full_path.with_suffix('.bak')
         try:
             if full_path.exists():
                 with full_path.open('r') as fh:
                     return json.load(fh)
-            else:
+            elif warn_not_found:
                 self.__logger.log(level=15, msg='Primary {} cache not found'.format(cache_file))
         except:
             self.__logger.warning('Unable to load primary {} cache:'.format(cache_file), exc_info=True)
@@ -806,12 +809,12 @@ class DAGRCache():
             if use_backup and backup.exists():
                 with backup.open('r') as fh:
                     return json.load(fh)
-            else:
+            elif warn_not_found:
                 self.__logger.log(level=15, msg='Backup {} cache not found'.format(cache_file))
         except:
             self.__logger.warning('Unable to load backup {} cache:'.format(cache_file), exc_info=True)
 
-    def __load_cache(self, use_backup=True, **kwargs):
+    def __load_cache(self, use_backup=True, warn_not_found=True, **kwargs):
         def filenames():
             self.__logger.log(level=15, msg='Building filenames cache')
             files_list_raw = self.base_dir.glob('*')
@@ -825,7 +828,7 @@ class DAGRCache():
             'no_link': lambda: []
         }
         for cache_type, cache_file in kwargs.items():
-            cache_contents = self.__load_cache_file(cache_file, use_backup=use_backup)
+            cache_contents = self.__load_cache_file(cache_file, use_backup=use_backup, warn_not_found=warn_not_found)
             if cache_contents:
                 yield cache_contents
             else:
@@ -927,6 +930,10 @@ class DAGRCache():
             if self.downloaded_pages or fix_artists or save_artists == 'force':
                 self.update_artists()
         self.__logger.log(level=5, msg=pformat(locals()))
+
+    def save_nolink(self):
+        if self.no_link:
+            self.__update_cache(self.nolink_name, self.no_link)
 
     def save_crawled(self, full_crawl=False):
         if full_crawl:
