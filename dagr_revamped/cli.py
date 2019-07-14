@@ -12,13 +12,12 @@ class DAGRCli():
 {} v{}
 
 Usage:
-    dagr.py bulk [-mrotu --nocrawl --verifybest --verifyexists --fixmissing --fixartists --maxpages=MAXPAGES -d DIRECTORY -p PROGRESS --filter=FILTER] [--isdeviant | --isgroup] [-v|-vv|--debug=DEBUGLVL] FILENAMES ...
-    dagr.py [-fgs] [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT ...
-    dagr.py (-a ALBUM) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT
-    dagr.py (-c COLLECTION) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT
-    dagr.py (-q QUERY) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT
-    dagr.py (-k CATEGORY) [-mrot -d DIRECTORY -p PROGRESS] [-v|-vv|--debug=DEBUGLVL] DEVIANT
-    dagr.py (--page PAGE) [-mrot -d DIRECTORY -p PROGRESS] [--isdeviant | --isgroup] [-v|-vv|--debug=DEBUGLVL] DEVIANT
+    dagr.py [-fgs] [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT ...
+    dagr.py (-a ALBUM) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
+    dagr.py (-c COLLECTION) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
+    dagr.py (-q QUERY) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
+    dagr.py (-k CATEGORY) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
+    dagr.py (--page PAGE) [options] [-v|-vv|--debug=DEBUGLVL] [--isdeviant | --isgroup] DEVIANT
 
 Options:
     -a ALBUM --album=ALBUM                  Rip deviations in album
@@ -39,6 +38,7 @@ Options:
     -t --test                               Skip downloading deviations, just print the url instead
     --nocrawl                               Use downloaded pages cache instead of crawling deviant's pages
     --fixartists                            Rebuild artists cache
+    --fixmissing                            Fix deviations present in cache but missing from filesystem.
     --isdeviant                             Skip deviant/group check, force deviant mode
     --isgroup                               Skip deviant/group check, force group mode
     -u --unfindable                         List non-existant albums, collections, galleries, etc
