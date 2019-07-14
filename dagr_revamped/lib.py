@@ -26,7 +26,8 @@ from mimetypes import (
 from .utils import (
     get_base_dir, make_dirs, update_d, convert_queue,
     load_bulk_files, compare_size, create_browser,
-    unlink_lockfile, shorten_url, StatefulBrowser
+    unlink_lockfile, shorten_url, StatefulBrowser,
+    filter_deviants
     )
 
 class DAGR():
@@ -89,7 +90,7 @@ class DAGR():
         if self.bulk:
             wq = load_bulk_files(self.filenames)
             wq = convert_queue(self.config, wq)
-            wq = self.filter_deviants(wq)
+            wq = filter_deviants(self.filter, wq)
             wq = self.find_refresh(wq)
         else:
             wq = {}
@@ -155,13 +156,6 @@ class DAGR():
         else:
             self.__logger.warning('Skipping missing dir {}'.format(base_dir))
         return False
-
-    def filter_deviants(self, queue):
-        if self.filter is None or not self.filter: return queue
-        self.__logger.info('Deviant filter: {}'.format(pformat(self.filter)))
-        results = dict((k, queue.get(k)) for k in queue.keys() if k in self.filter)
-        self.__logger.log(level=5, msg='Filter results: {}'.format(pformat(results)))
-        return dict((k, queue.get(k)) for k in queue.keys() if k in self.filter)
 
     def save_queue(self, path='.queue'):
         with open(path, 'w') as fh:
@@ -785,13 +779,17 @@ class DAGRCache():
         self.artists_name       = self.settings.get('artists', '.artists')
         self.crawled_name       = self.settings.get('crawled', '.crawled')
         self.nolink_name        = self.settings.get('nolink', '.nolink')
-        self.files_list         = next(self.__load_cache(filenames=self.fn_name))
+        self.__files_list       = next(self.__load_cache(filenames=self.fn_name))
         self.existing_pages     = next(self.__load_cache(existing_pages=self.ep_name))
         self.last_crawled       = next(self.__load_cache(last_crawled=self.crawled_name))
         self.no_link            = next(self.__load_cache(no_link=self.nolink_name, warn_not_found=False))
+        self.__excluded_fnames  = ['.lock', self.fn_name, self.ep_name, self.artists_name, self.crawled_name, self.nolink_name]
         self.downloaded_pages   = []
         if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
             self.__convert_urls()
+    @property
+    def files_list(self):
+        return [f for f in self.__files_list if not f in self.__excluded_fnames]
 
     def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
         full_path = self.base_dir.joinpath(cache_file)
@@ -943,6 +941,7 @@ class DAGRCache():
     def add_nolink(self, page):
         if not page in self.no_link:
             self.no_link.append(page)
+
     def add_link(self, link):
         if self.settings.get('shorturls'):
             link = shorten_url(link)
@@ -965,6 +964,6 @@ class DAGRCache():
             self.files_list.append(fn)
 
     def real_filename(self, shortname):
-        return next(fn for fn in self.files_list if shortname in fn)
+        return next(fn for fn in self.files_list if shortname.lower() in fn.lower())
 
 
