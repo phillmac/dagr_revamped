@@ -46,6 +46,7 @@ Options:
     --verifybest                            Ensure that best quality file is downloded
     --verifyexists                          Override cache and force check filesystem
     --debug=DEBUGLVL                        Show still more detail
+    --quiet                                 Suppress warnings
     -h --help                               Show this screen.
     --version                               Show version.
 
@@ -59,7 +60,7 @@ Options:
         modes = [m for m in cnf_modes if arguments.get('--'+m)]
         mode_val = next((arguments.get('--'+v) for v in cnf_mval_args if arguments.get('--'+v)), None)
         try:
-            ll_arg = int(arguments.get('--debug') or arguments.get('--verbose'))
+            ll_arg = -1 if arguments.get('--quiet') else int(arguments.get('--debug') or arguments.get('--verbose'))
         except Exception:
             dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
         self.args = {

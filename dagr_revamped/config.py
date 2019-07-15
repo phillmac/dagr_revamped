@@ -97,6 +97,7 @@ class DAGRConfig(DAGRBaseConf):
             25:'INFO',
         },
         'Logging.Map': {
+            -1: logging.ERROR,
             0:logging.WARN,
             1:logging.INFO,
             2: 15,
