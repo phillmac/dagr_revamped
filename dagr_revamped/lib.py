@@ -961,10 +961,10 @@ class DAGRCache():
         return [ l for l in links if not self.check_link(l)]
 
     def add_filename(self, fn):
-        if fn in self.files_list:
+        if fn in self.__files_list:
             self.__logger.log(level=5, msg='{} allready in filenames cache'.format(fn))
         else:
-            self.files_list.append(fn)
+            self.__files_list.append(fn)
 
     def real_filename(self, shortname):
         try:
