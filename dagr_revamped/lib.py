@@ -955,7 +955,8 @@ class DAGRCache():
     def check_link(self, link):
         if self.settings.get('shorturls'):
             link = shorten_url(link)
-        return link in self.existing_pages
+        if link in self.existing_pages: return True
+        return link.lower() in (l.lower() for l in self.existing_pages)
 
     def filter_links(self, links):
         return [ l for l in links if not self.check_link(l)]
@@ -967,10 +968,6 @@ class DAGRCache():
             self.__files_list.append(fn)
 
     def real_filename(self, shortname):
-        try:
-            return next(fn for fn in self.files_list if shortname in fn)
-        except StopIteration:
-            pass
         return next(fn for fn in self.files_list if shortname.lower() in fn.lower())
 
 
