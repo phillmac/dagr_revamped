@@ -611,6 +611,7 @@ class DeviantionProcessor():
         while True:
             try:
                 dest.write_bytes(self.__response.content)
+                self.__logger.log(level=4, msg='Wrote devation to {}'.format(dest))
                 break
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
