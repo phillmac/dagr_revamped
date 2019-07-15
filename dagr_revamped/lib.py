@@ -964,6 +964,8 @@ class DAGRCache():
             self.files_list.append(fn)
 
     def real_filename(self, shortname):
+        return next(fn for fn in self.files_list if shortname in fn)
         return next(fn for fn in self.files_list if shortname.lower() in fn.lower())
+
 
 
