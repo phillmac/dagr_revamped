@@ -782,6 +782,7 @@ class DAGRCache():
         self.nolink_name        = self.settings.get('nolink', '.nolink')
         self.__files_list       = next(self.__load_cache(filenames=self.fn_name))
         self.existing_pages     = next(self.__load_cache(existing_pages=self.ep_name))
+        self.artists            = next(self.__load_cache(artists=self.artists_name))
         self.last_crawled       = next(self.__load_cache(last_crawled=self.crawled_name))
         self.no_link            = next(self.__load_cache(no_link=self.nolink_name, warn_not_found=False))
         self.__excluded_fnames  = ['.lock', self.fn_name, self.ep_name, self.artists_name, self.crawled_name, self.nolink_name]
@@ -876,12 +877,13 @@ class DAGRCache():
         self.settings['shorturls'] = short
         self.__update_cache(self.settings_name, self.settings, False)
         self.__update_cache(self.ep_name, self.existing_pages)
-        self.update_artists()
+        self.update_artists(True)
 
-    def update_artists(self):
-        artists = {}
+    def update_artists(self, force=False):
         base_url = self.dagr_config.get('deviantart', 'baseurl')
-        for page in self.existing_pages:
+        updated_pages = self.existing_pages if force else self.downloaded_pages
+        self.__logger.log(15, 'Sorting {} artist pages'.format(len(updated_pages)))
+        for page in updated_pages:
             artist_url_p = PurePosixPath(page).parent.parent
             artist_name = artist_url_p.name
             shortname = PurePosixPath(page).name
@@ -890,10 +892,10 @@ class DAGRCache():
             except StopIteration:
                 self.__logger.error('Cache entry not found {} : {} : {}'.format(self.base_dir, page, shortname), exc_info=True)
                 raise
-            if not artist_name in artists:
-                artists[artist_name] = {'Home Page': '{}/{}'.format(base_url, artist_url_p), 'Artworks':{}}
-            artists[artist_name]['Artworks'][rfn] = page
-        self.__update_cache(self.artists_name, artists)
+            if not artist_name in self.artists:
+                self.artists[artist_name] = {'Home Page': '{}/{}'.format(base_url, artist_url_p), 'Artworks':{}}
+            self.artists[artist_name]['Artworks'][rfn] = page
+        self.__update_cache(self.artists_name, self.artists)
 
     def rename_deviant(self, old, new):
         rn_count = 0
@@ -925,7 +927,7 @@ class DAGRCache():
             self.__update_cache(self.ep_name, self.existing_pages)
         if save_artists:
             if self.downloaded_pages or fix_artists or save_artists == 'force':
-                self.update_artists()
+                self.update_artists(save_artists == 'force')
         self.__logger.log(level=5, msg=pformat(locals()))
 
     def save_nolink(self):
@@ -956,10 +958,11 @@ class DAGRCache():
         if self.settings.get('shorturls'):
             link = shorten_url(link)
         if link in self.existing_pages: return True
+        self.__logger.log(level=5, msg='Checking for lowercase link {}'.format(link))
         return link.lower() in (l.lower() for l in self.existing_pages)
 
     def filter_links(self, links):
-        return [ l for l in links if not self.check_link(l)]
+        return [l for l in links if not self.check_link(l)]
 
     def add_filename(self, fn):
         if fn in self.__files_list:
