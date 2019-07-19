@@ -26,7 +26,8 @@ from mimetypes import (
 from .utils import (
     get_base_dir, make_dirs, update_d, convert_queue,
     load_bulk_files, compare_size, create_browser,
-    unlink_lockfile, shorten_url, StatefulBrowser
+    unlink_lockfile, shorten_url, StatefulBrowser,
+    filter_deviants
     )
 
 class DAGR():
@@ -55,7 +56,7 @@ class DAGR():
         self.unfindable                 = bool(kwargs.get('unfindable'))
         self.show_queue                 = bool(kwargs.get('showqueue'))
         self.base_url                   = lambda: self.config.get('deviantart', 'baseurl')
-        self.fallbackorder              = lambda: list(s.strip() for s in self.config.get('deviantart.findlink', 'fallbackorder').split(','))
+        self.fallbackorder              = lambda: list(s.strip() for s in self.config.get('dagr.findlink', 'fallbackorder').split(','))
         self.mature                     = lambda: self.config.get('deviantart','maturecontent')
         self.outdir                     = lambda: self.config.get('dagr', 'outputdirectory')
         self.overwrite                  = lambda: self.config.get('dagr', 'overwrite')
@@ -70,6 +71,7 @@ class DAGR():
         self.deviantion_pocessor        = kwargs.get('processor') or DeviantionProcessor
         self.cache                      = kwargs.get('cache') or DAGRCache
         self.init_mimetypes()
+        self.browser_init()
         if self.deviants or self.bulk and self.filenames:
             self.__work_queue = self.__build_queue()
 
@@ -88,7 +90,7 @@ class DAGR():
         if self.bulk:
             wq = load_bulk_files(self.filenames)
             wq = convert_queue(self.config, wq)
-            wq = self.filter_deviants(wq)
+            wq = filter_deviants(self.filter, wq)
             wq = self.find_refresh(wq)
         else:
             wq = {}
@@ -111,24 +113,31 @@ class DAGR():
             now         = datetime.now().timestamp()
             refresh_ts  = date_parse(self.refresh_only).timestamp()
             seconds     = now - refresh_ts
-        if not seconds > 0: return queue
+        if not seconds > 0:
+            self.__logger.warning('Refresh-only seconds must be greater then 0')
+            return queue
+        self.__logger.info('Refresh seconds: {}'.format(seconds))
         if None in sq.keys(): sq.pop(None)
         while sq:
             try:
                 deviant         = next(iter(sorted(sq.keys(), reverse=self.reverse())))
                 modes           = sq.pop(deviant)
                 deviant, group  = self.get_deviant(deviant)
-                if group: continue
+                if group:
+                    self.__logger.info('Skipping unsupported group {}'.format(deviant))
+                    continue
                 for mode, mode_vals in modes.items():
                     if mode_vals:
                         for mval in mode_vals:
+                            self.__logger.debug('Checking {}: {}: {}'.format(deviant, mode, mval))
                             if self.check_lastcrawl(seconds, mode, deviant, mval):
                                 return {deviant:{mode:[mval]}}
                     else:
+                        self.__logger.debug('Checking {}: {}'.format(deviant, mode))
                         if self.check_lastcrawl(seconds, mode, deviant):
                             return {deviant:{mode:None}}
             except DagrException:
-                pass
+                self.__logger.debug('Exception while finding refresh: ', exc_info=True)
         return {}
 
     def check_lastcrawl(self, seconds, mode, deviant=None, mval=None):
@@ -148,13 +157,6 @@ class DAGR():
             self.__logger.warning('Skipping missing dir {}'.format(base_dir))
         return False
 
-    def filter_deviants(self, queue):
-        if self.filter is None or not self.filter: return queue
-        self.__logger.info('Deviant filter: {}'.format(pformat(self.filter)))
-        results = dict((k, queue.get(k)) for k in queue.keys() if k in self.filter)
-        self.__logger.log(level=5, msg='Filter results: {}'.format(pformat(results)))
-        return dict((k, queue.get(k)) for k in queue.keys() if k in self.filter)
-
     def save_queue(self, path='.queue'):
         with open(path, 'w') as fh:
             json.dump(self.get_queue(), fh)
@@ -173,6 +175,7 @@ class DAGR():
         if not self.get_queue():
             raise ValueError('Empty work queue')
         wq = self.get_queue()
+        self.__logger.info('Mature mode: {}' .format(self.mature()))
         self.__logger.info('Fix missing mode: {}'.format(self.fixmissing))
         self.__logger.info('Fix artists mode: {}'.format(self.fixartists))
         self.__logger.info('No crawl mode: {}'.format(self.nocrawl))
@@ -181,7 +184,6 @@ class DAGR():
         self.__logger.info('Verify mode: {}'.format(self.verifybest or self.verifyexists))
         self.__logger.info('Unfindable mode: {}'.format(self.unfindable))
         self.__logger.info('Loaded plugins: {}'.format(pformat(self.pl_manager.loaded_plugins)))
-        self.browser_init()
         while self.keep_running():
             if None in wq.keys():
                 nd = wq.pop(None)
@@ -259,11 +261,15 @@ class DAGR():
                 cache = self.cache(self.config, base_dir)
                 if not pages and not self.nocrawl:
                     self.__logger.log(level=15, msg='{} had no deviations'.format(msg_formatted))
+                    if self.test: return
                     cache.save_crawled(self.maxpages is None)
+                    cache.save_nolink()
                     return
                 self.__logger.log(level=15, msg='Total deviations in {} found: {}'.format(msg_formatted, len(pages)))
                 self.process_deviations(base_dir, cache, pages)
-                cache.save_crawled(self.maxpages is None)
+                if  not self.nocrawl and not self.test:
+                    cache.save_crawled(self.maxpages is None)
+                    cache.save_nolink()
             unlink_lockfile(lock_path)
         except (portalocker.exceptions.LockException,portalocker.exceptions.AlreadyLocked):
             self.__logger.warning('Skipping locked directory {}'.format(base_dir))
@@ -387,17 +393,20 @@ class DAGR():
         if self.isgroup:
             return deviant, True
         group = False
-        self.browser_init()
-        html = self.get('https://www.deviantart.com/{}/'.format(deviant)).text
         try:
-            search = re.search(r'<title>.[A-Za-z0-9-]*', html,
-                                re.IGNORECASE).group(0)[7:]
-            deviant = re.sub('[^a-zA-Z0-9_-]+', '', search)
-            if re.search('<dt class="f h">Group</dt>', html):
+            resp = self.browser.open('https://www.deviantart.com/{}/'.format(deviant))
+            if not resp.status_code == req_codes.ok:
+                raise DagrException('incorrect status code - {}'.format(resp.status_code))
+            current_page = self.browser.get_current_page()
+            page_title = re.search(r'[A-Za-z0-9-]*', current_page.title.string).group(0)
+            deviant = re.sub('[^a-zA-Z0-9_-]+', '', page_title)
+
+            if re.search('<dt class="f h">Group</dt>', resp.text):
                 group = True
             return deviant, group
         except:
-            raise DagrException('Unable to get deviant info')
+            self.__logger.log(level=5, msg='Unable to get deviant info', exc_info=True)
+        raise DagrException('Unable to get deviant info')
 
     def get(self, url):
         tries = {}
@@ -458,7 +467,8 @@ class DeviantionProcessor():
         self.__dest = dest
         self.__response = kwargs.get('response')
         self.__file_ext = kwargs.get('file_ext')
-        self.__verify_debug_loc = self.config.get('dagr.verify','debuglocation')
+        self.__verify_debug_loc     = self.config.get('dagr.verify','debuglocation')
+        self.__findlink_debug_loc   = self.config.get('dagr.findlink','debuglocation')
         self.__content_type = None
         self.__mature_error = None
 
@@ -558,7 +568,7 @@ class DeviantionProcessor():
         return False
 
     def verify_best(self):
-        fullimg_ft = next(self.ripper.fallbackorder())
+        fullimg_ft = next(iter(self.ripper.fallbackorder()))
         self.__logger.log(level=15, msg='Verifying {}'.format(self.page_link))
         flink, ltype =  self.find_link()
         if not ltype == fullimg_ft:
@@ -601,6 +611,7 @@ class DeviantionProcessor():
         while True:
             try:
                 dest.write_bytes(self.__response.content)
+                self.__logger.log(level=4, msg='Wrote devation to {}'.format(dest))
                 break
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
@@ -656,10 +667,20 @@ class DeviantionProcessor():
             self.__logger.log(level=5, msg='Found download button')
             self.__file_link, self.__found_type = img_link, 'download'
             return self.__file_link, self.__found_type
+        img_link = current_page.find('a', {'href': re.compile('deviantart.com/download')})
+        if img_link:
+            self.__logger.log(level=5, msg='Found eclipse download button')
+            self.__file_link, self.__found_type = img_link, 'download'
+            return self.__file_link, self.__found_type
         self.__logger.log(level=15, msg='Download link not found, falling back to alternate methods')
         page_title = current_page.find('span', {'itemprop': 'title'})
         if page_title and page_title.text == 'Literature':
             self.__logger.log(level=5, msg='Found literature')
+            self.__file_link, self.__found_type = self.browser.get_url(), 'literature'
+            return self.__file_link, self.__found_type
+        lit_class = current_page.find('div', {'class': '_2JHSA'})
+        if lit_class and lit_class.text.lower() == 'literature':
+            self.__logger.log(level=5, msg='Found eclipse literature')
             self.__file_link, self.__found_type = self.browser.get_url(), 'literature'
             return self.__file_link, self.__found_type
         journal = current_page.find('div', {'class': 'journal-wrapper'})
@@ -724,6 +745,15 @@ class DeviantionProcessor():
             else:
                 raise DagrException('maybe a mature deviation/' +
                                     'unable to find downloadable deviation')
+        if self.__findlink_debug_loc:
+            debug_folder = self.base_dir.joinpath(self.__findlink_debug_loc).expanduser().resolve()
+            if not debug_folder.exists(): debug_folder.mkdir(parents=True)
+            debug_output = (debug_folder
+                .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(self.page_link)))
+                .with_suffix('.html'))
+            self.__logger.info('Dumping html to {}'.format(debug_output))
+            debug_output.write_bytes(resp.content)
+        self.cache.add_nolink(self.page_link)
         raise DagrException('all attemps to find a link failed')
 
 
@@ -749,21 +779,28 @@ class DAGRCache():
         self.ep_name            = self.settings.get('downloadedpages', '.dagr_downloaded_pages')
         self.artists_name       = self.settings.get('artists', '.artists')
         self.crawled_name       = self.settings.get('crawled', '.crawled')
-        self.files_list         = next(self.__load_cache(filenames=self.fn_name))
+        self.nolink_name        = self.settings.get('nolink', '.nolink')
+        self.__files_list       = next(self.__load_cache(filenames=self.fn_name))
         self.existing_pages     = next(self.__load_cache(existing_pages=self.ep_name))
+        self.artists            = next(self.__load_cache(artists=self.artists_name))
         self.last_crawled       = next(self.__load_cache(last_crawled=self.crawled_name))
+        self.no_link            = next(self.__load_cache(no_link=self.nolink_name, warn_not_found=False))
+        self.__excluded_fnames  = ['.lock', self.fn_name, self.ep_name, self.artists_name, self.crawled_name, self.nolink_name]
         self.downloaded_pages   = []
         if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
             self.__convert_urls()
+    @property
+    def files_list(self):
+        return [f for f in self.__files_list if not f in self.__excluded_fnames]
 
-    def __load_cache_file(self, cache_file, use_backup=True):
+    def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
         full_path = self.base_dir.joinpath(cache_file)
         backup = full_path.with_suffix('.bak')
         try:
             if full_path.exists():
                 with full_path.open('r') as fh:
                     return json.load(fh)
-            else:
+            elif warn_not_found:
                 self.__logger.log(level=15, msg='Primary {} cache not found'.format(cache_file))
         except:
             self.__logger.warning('Unable to load primary {} cache:'.format(cache_file), exc_info=True)
@@ -772,12 +809,12 @@ class DAGRCache():
             if use_backup and backup.exists():
                 with backup.open('r') as fh:
                     return json.load(fh)
-            else:
+            elif warn_not_found:
                 self.__logger.log(level=15, msg='Backup {} cache not found'.format(cache_file))
         except:
             self.__logger.warning('Unable to load backup {} cache:'.format(cache_file), exc_info=True)
 
-    def __load_cache(self, use_backup=True, **kwargs):
+    def __load_cache(self, use_backup=True, warn_not_found=True, **kwargs):
         def filenames():
             self.__logger.log(level=15, msg='Building filenames cache')
             files_list_raw = self.base_dir.glob('*')
@@ -787,10 +824,11 @@ class DAGRCache():
             'filenames': filenames,
             'existing_pages': lambda: [],
             'artists': lambda: {},
-            'last_crawled': lambda : {'short': 'never', 'full': 'never'}
+            'last_crawled': lambda : {'short': 'never', 'full': 'never'},
+            'no_link': lambda: []
         }
         for cache_type, cache_file in kwargs.items():
-            cache_contents = self.__load_cache_file(cache_file, use_backup=use_backup)
+            cache_contents = self.__load_cache_file(cache_file, use_backup=use_backup, warn_not_found=warn_not_found)
             if cache_contents:
                 yield cache_contents
             else:
@@ -839,12 +877,13 @@ class DAGRCache():
         self.settings['shorturls'] = short
         self.__update_cache(self.settings_name, self.settings, False)
         self.__update_cache(self.ep_name, self.existing_pages)
-        self.update_artists()
+        self.update_artists(True)
 
-    def update_artists(self):
-        artists = {}
+    def update_artists(self, force=False):
         base_url = self.dagr_config.get('deviantart', 'baseurl')
-        for page in self.existing_pages:
+        updated_pages = self.existing_pages if force else self.downloaded_pages
+        self.__logger.log(15, 'Sorting {} artist pages'.format(len(updated_pages)))
+        for page in updated_pages:
             artist_url_p = PurePosixPath(page).parent.parent
             artist_name = artist_url_p.name
             shortname = PurePosixPath(page).name
@@ -853,10 +892,10 @@ class DAGRCache():
             except StopIteration:
                 self.__logger.error('Cache entry not found {} : {} : {}'.format(self.base_dir, page, shortname), exc_info=True)
                 raise
-            if not artist_name in artists:
-                artists[artist_name] = {'Home Page': '{}/{}'.format(base_url, artist_url_p), 'Artworks':{}}
-            artists[artist_name]['Artworks'][rfn] = page
-        self.__update_cache(self.artists_name, artists)
+            if not artist_name in self.artists:
+                self.artists[artist_name] = {'Home Page': '{}/{}'.format(base_url, artist_url_p), 'Artworks':{}}
+            self.artists[artist_name]['Artworks'][rfn] = page
+        self.__update_cache(self.artists_name, self.artists)
 
     def rename_deviant(self, old, new):
         rn_count = 0
@@ -888,15 +927,23 @@ class DAGRCache():
             self.__update_cache(self.ep_name, self.existing_pages)
         if save_artists:
             if self.downloaded_pages or fix_artists or save_artists == 'force':
-                self.update_artists()
+                self.update_artists(save_artists == 'force')
         self.__logger.log(level=5, msg=pformat(locals()))
+
+    def save_nolink(self):
+        if self.no_link:
+            self.__update_cache(self.nolink_name, self.no_link)
 
     def save_crawled(self, full_crawl=False):
         if full_crawl:
             self.last_crawled['full'] = time()
         else:
             self.last_crawled['short'] = time()
-        self.__update_cache(self.crawled_name, self.last_crawled, False)
+        self.__update_cache(self.crawled_name, self.last_crawled)
+
+    def add_nolink(self, page):
+        if not page in self.no_link:
+            self.no_link.append(page)
 
     def add_link(self, link):
         if self.settings.get('shorturls'):
@@ -910,16 +957,21 @@ class DAGRCache():
     def check_link(self, link):
         if self.settings.get('shorturls'):
             link = shorten_url(link)
-        return link in self.existing_pages
+        if link in self.existing_pages: return True
+        self.__logger.log(level=5, msg='Checking for lowercase link {}'.format(link))
+        return link.lower() in (l.lower() for l in self.existing_pages)
 
     def filter_links(self, links):
-        return [ l for l in links if not self.check_link(l)]
+        return [l for l in links if not self.check_link(l)]
 
     def add_filename(self, fn):
-        if not fn in self.files_list:
-            self.files_list.append(fn)
+        if fn in self.__files_list:
+            self.__logger.log(level=5, msg='{} allready in filenames cache'.format(fn))
+        else:
+            self.__files_list.append(fn)
 
     def real_filename(self, shortname):
-        return next(fn for fn in self.files_list if shortname in fn)
+        return next(fn for fn in self.files_list if shortname.lower() in fn.lower())
+
 
 

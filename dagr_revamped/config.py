@@ -66,7 +66,9 @@ class DAGRBaseConf():
         raise ValueError('Section {} does not exist'.format(section))
 
     def set_key(self, section, key, value):
-        pass
+        if not section in self.__settings:
+            self.__settings[section] = {}
+        self.__settings[section][key] = value
 
     def set_section(self, section, value):
         self.__settings[section] = value
@@ -95,6 +97,7 @@ class DAGRConfig(DAGRBaseConf):
             25:'INFO',
         },
         'Logging.Map': {
+            -1: logging.ERROR,
             0:logging.WARN,
             1:logging.INFO,
             2: 15,
@@ -113,9 +116,6 @@ class DAGRConfig(DAGRBaseConf):
             'MValArgs': 'album,collection,query,category,page',
             'NDModes': 'search',
             'MaxPages': 15000,
-            },
-        'DeviantArt.FindLink': {
-            'FallbackOrder': 'img full,meta,img normal'
             },
         'DeviantArt.Modes.Album':{
             'url_fmt': '{base_url}/{deviant_lower}/gallery/{mval}?offset={offset}'
@@ -172,6 +172,7 @@ class DAGRConfig(DAGRBaseConf):
             'Artists': '.artists',
             'FileNames': '.filenames',
             'DownloadedPages': '.dagr_downloaded_pages',
+            'NoLink': '.nolink',
             'Settings': '.settings',
             'Verified':  '.verified',
             'ShortUrls': False
@@ -207,8 +208,12 @@ class DAGRConfig(DAGRBaseConf):
             'ConnectionError': True
             },
         'Dagr.Verify':{
-            'DebugLocation':'#Trash/Verify'
-            }
+            'DebugLocation': ''
+            },
+        'Dagr.FindLink': {
+            'DebugLocation': '',
+            'FallbackOrder': 'img full,meta,img normal'
+            },
     }
     OVERRIDES = {
         'Dagr': {
@@ -279,7 +284,7 @@ class DAGRConfig(DAGRBaseConf):
     def conf_print(self):
         fname = self.__arguments.get('conf_file')
         if not fname:
-            pprint(self.__settings)
+            pprint(self.get_all())
         elif fname == '.ini':
             for f in self.__ini_files:
                 with open(f, 'r') as fh:

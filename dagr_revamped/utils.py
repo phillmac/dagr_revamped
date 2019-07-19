@@ -1,10 +1,10 @@
 import json
-import pprint
 import logging
+from io import StringIO
 from docopt import docopt
 from random import choice
 from . import __version__
-from pprint import pformat
+from pprint import pformat, pprint
 from .config import DAGRConfig
 from .dagr_logging import init_logging, log as dagr_log
 from pathlib import Path, PurePosixPath
@@ -22,10 +22,19 @@ def make_dirs(directory):
     if not directory.exists():
         directory.mkdir(parents=True)
         logger.debug('Created dir {}'.format(directory))
+def get_output_dir(config):
+    return Path(config.get('dagr', 'outputdirectory')).expanduser().resolve()
+
+
+def strip_topdir(directory):
+    if not isinstance(directory, Path):
+        directory = Path(directory)
+    dirparts = directory.parts[2:]
+    return Path(*dirparts)
 
 def get_base_dir(config, mode, deviant=None, mval=None):
     logger = logging.getLogger(__name__)
-    directory = Path(config.get('dagr', 'outputdirectory')).expanduser().resolve()
+    directory = get_output_dir(config)
     if deviant:
         base_dir = directory.joinpath(deviant, mode)
     else:
@@ -66,6 +75,17 @@ def get_base_dir(config, mode, deviant=None, mval=None):
         return
     logger.log(level=5, msg=pformat(locals()))
     return base_dir
+
+
+def buffered_file_write(json_content, fname):
+    if not isinstance(fname, Path):
+        fname= Path(fname)
+    buffer = StringIO()
+    json.dump(json_content, buffer, indent=4, sort_keys=True)
+    buffer.seek(0)
+    fname.write_text(buffer.read())
+
+
 
 def update_d(d, u):
     for k, v in u.items():
@@ -112,16 +132,24 @@ def load_bulk_files(files):
             update_d(bulk_queue, json.load(fh))
     return bulk_queue
 
+def filter_deviants(dfilter, queue):
+    if dfilter is None or not dfilter: return queue
+    logger = logging.getLogger(__name__)
+    logger.info('Deviant filter: {}'.format(pformat(dfilter)))
+    results = dict((k, queue.get(k)) for k in queue.keys() if k in dfilter)
+    logger.log(level=5, msg='Filter results: {}'.format(pformat(results)))
+    return dict((k, queue.get(k)) for k in queue.keys() if k in dfilter)
+
 def compare_size(dest, content):
-        logger = logging.getLogger(__name__)
-        if not isinstance(dest, Path):
-            dest = Path(dest)
-        if not dest.exists(): return False
-        current_size = dest.stat().st_size
-        best_size = len(content)
-        if not current_size < best_size: return True
-        logger.info('Current file {} is smaller by {} bytes'.format(dest, best_size - current_size))
-        return False
+    logger = logging.getLogger(__name__)
+    if not isinstance(dest, Path):
+        dest = Path(dest)
+    if not dest.exists(): return False
+    current_size = dest.stat().st_size
+    best_size = len(content)
+    if not current_size < best_size: return True
+    logger.info('Current file {} is smaller by {} bytes'.format(dest, best_size - current_size))
+    return False
 
 def create_browser(mature=False):
     user_agents = (
@@ -173,6 +201,9 @@ class DAGRUtilsCli():
 Usage:
 dagr-utils.py renamedeviant OLD NEW [-v|-vv|--debug=DEBUGLVL] FILENAMES ...
 dagr-utils.py shortenurlcache [-v|-vv|--debug=DEBUGLVL] FILENAMES ...
+dagr-utils.py finddupes [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
+dagr-utils.py updatedirscache [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
+
 
 Options:
     -v --verbose                            Show more detail, -vv for debug
@@ -194,10 +225,12 @@ Options:
             'log_level': ll_arg,
             'renamedeviant':  arguments.get('renamedeviant'),
             'shortenurlcache': arguments.get('shortenurlcache'),
+            'finddupes': arguments.get('finddupes'),
+            'updatedirscache': arguments.get('updatedirscache'),
             'filenames': arguments.get('FILENAMES'),
+            'filter': arguments.get('--filter'),
             'old': arguments.get('OLD'),
             'new': arguments.get('NEW'),
-
         }
 
 
@@ -210,28 +243,56 @@ class DAGRUtils():
         self.__logger = logging.getLogger(__name__)
         self.__utils_cmd_maping = {
             'shortenurlcache': self.shorten_url_cache,
-            'renamedeviant': self.rename_deviant
+            'renamedeviant': self.rename_deviant,
+            'finddupes': self.find_dupes,
+            'updatedirscache': self.update_dirs_cache
         }
-        self.__utils_cmd    = next((cmd for cmd in self.__utils_cmd_maping.keys() if kwargs.get(cmd)), None)
-        self.__config       = kwargs.get('config') or DAGRConfig()
-        self.__cache        = kwargs.get('cache') or DAGRCache
-        self.__filenames    = kwargs.get('filenames')
-        self.__kwargs       = kwargs
-
+        self.__utils_cmd                    = next((cmd for cmd in self.__utils_cmd_maping.keys() if kwargs.get(cmd)), None)
+        self.__config                       = kwargs.get('config') or DAGRConfig()
+        self.__cache                        = kwargs.get('cache') or DAGRCache
+        self.__filenames                    = kwargs.get('filenames')
+        self.__filter                       = None if kwargs.get('filter') is None else [s.strip().lower() for s in kwargs.get('filter').split(',')]
+        self.__global_files_mapping         = {}
+        self.__global_dirs_mapping          = {}
+        self.__global_deviant_dirs_cache    = dict((str(d.name).lower(), d) for d in (di for di in get_output_dir(self.__config).iterdir() if di.is_dir()))
+        self.__kwargs                       = kwargs
 
     def handle_utils_cmd(self):
         self.__utils_cmd_maping.get(self.__utils_cmd)()
 
-    def shorten_url_cache(self):
+    def build_queue(self):
         wq = load_bulk_files(self.__filenames)
         wq = convert_queue(self.__config, wq)
+        wq = filter_deviants(self.__filter, wq)
+        return wq
+
+
+    def walk_queue(self, callback, inc_nd=False):
+        wq = self.build_queue()
+        if None in wq.keys():
+            nd = wq.pop(None)
+        while True:
+            try:
+                deviant = next(iter(sorted(wq.keys())))
+                modes =  wq.pop(deviant)
+            except StopIteration:
+                break
+            deviant = str(self.__global_deviant_dirs_cache.get(deviant))
+            for mode, mode_vals in modes.items():
+                if mode_vals:
+                    for mval in mode_vals:
+                        callback(mode, deviant, mval)
+                else:
+                    callback(mode, deviant)
+
+    def shorten_url_cache(self):
+        wq = self.build_queue()
 
     def rename_deviant(self):
         old = self.__kwargs.get('old').lower()
         new = self.__kwargs.get('new').lower()
         print('Renaming from {} to {}'.format(old, new))
-        wq = load_bulk_files(self.__filenames)
-        wq = convert_queue(self.__config, wq)
+        wq = self.build_queue()
         if None in wq.keys(): wq.pop(None)
         while True:
             try:
@@ -247,16 +308,57 @@ class DAGRUtils():
                     self._rename_deviant(mode, deviant)
 
     def _rename_deviant(self, mode, deviant, mval=None):
-        from .lib import DAGRCache
         old = self.__kwargs.get('old').lower()
         new = self.__kwargs.get('new').lower()
         base_dir = get_base_dir(self.__config, mode, deviant, mval)
         print('Scanning {}'.format(base_dir))
-        cache = DAGRCache(self.__config, base_dir)
+        cache = self.__cache(self.__config, base_dir)
         renamed = cache.rename_deviant(old, new)
         print('Renamed {} deviations'.format(renamed))
         if renamed > 0: cache.save()
         return renamed
+
+
+    def find_dupes(self):
+        self.walk_queue(self._find_dupes, True)
+        duplicates = {k:v for k,v in self.__global_files_mapping.items() if len(v) > 1}
+        print(f'Total duplicates: {len(duplicates)}')
+        od = get_output_dir(self.__config)
+        of = od.joinpath('.duplicates.json')
+        buffered_file_write(duplicates, of)
+
+
+    def _find_dupes(self, mode, deviant, mval=None):
+        base_dir = get_base_dir(self.__config, mode, deviant, mval)
+        rel_path = str(strip_topdir(base_dir))
+        print(f'Scanning {rel_path}')
+        cache = self.__cache(self.__config, base_dir)
+        for file_name in cache.files_list:
+            if not file_name in self.__global_files_mapping:
+                self.__global_files_mapping[file_name] = []
+            self.__global_files_mapping[file_name].append(str(rel_path))
+        print(f'Total files: {len(self.__global_files_mapping)}')
+
+
+    def update_dirs_cache(self):
+        print('Scanning dirs')
+        self.walk_queue(self._update_dirs_cache, True)
+        print('Saving cache')
+        od = get_output_dir(self.__config)
+        of = od.joinpath('.dirs.json')
+        buffered_file_write(self.__global_dirs_mapping, of)
+
+    def _update_dirs_cache(self, mode, deviant, mval=None):
+        base_dir = get_base_dir(self.__config, mode, deviant, mval)
+        rel_path = str(strip_topdir(base_dir))
+        print(f'Scanning {rel_path}')
+        dir_lower = rel_path.lower()
+        if not dir_lower in self.__global_dirs_mapping:
+            self.__global_dirs_mapping[dir_lower] = rel_path
+
+
+
+
 
 
 
