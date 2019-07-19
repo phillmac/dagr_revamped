@@ -568,7 +568,7 @@ class DeviantionProcessor():
         return False
 
     def verify_best(self):
-        fullimg_ft = next(self.ripper.fallbackorder())
+        fullimg_ft = next(iter(self.ripper.fallbackorder()))
         self.__logger.log(level=15, msg='Verifying {}'.format(self.page_link))
         flink, ltype =  self.find_link()
         if not ltype == fullimg_ft:
