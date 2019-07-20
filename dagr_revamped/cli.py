@@ -104,6 +104,7 @@ def main():
         ripper = DAGR(config=config, **cli.args)
         ripper.run()
         ripper.print_errors()
+        ripper.print_dl_total()
     if __name__ == '__main__':
         logging.shutdown()
 
