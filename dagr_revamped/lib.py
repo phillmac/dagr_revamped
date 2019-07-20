@@ -588,6 +588,7 @@ class DeviantionProcessor():
             debug_file= debug.joinpath(dest.name)
             debug_file.write_bytes(dest.read_bytes())
             self.__logger.debug('Debug file {}'.format(debug_file))
+        return True
 
     def verify_exists(self) :
         fname = self.get_fname()
