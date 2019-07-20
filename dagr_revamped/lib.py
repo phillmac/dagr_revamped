@@ -70,6 +70,7 @@ class DAGR():
         self.pl_manager                 = (kwargs.get('pl_manager') or  PluginManager)(self)
         self.deviantion_pocessor        = kwargs.get('processor') or DeviantionProcessor
         self.cache                      = kwargs.get('cache') or DAGRCache
+        self.total_dl_count             = 0
         self.init_mimetypes()
         self.browser_init()
         if self.deviants or self.bulk and self.filenames:
@@ -440,6 +441,9 @@ class DAGR():
                 url = self.browser.absolute_url(url['href'])
         return self.browser.session.get(url, *args, timeout=150, **kwargs)
 
+    def print_dl_total(self):
+        self.__logger.info(f"Download total: {self.total_dl_count}")
+
     def print_errors(self):
         if self.errors_count:
             self.__logger.warning("Download errors:")
@@ -556,6 +560,7 @@ class DeviantionProcessor():
         fname = self.get_fname()
         self.save_content()
         self.cache.add_filename(fname)
+        self.ripper.total_dl_count += 1
 
     def download_needed(self):
         if self.ripper.overwrite(): return True
