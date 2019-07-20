@@ -581,13 +581,14 @@ class DeviantionProcessor():
         response = self.get_response()
         if compare_size(dest, response.content):
             self.__logger.log(level=15, msg='Sizes match')
-            return
+            return False
         if self.__verify_debug_loc:
             debug = self.base_dir.joinpath(self.__verify_debug_loc).expanduser().resolve()
             make_dirs(debug)
             debug_file= debug.joinpath(dest.name)
             debug_file.write_bytes(dest.read_bytes())
             self.__logger.debug('Debug file {}'.format(debug_file))
+        return True
 
     def verify_exists(self) :
         fname = self.get_fname()
