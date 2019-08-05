@@ -113,7 +113,7 @@ class DAGRConfig(DAGRBaseConf):
             'ArtRegex':(r"https://www\.deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
             'MatureContent': False,
             'Modes': 'album,collection,query,scraps,favs,gallery,search,page',
-            'MValArgs': 'album,collection,query,category,page',
+            'MValArgs': 'album,collection,query,category,page,search',
             'NDModes': 'search',
             'MaxPages': 15000,
             },
