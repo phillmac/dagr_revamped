@@ -17,7 +17,8 @@ Usage:
     dagr.py (-c COLLECTION) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
     dagr.py (-q QUERY) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
     dagr.py (-k CATEGORY) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
-    dagr.py (--page PAGE) [options] [-v|-vv|--debug=DEBUGLVL] [--isdeviant | --isgroup] DEVIANT
+    dagr.py (--page PAGE) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
+    dagr.py (--search SEARCH) [options] [-v|-vv|--debug=DEBUGLVL]
 
 Options:
     -a ALBUM --album=ALBUM                  Rip deviations in album
@@ -28,6 +29,7 @@ Options:
     --page=PAGE                             Rip a single page
     -q QUERY --query=QUERY                  Rip gallery with query filter
     -s --scraps                             Rip deviations in scraps
+    --search=SEARCH                         Search deviantart for results
     --filter=filter                         Filter bulk deviants by name. Comma seperated list
     -d DIRECTORY --directory=DIRECTORY      Output directory for deviations
     -p PROGRESS --progress=PROGRESS         Save progress regulary
@@ -47,6 +49,7 @@ Options:
     --verifyexists                          Override cache and force check filesystem
     --debug=DEBUGLVL                        Show still more detail
     --quiet                                 Suppress warnings
+    --showqueue                             Display inital queue contents. Requires at least -v or --debug=1.
     -h --help                               Show this screen.
     --version                               Show version.
 
