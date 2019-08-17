@@ -87,8 +87,6 @@ Options:
             'unfindable': arguments.get('--unfindable'),
             'verifybest': arguments.get('--verifybest'),
             'verifyexists': arguments.get('--verifyexists'),
-            'conf_cmd': arguments.get('CONF_CMD'),
-            'conf_file': arguments.get('CONF_FILE'),
             'log_level': ll_arg
         }
 
@@ -101,13 +99,11 @@ def main():
     logger = logging.getLogger(__name__)
     logger.log(level=5, msg=pformat(cli.arguments))
     logger.debug(pformat(cli.args))
-    if cli.args.get('conf_cmd'):
-        config.conf_cmd()
-    else:
-        ripper = DAGR(config=config, **cli.args)
-        ripper.run()
-        ripper.print_errors()
-        ripper.print_dl_total()
+
+    ripper = DAGR(config=config, **cli.args)
+    ripper.run()
+    ripper.print_errors()
+    ripper.print_dl_total()
     if __name__ == '__main__':
         logging.shutdown()
 
