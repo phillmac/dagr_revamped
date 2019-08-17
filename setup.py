@@ -19,7 +19,8 @@ setup(
         'docopt == 0.6.2',
         'pluginbase == 1.0.0',
         'portalocker == 1.4.0',
-        'python-dateutil==2.7.5'
+        'python-dateutil==2.7.5',
+        'deviantart==0.1.5'
         ],
     extras_require={
         'calmjs':  ["calmjs==3.3.1"]
