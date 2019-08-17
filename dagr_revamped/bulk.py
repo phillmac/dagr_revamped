@@ -69,8 +69,6 @@ Options:
             'unfindable': arguments.get('--unfindable'),
             'verifybest': arguments.get('--verifybest'),
             'verifyexists': arguments.get('--verifyexists'),
-            'conf_cmd': arguments.get('CONF_CMD'),
-            'conf_file': arguments.get('CONF_FILE'),
             'log_level': ll_arg,
             'showqueue': arguments.get('--showqueue')
         }
