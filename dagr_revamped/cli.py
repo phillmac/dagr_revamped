@@ -50,6 +50,9 @@ Options:
     --debug=DEBUGLVL                        Show still more detail
     --quiet                                 Suppress warnings
     --showqueue                             Display inital queue contents. Requires at least -v or --debug=1.
+    --useapi                                Use DA API
+    --clientid=CLIENTID                     DA API Client ID
+    --clientsecret=CLIENTSECRET             DA API Client Secret
     -h --help                               Show this screen.
     --version                               Show version.
 
@@ -87,6 +90,9 @@ Options:
             'unfindable': arguments.get('--unfindable'),
             'verifybest': arguments.get('--verifybest'),
             'verifyexists': arguments.get('--verifyexists'),
+            'useapi': arguments.get('--useapi'),
+            'clientid': arguments.get('--clientid'),
+            'clientsecret': arguments.get('--clientsecret'),
             'log_level': ll_arg
         }
 

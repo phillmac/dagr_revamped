@@ -35,8 +35,8 @@ Options:
     --debug=DEBUGLVL                        Show even more detail.
     --showqueue                             Display inital queue contents. Requires at least -v or --debug=1.
     --useapi                                Use DA API
-    --api_id=API_ID                         DA API Id
-    --apikey=APIKEY                         DA API Key
+    --clientid=CLIENTID                     DA API Client ID
+    --clientsecret=CLIENTSECRET             DA API Client Secret
     -h --help                               Display this screen.
     --version                               Display version.
 
@@ -75,8 +75,8 @@ Options:
             'log_level': ll_arg,
             'showqueue': arguments.get('--showqueue'),
             'useapi': arguments.get('--useapi'),
-            'api_id': arguments.get('--api_id'),
-            'apikey': arguments.get('--apikey'),
+            'clientid': arguments.get('--clientid'),
+            'clientsecret': arguments.get('--clientsecret')
         }
 
 
