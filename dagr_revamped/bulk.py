@@ -34,6 +34,9 @@ Options:
     --refreshonlydays=DAYS                  Crawl deviants that have not been crawled in DAYS days
     --debug=DEBUGLVL                        Show even more detail.
     --showqueue                             Display inital queue contents. Requires at least -v or --debug=1.
+    --useapi                                Use DA API
+    --api_id=API_ID                         DA API Id
+    --apikey=APIKEY                         DA API Key
     -h --help                               Display this screen.
     --version                               Display version.
 
@@ -70,7 +73,10 @@ Options:
             'verifybest': arguments.get('--verifybest'),
             'verifyexists': arguments.get('--verifyexists'),
             'log_level': ll_arg,
-            'showqueue': arguments.get('--showqueue')
+            'showqueue': arguments.get('--showqueue'),
+            'useapi': arguments.get('--useapi'),
+            'api_id': arguments.get('--api_id'),
+            'apikey': arguments.get('--apikey'),
         }
 
 
