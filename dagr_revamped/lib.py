@@ -668,9 +668,6 @@ class DeviantionProcessor():
         if not resp.status_code == req_codes.ok:
             raise DagrException('incorrect status code - {}'.format(resp.status_code))
         current_page = self.browser.get_current_page()
-        #Check for antisocial
-        if current_page.find('div', {'class':'antisocial'}):
-            raise DagrException('deviation not available without login')
         # Full image link (via download link)
         link_text = re.compile('Download( (Image|File))?')
         img_link = None
@@ -703,6 +700,10 @@ class DeviantionProcessor():
             self.__logger.log(level=5, msg='Found journal')
             self.__file_link, self.__found_type = self.browser.get_url(), 'journal'
             return self.__file_link, self.__found_type
+        #Check for antisocial
+        if current_page.find('div', {'class':'antisocial'}):
+            self.cache.add_nolink(self.page_link)
+            raise DagrException('deviation not available without login')
         search_tags = {}
         # Fallback 1: try collect_rid, full
         search_tags['img full'] = current_page.find('img',
