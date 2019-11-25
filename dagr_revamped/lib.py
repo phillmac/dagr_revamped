@@ -754,6 +754,7 @@ class DeviantionProcessor():
                 self.__logger.log(level=5, msg='Found {}'.format(found))
                 self.__file_link, self.__found_type = filelink, found
                 return self.__file_link, self.__found_type
+        self.cache.add_nolink(self.page_link)
         if self.__mature_error:
             if self.ripper.mature():
                 raise DagrException('unable to find downloadable deviation')
@@ -768,7 +769,6 @@ class DeviantionProcessor():
                 .with_suffix('.html'))
             self.__logger.info('Dumping html to {}'.format(debug_output))
             debug_output.write_bytes(resp.content)
-        self.cache.add_nolink(self.page_link)
         raise DagrException('all attemps to find a link failed')
 
 
