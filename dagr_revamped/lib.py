@@ -73,7 +73,7 @@ class DAGR():
         self.total_dl_count             = 0
         self.init_mimetypes()
         self.browser_init()
-        if self.deviants or self.bulk and self.filenames:
+        if self.deviants or (self.bulk and self.filenames) or 'search' in self.modes:
             self.__work_queue = self.__build_queue()
 
     def init_mimetypes(self):
@@ -95,12 +95,22 @@ class DAGR():
             wq = self.find_refresh(wq)
         else:
             wq = {}
-            for deviant in self.deviants:
+            self.__logger.log(5, f'Deviants: {self.deviants}')
+            self.__logger.log(5, f'Modes: {self.modes}')
+            self.__logger.log(5, f'Mode vals: {self.mode_vals}')
+            if self.deviants:
+                for deviant in self.deviants:
+                    for mode in self.modes:
+                        if self.mode_vals:
+                            update_d(wq, {deviant:{mode:[self.mode_vals]}})
+                        else:
+                            update_d(wq, {deviant:{mode:[]}})
+            else:
                 for mode in self.modes:
                     if self.mode_vals:
-                        update_d(wq, {deviant:{mode:[self.mode_vals]}})
+                        update_d(wq, {None:{mode:[self.mode_vals]}})
                     else:
-                        update_d(wq, {deviant:{mode:[]}})
+                        update_d(wq, {None:{mode:[]}})
         self.__logger.log(level=logging.INFO if self.show_queue else 4, msg='Work queue: {}'.format(pformat(wq)))
         return wq
 
@@ -418,8 +428,7 @@ class DAGR():
                 break
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
-                retry_excepts = self.retry_exception_names()
-                if except_name in retry_excepts:
+                if [re for re in self.retry_exception_names() if except_name in re]:
                     self.__logger.warning('Get exception', exc_info=True)
                     if not except_name in tries:
                         tries[except_name] = 0
@@ -429,7 +438,7 @@ class DAGR():
                         continue
                     raise DagrException('failed to get url: {}'.format(except_name))
                 else:
-                    self.__logger.critical(pformat(retry_excepts))
+                    self.__logger.critical(pformat(self.retry_exception_names()))
                     raise
         if not response.status_code == req_codes.ok:
             raise DagrException('incorrect status code - {}'.format(response.status_code))
@@ -621,7 +630,7 @@ class DeviantionProcessor():
                 break
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
-                if except_name in self.ripper.retry_exception_names():
+                if [re for re in self.ripper.retry_exception_names() if except_name in re]:
                     self.__logger.debug('Exception while saving link', exc_info=True)
                     if not except_name in tries:
                         tries[except_name] = 0
@@ -659,9 +668,6 @@ class DeviantionProcessor():
         if not resp.status_code == req_codes.ok:
             raise DagrException('incorrect status code - {}'.format(resp.status_code))
         current_page = self.browser.get_current_page()
-        #Check for antisocial
-        if current_page.find('div', {'class':'antisocial'}):
-            raise DagrException('deviation not available without login')
         # Full image link (via download link)
         link_text = re.compile('Download( (Image|File))?')
         img_link = None
@@ -694,6 +700,10 @@ class DeviantionProcessor():
             self.__logger.log(level=5, msg='Found journal')
             self.__file_link, self.__found_type = self.browser.get_url(), 'journal'
             return self.__file_link, self.__found_type
+        #Check for antisocial
+        if current_page.find('div', {'class':'antisocial'}):
+            self.cache.add_nolink(self.page_link)
+            raise DagrException('deviation not available without login')
         search_tags = {}
         # Fallback 1: try collect_rid, full
         search_tags['img full'] = current_page.find('img',
@@ -745,6 +755,7 @@ class DeviantionProcessor():
                 self.__logger.log(level=5, msg='Found {}'.format(found))
                 self.__file_link, self.__found_type = filelink, found
                 return self.__file_link, self.__found_type
+        self.cache.add_nolink(self.page_link)
         if self.__mature_error:
             if self.ripper.mature():
                 raise DagrException('unable to find downloadable deviation')
@@ -759,7 +770,6 @@ class DeviantionProcessor():
                 .with_suffix('.html'))
             self.__logger.info('Dumping html to {}'.format(debug_output))
             debug_output.write_bytes(resp.content)
-        self.cache.add_nolink(self.page_link)
         raise DagrException('all attemps to find a link failed')
 
 
