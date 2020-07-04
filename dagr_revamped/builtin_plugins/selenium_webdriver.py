@@ -67,7 +67,7 @@ class Browser():
             user_agent = self.__driver.execute_script("return navigator.userAgent;")
         )
 
-    def wait_ready(self)
+    def wait_ready(self):
         WebDriverWait(self.__driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
 
     def do_login(self):
