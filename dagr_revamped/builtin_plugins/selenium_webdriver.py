@@ -43,7 +43,7 @@ class Browser():
             options = webdriver.ChromeOptions()
             options.add_argument('--disable-web-security')
             capabilities = {**options.to_capabilities(), **self.__config.get('capabilities', {})}
-            config_ce_url = self.__config.get('webdriver_url', '')
+            config_ce_url = self.__config.get('webdriver_url', key_errors=False)
             ce_url = os.environ.get('dagr.plugins.selenium.webdriver.webdriver_url', config_ce_url)
             self.__driver = webdriver.Remote(
                 command_executor=ce_url,
@@ -74,10 +74,10 @@ class Browser():
         if self.__dirver.current_url != self.__login_url:
             self.__driver.get('https://deviantart.com/users/login')
 
-        config_user = self.__config.get('deviantart.username', '')
+        config_user = self.__config.get('deviantart','username', key_errors=False)
         user = os.environ.get('deviantart.username', config_user)
 
-        config_pass = self.__config.get('deviantart.password', '')
+        config_pass = self.__config.get('deviantart','password', key_errors=False)
         passwd = os.environ.get('deviantart.password', config_pass)
 
         self.__driver.find_element_by_id('username').send_keys(user)
