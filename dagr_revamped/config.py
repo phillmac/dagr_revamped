@@ -56,21 +56,24 @@ class DAGRBaseConf():
     def get_json_section(self, section):
         return deepcopy(self.__json_config.get(section))
 
-    def get(self, section, key=None):
+    def get(self, section, key=None, key_errors=True):
         section = str(section).lower()
         if section in self.__settings:
             if key is None:
                 return self.__settings.get(section)
             key = str(key).lower()
-            return self.__settings.get(section).get(key)
-        raise ValueError('Section {} does not exist'.format(section))
+            return convert_val(self.__settings.get(section).get(key))
+        if key_errors: raise ValueError('Section {} does not exist'.format(section))
+        return None
 
     def set_key(self, section, key, value):
+        section = str(section).lower()
         if not section in self.__settings:
             self.__settings[section] = {}
         self.__settings[section][key] = value
 
     def set_section(self, section, value):
+        section = str(section).lower()
         self.__settings[section] = value
 
     def get_all(self):
@@ -81,6 +84,7 @@ class DAGRBaseConf():
 
     def merge_configs(self, section_names, conf_calbacks):
         for sec_name in section_names:
+            dagr_log(__name__, 5, f'Merging section {sec_name}')
             conf_sections = (cb(sec_name) for cb in conf_calbacks)
             self.__settings[sec_name.lower()] = merge_all(*conf_sections)
 
@@ -112,10 +116,11 @@ class DAGRConfig(DAGRBaseConf):
             'BaseUrl': 'https://www.deviantart.com',
             'ArtRegex':(r"https://www\.deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
             'MatureContent': False,
+            'Antisocial': True,
             'Modes': 'album,collection,query,scraps,favs,gallery,search,page',
             'MValArgs': 'album,collection,query,category,page,search',
             'NDModes': 'search',
-            'MaxPages': 15000,
+            'MaxPages': 15000
             },
         'DeviantArt.Modes.Album':{
             'url_fmt': '{base_url}/{deviant_lower}/gallery/{mval}?offset={offset}'
@@ -177,6 +182,9 @@ class DAGRConfig(DAGRBaseConf):
             'Verified':  '.verified',
             'ShortUrls': False
             },
+        'Dagr.Browser': {
+            'Driver': 'Default'
+        },
         'Dagr.BS4.Config': {
             'Features': 'lxml'
             },
@@ -230,13 +238,14 @@ class DAGRConfig(DAGRBaseConf):
             },
             'DeviantArt': {
                 'MatureContent': 'mature',
-                'MaxPages': 'maxpages'
+                'MaxPages': 'maxpages',
             }
     }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__arguments = None
+        self.__config_options = {}
         self.merge_configs(self.DEFAULTS.keys(), (
             self.get_ini_section,
             self.get_json_section,
@@ -246,9 +255,26 @@ class DAGRConfig(DAGRBaseConf):
 
     def set_args(self, arguments):
         self.__arguments = arguments
-        self.merge_configs(self.DEFAULTS.keys(), (
+        if not self.__arguments.get('config_options') is None:
+            for opt in self.__arguments.get('config_options').split(','):
+                [opt_name, opt_value] = opt.lower().split(':')
+                if (not opt_name) or (not opt_value):
+                    dagr_log(__name__, logging.WARNING, f'Unable to parse config option {opt_name} : {opt_value}')
+                    continue
+                opt_name_parts = opt_name.split('.')
+                opt_name_parts.reverse()
+                opt_key, *opt_sec_parts = opt_name_parts
+                opt_sec_parts.reverse()
+                opt_section = '.'.join(opt_sec_parts)
+                self.__config_options = dict_merge(self.__config_options, {opt_section: {opt_key: opt_value}})
+
+            dagr_log(__name__, 30, f'Config Options: {pformat(self.__config_options)}')
+
+        self.merge_configs(set([*self.DEFAULTS.keys(),  *self.__config_options.keys()]), (
             self.get_args_mapped,
-            self.get
+            self.__get_config_options,
+            lambda section: self.get(section, key_errors=False),
+
         ))
         dagr_log(__name__, 5, 'Config: {}'.format(pformat(self.get_all())))
 
@@ -256,8 +282,11 @@ class DAGRConfig(DAGRBaseConf):
         if not self.__arguments: return {}
         mapping = self.SETTINGS_MAP.get(section)
         if not mapping: return {}
-        return  dict((str(key), self.__arguments.get(mapping.get(key)))
+        return dict((str(key), self.__arguments.get(mapping.get(key)))
                 for key in mapping.keys() if self.__arguments.get(mapping.get(key)))
+
+    def __get_config_options(self, section):
+        return self.__config_options.get(section.lower())
 
     def get_modes(self):
         modes = [s.strip() for s in self.get('deviantart', 'modes').split(',')]
@@ -317,7 +346,7 @@ def dict_merge(dict_1, dict_2):
 def merge_all(*dicts):
     result = {}
     for item in filter(lambda d: d, dicts):
-        dagr_log(__name__, 5, 'Merging {}, {}'.format(result, item))
+        dagr_log(__name__, 5, f'Merging {result}, {item}')
         result = dict_merge(result, item)
     dagr_log(__name__, 4, 'Result: {}'.format(result))
     return result

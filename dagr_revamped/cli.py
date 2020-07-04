@@ -53,8 +53,9 @@ Options:
     --useapi                                Use DA API
     --clientid=CLIENTID                     DA API Client ID
     --clientsecret=CLIENTSECRET             DA API Client Secret
-    -h --help                               Show this screen.
-    --version                               Show version.
+    --config_options=CONFIGOPTIONS
+    -h --help                               Show this screen
+    --version                               Show version
 
 """
     NAME = __package__
@@ -66,7 +67,7 @@ Options:
         modes = [m for m in cnf_modes if arguments.get('--'+m)]
         mode_val = next((arguments.get('--'+v) for v in cnf_mval_args if arguments.get('--'+v)), None)
         try:
-            ll_arg = -1 if arguments.get('--quiet') else int(arguments.get('--debug') or arguments.get('--verbose'))
+            ll_arg = -1 if arguments.get('--quiet') else int(arguments.get('--debug') or int(arguments.get('--verbose')))
         except Exception:
             dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
         self.args = {
@@ -93,6 +94,7 @@ Options:
             'useapi': arguments.get('--useapi'),
             'clientid': arguments.get('--clientid'),
             'clientsecret': arguments.get('--clientsecret'),
+            'config_options': arguments.get('--config_options'),
             'log_level': ll_arg
         }
 
@@ -110,6 +112,7 @@ def main():
     ripper.run()
     ripper.print_errors()
     ripper.print_dl_total()
+    if ripper.browser.quit: ripper.browser.quit()
     if __name__ == '__main__':
         logging.shutdown()
 

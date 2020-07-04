@@ -151,7 +151,7 @@ def compare_size(dest, content):
     logger.info('Current file {} is smaller by {} bytes'.format(dest, best_size - current_size))
     return False
 
-def create_browser(mature=False):
+def create_browser(mature=False, user_agent=None):
     user_agents = (
         'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1'
         ' (KHTML, like Gecko) Chrome/14.0.835.202 Safari/535.1',
@@ -169,13 +169,16 @@ def create_browser(mature=False):
     )
     session = req_session()
     session.headers.update({'Referer': 'https://www.deviantart.com/'})
+
     if mature:
         session.cookies.update({'agegate_state': '1'})
     session.mount('https://', req_adapters.HTTPAdapter(max_retries=3))
 
+    if user_agent is None: user_agent=choice(user_agents)
+
     return StatefulBrowser(
         session=session,
-        user_agent=choice(user_agents))
+        user_agent=user_agent)
 
 def unlink_lockfile(lockfile):
     logger = logging.getLogger(__name__)

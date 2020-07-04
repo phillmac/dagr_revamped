@@ -37,6 +37,7 @@ Options:
     --useapi                                Use DA API
     --clientid=CLIENTID                     DA API Client ID
     --clientsecret=CLIENTSECRET             DA API Client Secret
+    --config_options=CONFIGOPTIONS
     -h --help                               Display this screen.
     --version                               Display version.
 
@@ -76,7 +77,9 @@ Options:
             'showqueue': arguments.get('--showqueue'),
             'useapi': arguments.get('--useapi'),
             'clientid': arguments.get('--clientid'),
-            'clientsecret': arguments.get('--clientsecret')
+            'clientsecret': arguments.get('--clientsecret'),
+            'config_options': arguments.get('--config_options')
+
         }
 
 

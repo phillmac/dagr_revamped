@@ -19,11 +19,15 @@ setup(
         'docopt == 0.6.2',
         'pluginbase == 1.0.0',
         'portalocker == 1.4.0',
-        'python-dateutil==2.7.5',
-        'deviantart==0.1.5'
-        ],
+        'python-dateutil == 2.7.5',
+        'deviantart >= 0.2.0'
+    ],
+    dependency_links=[
+        'git+https://github.com/phillmac/deviantart@0.2.0#egg=deviantart'
+    ],
     extras_require={
-        'calmjs':  ["calmjs==3.3.1"]
+        'calmjs':  ["calmjs==3.3.1"],
+        'selenium': ['selenium==3.141.0']
     },
     classifiers=[
         'Programming Language :: Python :: 3',

@@ -1,6 +1,7 @@
 import pickle
 def setup(manager):
     manager.register_findlink_b('flash_video', find_flash_video)
+    return True
 
 def find_flash_video(browser):
     #browser = pickle.loads(browser)

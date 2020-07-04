@@ -4,6 +4,7 @@ import json
 import pathlib
 import logging
 import threading
+import deviantart
 import portalocker
 from os import utime
 from io import StringIO
@@ -35,6 +36,7 @@ class DAGR():
         self.__logger = logging.getLogger(__name__)
         self.__work_queue               = {}
         self.errors_count               = {}
+        self.kwargs                     = kwargs
         self.config                     = kwargs.get('config') or DAGRConfig(kwargs)
         self.deviants                   = kwargs.get('deviants')
         self.filenames                  = kwargs.get('filenames')
@@ -55,9 +57,11 @@ class DAGR():
         self.verifyexists               = bool(kwargs.get('verifyexists'))
         self.unfindable                 = bool(kwargs.get('unfindable'))
         self.show_queue                 = bool(kwargs.get('showqueue'))
+        self.use_api                    = bool(kwargs.get('useapi'))
         self.base_url                   = lambda: self.config.get('deviantart', 'baseurl')
         self.fallbackorder              = lambda: list(s.strip() for s in self.config.get('dagr.findlink', 'fallbackorder').split(','))
         self.mature                     = lambda: self.config.get('deviantart','maturecontent')
+        self.antisocial                 = lambda: self.config.get('deviantart', 'antisocial')
         self.outdir                     = lambda: self.config.get('dagr', 'outputdirectory')
         self.overwrite                  = lambda: self.config.get('dagr', 'overwrite')
         self.progress                   = lambda: self.config.get('dagr', 'saveprogress')
@@ -68,10 +72,10 @@ class DAGR():
         self.browser                    = None
         self.stop_running               = threading.Event()
         self.pl_manager                 = (kwargs.get('pl_manager') or  PluginManager)(self)
-        self.deviantion_pocessor        = kwargs.get('processor') or DeviantionProcessor
         self.cache                      = kwargs.get('cache') or DAGRCache
         self.total_dl_count             = 0
         self.init_mimetypes()
+        self.init_classes()
         self.browser_init()
         if self.deviants or (self.bulk and self.filenames) or 'search' in self.modes:
             self.__work_queue = self.__build_queue()
@@ -80,6 +84,21 @@ class DAGR():
         mimetypes_init()
         for k,v in self.config.get('dagr.mimetypes').items():
             add_mimetype(k,v)
+
+    def init_classes(self):
+        if not self.use_api:
+            self.deviantion_pocessor    = self.kwargs.get('processor') or DAGRDeviantionProcessor
+            self.deviant_resolver       = self.kwargs.get('resolver') or DAGRDeviantResolver
+            self.devation_crawler       = self.kwargs.get('crawler') or DAGRCrawler
+        else:
+            self.da_api                 =  deviantart.Api (
+                self.kwargs.get('clientid'),
+                self.kwargs.get('clientsecret'),
+                mature_content = self.mature
+            )
+            self.deviantion_pocessor    = self.kwargs.get('processor') or DAGRDeviantionProcessor
+            self.deviant_resolver       = self.kwargs.get('resolver') or APIDeviantResolver
+            self.devation_crawler       = self.kwargs.get('crawler') or APICrawler
 
     def get_queue(self):
         return self.__work_queue
@@ -133,7 +152,7 @@ class DAGR():
             try:
                 deviant         = next(iter(sorted(sq.keys(), reverse=self.reverse())))
                 modes           = sq.pop(deviant)
-                deviant, group  = self.get_deviant(deviant)
+                deviant, group  = self.resolve_deviant(deviant)
                 if group:
                     self.__logger.info('Skipping unsupported group {}'.format(deviant))
                     continue
@@ -187,6 +206,7 @@ class DAGR():
             raise ValueError('Empty work queue')
         wq = self.get_queue()
         self.__logger.info('Mature mode: {}' .format(self.mature()))
+        self.__logger.info(f'Antisocial check enabled: {self.antisocial()}')
         self.__logger.info('Fix missing mode: {}'.format(self.fixmissing))
         self.__logger.info('Fix artists mode: {}'.format(self.fixartists))
         self.__logger.info('No crawl mode: {}'.format(self.nocrawl))
@@ -195,6 +215,8 @@ class DAGR():
         self.__logger.info('Verify mode: {}'.format(self.verifybest or self.verifyexists))
         self.__logger.info('Unfindable mode: {}'.format(self.unfindable))
         self.__logger.info('Loaded plugins: {}'.format(pformat(self.pl_manager.loaded_plugins)))
+        self.__logger.info('Enabled plugins: {}'.format(pformat(self.pl_manager.enabled_plugins)))
+
         while self.keep_running():
             if None in wq.keys():
                 nd = wq.pop(None)
@@ -211,7 +233,7 @@ class DAGR():
         group=None
         if deviant:
             try:
-                deviant, group = self.get_deviant(deviant)
+                deviant, group = self.resolve_deviant(deviant)
             except DagrException as ex:
                 self.__logger.warning('Deviant {} not found or deactivated!: {}'.format(deviant, ex))
                 self.handle_download_error(deviant, ex)
@@ -302,42 +324,8 @@ class DAGR():
         if self.nocrawl:
             self.__logger.debug('No crawl mode, skipping pages crawl')
             return []
-        base_url = self.base_url()
-        pages = []
-        pages_offset = (self.config.get('deviantart.offsets','search')
-            if mode == 'search'
-                else self.config.get('deviantart.offsets','page'))
-        art_regex = self.config.get('deviantart','artregex')
-        if deviant:
-            deviant_lower = deviant.lower()
-        self.__logger.log(level=3, msg=pformat(locals()))
-        for page_no in range(0, self.config.get('deviantart', 'maxpages')):
-            offset = page_no * pages_offset
-            url = url_fmt.format(**locals())
-            if msg:
-                self.__logger.log(level=15, msg='Crawling {} page {}'.format(msg.format(**locals()), page_no))
-            try:
-                html = self.get(url).text
-            except DagrException:
-                    self.__logger.warning(
-                        'Could not find {}'.format(msg.format(**locals())))
-                    return pages
-            if self.unfindable: return
-            matches = re.findall(art_regex, html,
-                                re.IGNORECASE | re.DOTALL)
-            for match in matches:
-                if match not in pages:
-                    pages.append(match)
-            done = re.findall("(This section has no deviations yet!|"
-                              "This collection has no items yet!|"
-                              "Sorry, we found no relevant results.|"
-                              "Sorry, we don't have that many results.)",
-                              html, re.IGNORECASE | re.S)
-            if done:
-                break
-        if not self.reverse():
-            pages.reverse()
-        return pages
+        return self.devation_crawler(self).crawl(url_fmt, mode, deviant, mval, msg)
+
 
     def get_folders(self, url_fmt, folder_regex, deviant):
         deviant_lower = deviant.lower()
@@ -364,6 +352,9 @@ class DAGR():
             folders.reverse()
         self.__logger.debug('Found folders {}'.format(pformat(folders)))
         return folders
+
+    def resolve_deviant(self, deviant):
+        return self.deviant_resolver(self).resolve(deviant)
 
     def process_deviations(self, base_dir, cache, pages):
         if not isinstance(base_dir, Path):
@@ -395,29 +386,18 @@ class DAGR():
 
     def browser_init(self):
         if not self.browser:
-            # Set up fake browser
-            self.browser = create_browser(self.mature())
+            driver_name = self.config.get('dagr.browser', 'driver')
+            if (driver_name is None) or (driver_name.lower() == 'default'):
+                self.__logger.info('Using default browser driver')
+                self.browser = create_browser()
+                return
 
-    def get_deviant(self, deviant):
-        if self.isdeviant:
-            return deviant, False
-        if self.isgroup:
-            return deviant, True
-        group = False
-        try:
-            resp = self.browser.open('https://www.deviantart.com/{}/'.format(deviant))
-            if not resp.status_code == req_codes.ok:
-                raise DagrException('incorrect status code - {}'.format(resp.status_code))
-            current_page = self.browser.get_current_page()
-            page_title = re.search(r'[A-Za-z0-9-]*', current_page.title.string).group(0)
-            deviant = re.sub('[^a-zA-Z0-9_-]+', '', page_title)
+            funcs = self.pl_manager.get_funcs('browser')
 
-            if re.search('<dt class="f h">Group</dt>', resp.text):
-                group = True
-            return deviant, group
-        except:
-            self.__logger.log(level=5, msg='Unable to get deviant info', exc_info=True)
-        raise DagrException('Unable to get deviant info')
+            if not driver_name in funcs: raise Exception(f'Could not find browser driver {driver_name}')
+            self.__logger.info(f'Using {driver_name} browser driver')
+            self.browser = funcs.get(driver_name)(self.mature())
+
 
     def get(self, url):
         tries = {}
@@ -436,10 +416,10 @@ class DAGR():
                     if tries[except_name]  < 3:
                         sleep(self.retry_sleep_duration())
                         continue
-                    raise DagrException('failed to get url: {}'.format(except_name))
+                    raise DagrException(f'Failed to get url: {except_name}')
                 else:
-                    self.__logger.critical(pformat(self.retry_exception_names()))
-                    raise
+                    # self.__logger.critical(f'Get exception: {except_name}')
+                    raise DagrException(f'Failed to get url: {except_name}')
         if not response.status_code == req_codes.ok:
             raise DagrException('incorrect status code - {}'.format(response.status_code))
         return response
@@ -459,8 +439,154 @@ class DAGR():
             for error in self.errors_count:
                 self.__logger.warning('* {} : {}'.format(error, self.errors_count[error]))
 
+class APIDeviantResolver():
+    def __init__(self, ripper):
+        self.ripper = ripper
+        self.__logger = logging.getLogger(__name__)
 
-class DeviantionProcessor():
+    def resolve(self, deviant):
+        try:
+            return self.ripper.da_api.get_user(deviant, True, True), False
+        except:
+            self.__logger.log(level=5, msg='Unable to get deviant info', exc_info=True)
+        raise DagrException('Unable to get deviant info')
+
+
+class APICrawler():
+    def __init__(self, ripper):
+        self.ripper = ripper
+        self.config = ripper.config
+        self.da  = self.ripper.da_api
+        self.__logger = logging.getLogger(__name__)
+
+    def crawl(self, url_fmt, mode, deviant=None, mval=None, msg=None):
+        mode_action = {
+            'favs': self.fetch_favs_deviations,
+            'gallery': self.fetch_gallery_deviations
+        }.get(mode)
+        if(mode_action is None): raise DagrException(f'Unkown mode {mode}')
+        return mode_action(deviant)
+
+    def fetch_gallery_deviations(self, deviant):
+        if isinstance(deviant, deviantart.user.User):
+            deviant = str(deviant)
+        return self.da.get_gallery_all(deviant)
+
+    def fetch_deviant_collections(self, deviant):
+        offset = 0
+        has_more = True
+        collections = {}
+        while has_more:
+            try:
+                print('fetching {}'.format(offset))
+                fetched_collections = da.get_collections(
+                username=deviant,
+                offset=offset,
+                ext_preload=False,
+                calculate_size=False,
+            )
+                results = fetched_collections['results']
+                collections.update(dict((v[1],k[1]) for k,v in [c.items() for c in fetched_collections['results']]))
+                offset = fetched_collections['next_offset']
+                has_more = fetched_collections['has_more']
+            except deviantart.api.DeviantartError as e:
+                print (e)
+                has_more = False
+        return collections
+
+def fetch_collection_deviations(username, folder_id):
+    offset = 0
+    has_more = True
+    #while there are more deviations to fetch
+    while has_more:
+        try:
+            print('fetching {}'.format(offset))
+        except deviantart.api.DeviantartError as e:
+            print (e)
+
+    def fetch_favs_deviations(deviant):
+        deviations = []
+        if isinstance(deviant,  deviantart.user.User):
+            return
+        for name, folder_id in fetch_collections(username).items():
+            for deviation in fetch_collection_deviations(collection):
+                pass
+class DAGRCrawler():
+    def __init__(self, ripper):
+        self.ripper = ripper
+        self.config = ripper.config
+        self.__logger = logging.getLogger(__name__)
+
+
+    def crawl(self, url_fmt, mode, deviant=None, mval=None, msg=None):
+        base_url = self.ripper.base_url()
+        pages = []
+        pages_offset = (self.config.get('deviantart.offsets','search')
+            if mode == 'search'
+                else self.config.get('deviantart.offsets','page'))
+        art_regex = self.config.get('deviantart','artregex')
+        if deviant:
+            deviant_lower = deviant.lower()
+        self.__logger.log(level=3, msg=pformat(locals()))
+        for page_no in range(0, self.config.get('deviantart', 'maxpages')):
+            offset = page_no * pages_offset
+            url = url_fmt.format(**locals())
+            if msg:
+                self.__logger.log(level=15, msg='Crawling {} page {}'.format(msg.format(**locals()), page_no))
+            try:
+                html = self.ripper.get(url).text
+            except DagrException:
+                    self.__logger.warning(
+                        'Could not find {}'.format(msg.format(**locals())), exc_info=True)
+                    return pages
+            if self.ripper.unfindable: return
+            matches = re.findall(art_regex, html,
+                                re.IGNORECASE | re.DOTALL)
+            for match in matches:
+                if match not in pages:
+                    pages.append(match)
+            done = re.findall("(This section has no deviations yet!|"
+                              "This collection has no items yet!|"
+                              "Sorry, we found no relevant results.|"
+                              "Sorry, we don't have that many results.)",
+                              html, re.IGNORECASE | re.S)
+            if done:
+                break
+        if not self.ripper.reverse():
+            pages.reverse()
+        return pages
+
+
+class DAGRDeviantResolver():
+    def __init__(self, ripper):
+        self.ripper = ripper
+        self.__logger = logging.getLogger(__name__)
+
+    def resolve(self, deviant):
+        if self.ripper.isdeviant:
+            return deviant, False
+        if self.ripper.isgroup:
+            return deviant, True
+        group = False
+        try:
+            resp = self.ripper.browser.open('https://www.deviantart.com/{}/'.format(deviant))
+            if not deviant.lower() in self.ripper.browser.title.lower():
+                raise DagrException('Unable to get deviant info')
+            if not resp.status_code == req_codes.ok:
+                raise DagrException('incorrect status code - {}'.format(resp.status_code))
+            current_page = self.ripper.browser.get_current_page()
+            page_title = re.search(r'[A-Za-z0-9-]*', current_page.title.string).group(0)
+            deviant = re.sub('[^a-zA-Z0-9_-]+', '', page_title)
+
+            if re.search('<dt class="f h">Group</dt>', resp.text):
+                group = True
+            return deviant, group
+        except:
+            self.__logger.log(level=5, msg='Unable to get deviant info', exc_info=True)
+        raise DagrException('Unable to get deviant info')
+
+
+class DAGRDeviantionProcessor():
     def __init__(self, ripper, base_dir, cache, page_link, **kwargs):
         self.__logger = logging.getLogger(__name__)
         self.ripper = ripper
@@ -621,10 +747,10 @@ class DeviantionProcessor():
 
     def save_content(self):
         dest = self.get_dest()
-        response = self.get_response()
         tries = {}
         while True:
             try:
+                response = self.get_response()
                 dest.write_bytes(self.__response.content)
                 self.__logger.log(level=4, msg='Wrote devation to {}'.format(dest))
                 break
@@ -638,10 +764,10 @@ class DeviantionProcessor():
                     if tries[except_name]  < 3:
                         sleep(self.ripper.retry_sleep_duration())
                         continue
-                    raise DagrException('failed to get url: {}'.format(except_name))
+                    raise DagrException(f'Failed to get url: {except_name}')
                 else:
-                    self.__logger.error('Exception name {}'.format(except_name))
-                    raise
+                    # self.__logger.error('Exception name {}'.format(except_name))
+                    raise DagrException(f'Failed to get url: {except_name}')
         if response.headers.get('last-modified'):
             # Set file dates to last modified time
             mod_time = mktime(parsedate(response.headers.get('last-modified')))
@@ -668,9 +794,6 @@ class DeviantionProcessor():
         if not resp.status_code == req_codes.ok:
             raise DagrException('incorrect status code - {}'.format(resp.status_code))
         current_page = self.browser.get_current_page()
-        #Check for antisocial
-        if current_page.find('div', {'class':'antisocial'}):
-            raise DagrException('deviation not available without login')
         # Full image link (via download link)
         link_text = re.compile('Download( (Image|File))?')
         img_link = None
@@ -740,13 +863,13 @@ class DeviantionProcessor():
             else:
                 self.__logger.log(level=5, msg='{} not found'.format(si))
 
-        for found, pl_func in self.ripper.pl_manager.get_funcs('findlink'):
+        for found, pl_func in [*self.ripper.pl_manager.get_funcs('findlink').items()]:
             filelink = pl_func(BeautifulSoup(deepcopy(resp.content), **soup_config))
             if filelink:
                 self.__logger.log(level=5, msg='Found {}'.format(found))
                 self.__file_link, self.__found_type = filelink, found
                 return self.__file_link, self.__found_type
-        for found, pl_func in self.ripper.pl_manager.get_funcs('findlink_b'):
+        for found, pl_func in [*self.ripper.pl_manager.get_funcs('findlink_b').items()]:
             temp_browser = StatefulBrowser(session=deepcopy(self.browser.session))
             temp_browser.open_fake_page(deepcopy(resp.content), self.browser.get_url())
             filelink = pl_func(temp_browser)
@@ -754,6 +877,10 @@ class DeviantionProcessor():
                 self.__logger.log(level=5, msg='Found {}'.format(found))
                 self.__file_link, self.__found_type = filelink, found
                 return self.__file_link, self.__found_type
+        self.cache.add_nolink(self.page_link)
+        #Check for antisocial
+        if self.ripper.antisocial() and current_page.find('div', {'class':'antisocial'}):
+            raise DagrException('deviation not available without login')
         if self.__mature_error:
             if self.ripper.mature():
                 raise DagrException('unable to find downloadable deviation')
@@ -768,7 +895,6 @@ class DeviantionProcessor():
                 .with_suffix('.html'))
             self.__logger.info('Dumping html to {}'.format(debug_output))
             debug_output.write_bytes(resp.content)
-        self.cache.add_nolink(self.page_link)
         raise DagrException('all attemps to find a link failed')
 
 
