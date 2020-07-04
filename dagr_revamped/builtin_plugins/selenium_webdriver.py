@@ -42,7 +42,8 @@ class Browser():
             options = webdriver.ChromeOptions()
             options.add_argument('--disable-web-security')
             capabilities = {**options.to_capabilities(), **self.__config.get('capabilities', {})}
-            ce_url = os.environ.get('dagr.plugins.selenium.webdriver.webdriver_url')
+            config_ce_url = self.__config.get('webdriver_url', '')
+            ce_url = os.environ.get('dagr.plugins.selenium.webdriver.webdriver_url', config_ce_url)
             self.__driver = webdriver.Remote(
                 command_executor=ce_url,
                 desired_capabilities=capabilities)
