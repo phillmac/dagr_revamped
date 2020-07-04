@@ -71,7 +71,7 @@ class Browser():
         WebDriverWait(self.__driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
 
     def do_login(self):
-        if self.__dirver.current_url != self.__login_url:
+        if self.__driver.current_url != self.__login_url:
             self.__driver.get('https://deviantart.com/users/login')
 
         config_user = self.__app_config.get('deviantart','username', key_errors=False)
@@ -112,11 +112,11 @@ class Browser():
 
     def open_do_login(self, url):
         self.__open(url)
-        if self.__dirver.current_url == self.__login_url:
+        if self.__driver.current_url == self.__login_url:
             self.do_login()
         elif self.get_current_page().find('a', {'href':'https://www.deviantart.com/users/login'}):
             self.do_login()
-        if self.__dirver.current_url != url:
+        if self.__driver.current_url != url:
             self.__open(url)
 
     def open(self, url):
