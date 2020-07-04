@@ -78,7 +78,7 @@ class Browser():
         user = os.environ.get('deviantart.username',config_user)
 
         config_pass = self.__config.get('deviantart.password', '')
-        passwd = os.environ.get('deviantart.password',config_user)
+        passwd = os.environ.get('deviantart.password',config_pass)
 
         self.__driver.find_element_by_id('username').send_keys(user)
         self.__driver.find_element_by_id('password').send_keys(passwd)
