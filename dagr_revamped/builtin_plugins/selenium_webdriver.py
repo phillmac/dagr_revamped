@@ -36,6 +36,7 @@ class Browser():
         self.__app_config = app_config
         self.__config = config
         self.__mature = mature
+        self.__login_url = self.__config.get('login_url', 'https://deviantart.com/users/login')
         if driver:
             self.__driver = driver
         else:
@@ -66,19 +67,23 @@ class Browser():
             user_agent = self.__driver.execute_script("return navigator.userAgent;")
         )
 
+    def wait_ready(self)
+        WebDriverWait(self.__driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+
     def do_login(self):
-        self.__driver.get('https://deviantart.com/users/login')
+       if self.__dirver.current_url != self.__login_url:
+            self.__driver.get('https://deviantart.com/users/login')
 
         config_user= self.__config.get('deviantart.username', '')
         user = os.environ.get('deviantart.username',config_user)
 
         config_pass = self.__config.get('deviantart.password', '')
-        passwd = os.environ.get('deviantart.username',config_user)
+        passwd = os.environ.get('deviantart.password',config_user)
 
         self.__driver.find_element_by_id('username').send_keys(user)
         self.__driver.find_element_by_id('password').send_keys(passwd)
         self.__driver.find_element_by_id('loginbutton').send_keys(Keys.RETURN)
-        WebDriverWait(self.__driver, 60)
+        self.wait_ready()
 
 
 
@@ -101,12 +106,26 @@ class Browser():
     def get_url(self):
         return self.__driver.current_url
 
+    def __open(self, url):
+        self.__driver.get(url)
+        self.wait_ready()
+
+    def open_do_login(self, url):
+        self.__open(url)
+        if self.__dirver.current_url == self.__login_url:
+            self.do_login()
+        if self.get_current_page().find('a', {'href':'https://www.deviantart.com/users/login'}):
+            self.do_login()
+        if self.__dirver.current_url != url:
+            self.__open(url)
+
     def open(self, url):
         self.__driver.get(url)
-        if '404 Not Found' in self.title:
+        self.wait_ready()
+        page_title = self.title
+        if '404 Not Found' in page_title or 'DeviantArt: 404' in page_title:
             return Response(content=self.__driver.page_source, status=404)
-        #if self.get_current_page().find('a', {'href':'https://www.deviantart.com/users/login'}):
-            #self.do_login()
+
         return Response(content=self.__driver.page_source)
 
     def get(self, url, timeout=30, *args, **kwargs):
