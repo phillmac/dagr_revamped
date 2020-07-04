@@ -114,7 +114,7 @@ class Browser():
         self.__open(url)
         if self.__dirver.current_url == self.__login_url:
             self.do_login()
-        if self.get_current_page().find('a', {'href':'https://www.deviantart.com/users/login'}):
+        elif self.get_current_page().find('a', {'href':'https://www.deviantart.com/users/login'}):
             self.do_login()
         if self.__dirver.current_url != url:
             self.__open(url)
