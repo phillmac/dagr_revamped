@@ -71,14 +71,14 @@ class Browser():
         WebDriverWait(self.__driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
 
     def do_login(self):
-       if self.__dirver.current_url != self.__login_url:
+        if self.__dirver.current_url != self.__login_url:
             self.__driver.get('https://deviantart.com/users/login')
 
-        config_user= self.__config.get('deviantart.username', '')
-        user = os.environ.get('deviantart.username',config_user)
+        config_user = self.__config.get('deviantart.username', '')
+        user = os.environ.get('deviantart.username', config_user)
 
         config_pass = self.__config.get('deviantart.password', '')
-        passwd = os.environ.get('deviantart.password',config_pass)
+        passwd = os.environ.get('deviantart.password', config_pass)
 
         self.__driver.find_element_by_id('username').send_keys(user)
         self.__driver.find_element_by_id('password').send_keys(passwd)
