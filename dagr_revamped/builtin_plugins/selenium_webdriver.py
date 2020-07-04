@@ -60,7 +60,6 @@ class Browser():
                     'HostOnly': False,
                     'Secure': False
                 })
-        self.do_login()
 
         self.__browser = utils_create_browser(
             mature = self.__mature,
