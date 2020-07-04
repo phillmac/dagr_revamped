@@ -77,7 +77,7 @@ class DAGR():
         self.init_mimetypes()
         self.init_classes()
         self.browser_init()
-        if self.deviants or (self.bulk and self.filenames) or 'search' in self.modes:
+        if self.deviants or (self.bulk and self.filenames) or (self.modes and 'search' in self.modes):
             self.__work_queue = self.__build_queue()
 
     def init_mimetypes(self):
