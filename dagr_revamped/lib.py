@@ -69,7 +69,7 @@ class DAGR():
             k for k,v in self.config.get('dagr.retry.exceptionnames').items() if v)
         self.retry_sleep_duration       = lambda: self.config.get('dagr.retry','sleepduration')
         self.reverse                    = lambda: self.config.get('dagr', 'reverse') or False
-        self.browser                    = None
+        self.browser                    = kwargs.get('browser', None)
         self.stop_running               = threading.Event()
         self.pl_manager                 = (kwargs.get('pl_manager') or  PluginManager)(self)
         self.cache                      = kwargs.get('cache') or DAGRCache
