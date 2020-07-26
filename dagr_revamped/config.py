@@ -21,15 +21,17 @@ class DAGRBaseConf():
         self.__ini_config = self.load_ini_config()
         self.__json_config = self.load_json_config()
         self.__conf_files = self.__ini_files + self.__json_files
-        dagr_log(__name__, logging.DEBUG, 'Loaded config files {}'.format(pformat(self.__conf_files)))
+        dagr_log(__name__, logging.DEBUG, 'Loaded config files {}'.format(
+            pformat(self.__conf_files)))
 
     def find_configs(self, ext):
         usr_dir = Path('~/.config/dagr').expanduser()
-        locations  = [Path.cwd(), usr_dir] + self.__include
+        locations = [Path.cwd(), usr_dir] + self.__include
         dagr_log(__name__, 5, 'Looking for configs in {}'.format(locations))
         return [cnf for cnf in
-                (search.joinpath(self.__conf_name or 'dagr_settings').with_suffix(ext).resolve() for search in locations)
-                    if cnf.exists()]
+                (search.joinpath(self.__conf_name or 'dagr_settings').with_suffix(
+                    ext).resolve() for search in locations)
+                if cnf.exists()]
 
     def load_ini_config(self):
         if self.__ini_files:
@@ -40,7 +42,7 @@ class DAGRBaseConf():
     def load_json_config(self):
         settings = {}
         for json_file in self.__json_files:
-            with open (json_file, 'r') as fh:
+            with open(json_file, 'r') as fh:
                 settings = dict_merge(settings, json.load(fh))
         return settings
 
@@ -49,7 +51,7 @@ class DAGRBaseConf():
             return {}
         try:
             return dict((key, value)
-                    for key, value in self.__ini_config.items(section))
+                        for key, value in self.__ini_config.items(section))
         except:
             return {}
 
@@ -63,7 +65,8 @@ class DAGRBaseConf():
                 return self.__settings.get(section)
             key = str(key).lower()
             return convert_val(self.__settings.get(section).get(key))
-        if key_errors: raise ValueError('Section {} does not exist'.format(section))
+        if key_errors:
+            raise ValueError('Section {} does not exist'.format(section))
         return None
 
     def set_key(self, section, key, value):
@@ -90,89 +93,90 @@ class DAGRBaseConf():
 
 
 class DAGRConfig(DAGRBaseConf):
+    
     DEFAULTS = {
         "Logging": {
-            'Format':'%(asctime)s - %(levelname)s - %(message)s'
+            'Format': '%(asctime)s - %(levelname)s - %(message)s'
         },
         'Logging.Extra': {
-            4:'TRACE',
-            5:'TRACE',
-            15:'INFO',
-            25:'INFO',
+            4: 'TRACE',
+            5: 'TRACE',
+            15: 'INFO',
+            25: 'INFO',
         },
         'Logging.Map': {
             -1: logging.ERROR,
-            0:logging.WARN,
-            1:logging.INFO,
+            0: logging.WARN,
+            1: logging.INFO,
             2: 15,
-            3:logging.DEBUG,
-            4:5,
-            5:4
+            3: logging.DEBUG,
+            4: 5,
+            5: 4
         },
         'Conf': {
             'Version': '0.1.0'
-            },
+        },
         'DeviantArt': {
             'BaseUrl': 'https://www.deviantart.com',
-            'ArtRegex':(r"https://www\.deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
+            'ArtRegex': (r"https://www\.deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
             'MatureContent': False,
             'Antisocial': True,
             'Modes': 'album,collection,query,scraps,favs,gallery,search,page',
             'MValArgs': 'album,collection,query,category,page,search',
             'NDModes': 'search',
             'MaxPages': 15000
-            },
-        'DeviantArt.Modes.Album':{
+        },
+        'DeviantArt.Modes.Album': {
             'url_fmt': '{base_url}/{deviant_lower}/gallery/{mval}?offset={offset}'
-            },
-            'DeviantArt.Modes.Category':{
-                'url_fmt': '{base_url}/{deviant_lower}/gallery/?catpath={mval}&offset={offset}'
-            },
-            'DeviantArt.Modes.Collection':{
-                'url_fmt': '{base_url}/{deviant_lower}/favourites/{mval}?offset={offset}'
-            },
-            'DeviantArt.Modes.Query':{
-                'url_fmt': '{base_url}/{deviant_lower}/gallery/?q={mval}&offset={offset}'
-            },
-            'DeviantArt.Modes.Scraps':{
-                'url_fmt': '{base_url}/{deviant_lower}/gallery/?catpath=scraps&offset={offset}'
-            },
-            'DeviantArt.Modes.Favs':{
-                'url_fmt': '{base_url}/{deviant_lower}/favourites/?catpath=/&offset={offset}',
-                'group_url_fmt': '{base_url}/{deviant_lower}/favourites/?offset={offset}',
-                'folder_regex': 'class="ch-top" href="{base_url}/{deviant_lower}/favourites/([0-9]*/[a-zA-Z0-9_-]*)"',
-                'folder_url_fmt': '{base_url}/{deviant_lower}/favourites/{mval}/?offset={offset}'
-            },
-            'DeviantArt.Modes.Gallery':{
-                'url_fmt': '{base_url}/{deviant_lower}/gallery/?catpath=/&offset={offset}',
-                'group_url_fmt': '{base_url}/{deviant_lower}/gallery?offset={offset}',
-                'folder_regex': 'class="ch-top" href="{base_url}/{deviant_lower}/gallery/([0-9]*/[a-zA-Z0-9_-]*)"',
-                'folder_url_fmt': '{base_url}/{deviant_lower}/gallery/{mval}/?offset={offset}'
-            },
-            'DeviantArt.Modes.Search':{
-                'url_fmt': '{base_url}?q={mval}&offset={offset}'
-            },
-             'DeviantArt.Modes.Page':{
-                'url_fmt': '{base_url}/{deviant_lower}/art/{mval}'
-            },
-        'DeviantArt.Offsets':{
+        },
+        'DeviantArt.Modes.Category': {
+            'url_fmt': '{base_url}/{deviant_lower}/gallery/?catpath={mval}&offset={offset}'
+        },
+        'DeviantArt.Modes.Collection': {
+            'url_fmt': '{base_url}/{deviant_lower}/favourites/{mval}?offset={offset}'
+        },
+        'DeviantArt.Modes.Query': {
+            'url_fmt': '{base_url}/{deviant_lower}/gallery/?q={mval}&offset={offset}'
+        },
+        'DeviantArt.Modes.Scraps': {
+            'url_fmt': '{base_url}/{deviant_lower}/gallery/?catpath=scraps&offset={offset}'
+        },
+        'DeviantArt.Modes.Favs': {
+            'url_fmt': '{base_url}/{deviant_lower}/favourites/?catpath=/&offset={offset}',
+            'group_url_fmt': '{base_url}/{deviant_lower}/favourites/?offset={offset}',
+            'folder_regex': 'class="ch-top" href="{base_url}/{deviant_lower}/favourites/([0-9]*/[a-zA-Z0-9_-]*)"',
+            'folder_url_fmt': '{base_url}/{deviant_lower}/favourites/{mval}/?offset={offset}'
+        },
+        'DeviantArt.Modes.Gallery': {
+            'url_fmt': '{base_url}/{deviant_lower}/gallery/?catpath=/&offset={offset}',
+            'group_url_fmt': '{base_url}/{deviant_lower}/gallery?offset={offset}',
+            'folder_regex': 'class="ch-top" href="{base_url}/{deviant_lower}/gallery/([0-9]*/[a-zA-Z0-9_-]*)"',
+            'folder_url_fmt': '{base_url}/{deviant_lower}/gallery/{mval}/?offset={offset}'
+        },
+        'DeviantArt.Modes.Search': {
+            'url_fmt': '{base_url}?q={mval}&offset={offset}'
+        },
+        'DeviantArt.Modes.Page': {
+            'url_fmt': '{base_url}/{deviant_lower}/art/{mval}'
+        },
+        'DeviantArt.Offsets': {
             'Folder': 10,
             'Page': 24,
             'Search': 10
-            },
+        },
         'Dagr': {
             'OutputDirectory': '~/dagr',
             'Overwrite': False,
             'Reverse': False,
-            #'RecursionLimit': 10000,
+            # 'RecursionLimit': 10000,
             'SaveProgress': 50,
             'DownloadDelay': 0.300,
             'Verbose': False,
-            },
-        'Dagr.SubDirs':{
+        },
+        'Dagr.SubDirs': {
             'UseOldFormat': False,
             'Move': False
-            },
+        },
         'Dagr.Cache': {
             'Crawled': '.crawled',
             'Artists': '.artists',
@@ -182,13 +186,13 @@ class DAGRConfig(DAGRBaseConf):
             'Settings': '.settings',
             'Verified':  '.verified',
             'ShortUrls': False
-            },
+        },
         'Dagr.Browser': {
             'Driver': 'Default'
         },
         'Dagr.BS4.Config': {
             'Features': 'lxml'
-            },
+        },
         'Dagr.MimeTypes': {
             'image/vnd.adobe.photoshop': '.psd',
             'image/photoshop': '.psd',
@@ -201,46 +205,47 @@ class DAGRConfig(DAGRBaseConf):
             'application/zip': '.zip',
             'image/x-ms-bmp': '.bmp',
             'application/x-shockwave-flash': '.swf'
-            },
+        },
         'Dagr.Plugins': {
             'Disabled': ''
-            },
+        },
         'Dagr.Plugins.Locations': {
             'Default': '~/.config/dagr/plugins'
-            },
-        'Dagr.Retry':{
+        },
+        'Dagr.Retry': {
             'SleepDuration': 0.5
-            },
+        },
         'Dagr.Retry.ExceptionNames': {
             'OSError': True,
             'ChunkedEncodingError': True,
             'ConnectionError': True
-            },
-        'Dagr.Verify':{
+        },
+        'Dagr.Verify': {
             'DebugLocation': ''
-            },
+        },
         'Dagr.FindLink': {
             'DebugLocation': '',
             'FallbackOrder': 'img full,meta,img normal'
-            },
+        },
     }
     OVERRIDES = {
         'Dagr': {
             'OutputDirectory': Path.cwd()
         }
+        'Dagr.Plugins': get_os_options('')
     }
     SETTINGS_MAP = {
-            'Dagr': {
-                'OutputDirectory': 'directory',
-                'Overwrite': 'overwrite',
-                'SaveProgress': 'progress',
-                'Verbose': 'verbose',
-                'Reverse': 'reverse'
-            },
-            'DeviantArt': {
-                'MatureContent': 'mature',
-                'MaxPages': 'maxpages',
-            }
+        'Dagr': {
+            'OutputDirectory': 'directory',
+            'Overwrite': 'overwrite',
+            'SaveProgress': 'progress',
+            'Verbose': 'verbose',
+            'Reverse': 'reverse'
+        },
+        'DeviantArt': {
+            'MatureContent': 'mature',
+            'MaxPages': 'maxpages',
+        }
     }
 
     def __init__(self, *args, **kwargs):
@@ -254,22 +259,37 @@ class DAGRConfig(DAGRBaseConf):
             self.DEFAULTS.get,
         ))
 
+    def get_os_options(self, base_key, keys):
+        options = {}
+        for k in keys:
+            full_key = f"{base_key}.{k}".lower()
+            value = os.environ.get(full_key, None)
+            if not value is None:
+                options[full_key] = value
+        return options
+
+
+
+
     def set_args(self, arguments):
         self.__arguments = arguments
         if not self.__arguments.get('config_options') is None:
             for opt in self.__arguments.get('config_options').split(','):
                 [opt_name, opt_value] = opt.lower().split(':')
                 if (not opt_name) or (not opt_value):
-                    dagr_log(__name__, logging.WARNING, f'Unable to parse config option {opt_name} : {opt_value}')
+                    dagr_log(__name__, logging.WARNING,
+                             f'Unable to parse config option {opt_name} : {opt_value}')
                     continue
                 opt_name_parts = opt_name.split('.')
                 opt_name_parts.reverse()
                 opt_key, *opt_sec_parts = opt_name_parts
                 opt_sec_parts.reverse()
                 opt_section = '.'.join(opt_sec_parts)
-                self.__config_options = dict_merge(self.__config_options, {opt_section: {opt_key: opt_value}})
+                self.__config_options = dict_merge(
+                    self.__config_options, {opt_section: {opt_key: opt_value}})
 
-            dagr_log(__name__, 30, f'Config Options: {pformat(self.__config_options)}')
+            dagr_log(__name__, 30,
+                     f'Config Options: {pformat(self.__config_options)}')
 
         self.merge_configs(set([*self.DEFAULTS.keys(),  *self.__config_options.keys()]), (
             self.get_args_mapped,
@@ -280,23 +300,28 @@ class DAGRConfig(DAGRBaseConf):
         dagr_log(__name__, 5, 'Config: {}'.format(pformat(self.get_all())))
 
     def get_args_mapped(self, section):
-        if not self.__arguments: return {}
+        if not self.__arguments:
+            return {}
         mapping = self.SETTINGS_MAP.get(section)
-        if not mapping: return {}
+        if not mapping:
+            return {}
         return dict((str(key), self.__arguments.get(mapping.get(key)))
-                for key in mapping.keys() if self.__arguments.get(mapping.get(key)))
+                    for key in mapping.keys() if self.__arguments.get(mapping.get(key)))
 
     def __get_config_options(self, section):
         return self.__config_options.get(section.lower())
 
     def get_modes(self):
         modes = [s.strip() for s in self.get('deviantart', 'modes').split(',')]
-        mval_args = [s.strip() for s in self.get('deviantart', 'mvalargs').split(',')]
+        mval_args = [s.strip() for s in self.get(
+            'deviantart', 'mvalargs').split(',')]
         return modes, mval_args
 
     def get_log_level(self):
-        if self.get('dagr', 'debug') and self.__arguments.get('log_level') < 3: return 3
-        if self.get('dagr', 'verbose') and self.__arguments.get('log_level') < 1: return 1
+        if self.get('dagr', 'debug') and self.__arguments.get('log_level') < 3:
+            return 3
+        if self.get('dagr', 'verbose') and self.__arguments.get('log_level') < 1:
+            return 1
         return self.__arguments.get('log_level')
 
     def map_log_level(self):
@@ -308,7 +333,8 @@ class DAGRConfig(DAGRBaseConf):
             'files': self.conf_files
         }
         cmd = self.__arguments.get('conf_cmd')
-        if conf_cmd_maping.get(cmd)(): return
+        if conf_cmd_maping.get(cmd)():
+            return
         print('Unrecognized {}'.format(cmd))
 
     def conf_print(self):
@@ -326,13 +352,14 @@ class DAGRConfig(DAGRBaseConf):
         else:
             for f in self.get_conf_files():
                 if fname == f.name:
-                   with f.open('r') as fh:
-                    pprint(fh.read())
+                    with f.open('r') as fh:
+                        pprint(fh.read())
         return True
 
     def conf_files(self):
         print('Loaded conf files {}'.format(pformat(self.get_conf_files())))
         return True
+
 
 def dict_merge(dict_1, dict_2):
     """Merge two dictionaries.
@@ -342,7 +369,8 @@ def dict_merge(dict_1, dict_2):
     dict_1 = normalize_dict(dict_1)
     dict_2 = normalize_dict(dict_2)
     return dict((key, dict_1.get(key) or dict_2.get(key))
-            for key in set(dict_2) | set(dict_1))
+                for key in set(dict_2) | set(dict_1))
+
 
 def merge_all(*dicts):
     result = {}
@@ -352,19 +380,27 @@ def merge_all(*dicts):
     dagr_log(__name__, 4, 'Result: {}'.format(result))
     return result
 
+
 def normalize_dict(d):
-    return dict((str(k).lower(), convert_val(v)) for k,v in d.items())
+    return dict((str(k).lower(), convert_val(v)) for k, v in d.items())
+
 
 def convert_val(val):
     if isinstance(val, str):
         true_vals = ['true', 'yes', 'on', '1']
         false_vals = ['false', 'no', 'off', '0']
-        if val.lower() in true_vals: return True
-        if val.lower() in false_vals: return False
-        try: return int(val)
-        except: pass
-        try: return float(val)
-        except: pass
+        if val.lower() in true_vals:
+            return True
+        if val.lower() in false_vals:
+            return False
+        try:
+            return int(val)
+        except:
+            pass
+        try:
+            return float(val)
+        except:
+            pass
     return val
 
 

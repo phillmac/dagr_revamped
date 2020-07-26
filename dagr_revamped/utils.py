@@ -22,6 +22,8 @@ def make_dirs(directory):
     if not directory.exists():
         directory.mkdir(parents=True)
         logger.debug('Created dir {}'.format(directory))
+
+
 def get_output_dir(config):
     return Path(config.get('dagr', 'outputdirectory')).expanduser().resolve()
 
@@ -32,17 +34,18 @@ def strip_topdir(directory):
     dirparts = directory.parts[2:]
     return Path(*dirparts)
 
+
 def get_base_dir(config, mode, deviant=None, mval=None):
     logger = logging.getLogger(__name__)
     directory = get_output_dir(config)
     if deviant:
         base_dir = directory.joinpath(deviant, mode)
     else:
-        base_dir =  Path(directory, mode)
+        base_dir = Path(directory, mode)
     if mval:
         mval = Path(mval)
-        use_old = config.get('dagr.subdirs','useoldformat')
-        move = config.get('dagr.subdirs','move')
+        use_old = config.get('dagr.subdirs', 'useoldformat')
+        move = config.get('dagr.subdirs', 'move')
         old_path = base_dir.joinpath(mval)
         new_path = base_dir.joinpath(mval.name)
         if use_old:
@@ -51,16 +54,19 @@ def get_base_dir(config, mode, deviant=None, mval=None):
         elif not new_path == old_path and old_path.exists():
             if move:
                 if new_path.exists():
-                    logger.error('Unable to move {}: subfolder {} already exists'.format(old_path, new_path))
+                    logger.error('Unable to move {}: subfolder {} already exists'.format(
+                        old_path, new_path))
                     return
-                logger.log(level=25,msg='Moving {} to {}'.format(old_path, new_path))
+                logger.log(level=25, msg='Moving {} to {}'.format(
+                    old_path, new_path))
                 try:
                     parent = old_path.parent
                     old_path.rename(new_path)
                     parent.rmdir()
                     base_dir = new_path
                 except OSError:
-                    logger.error('Unable to move subfolder {}:'.format(new_path), exc_info=True)
+                    logger.error('Unable to move subfolder {}:'.format(
+                        new_path), exc_info=True)
                     return
             else:
                 logger.debug('Move subdirs not enabled')
@@ -79,12 +85,11 @@ def get_base_dir(config, mode, deviant=None, mval=None):
 
 def buffered_file_write(json_content, fname):
     if not isinstance(fname, Path):
-        fname= Path(fname)
+        fname = Path(fname)
     buffer = StringIO()
     json.dump(json_content, buffer, indent=4, sort_keys=True)
     buffer.seek(0)
     fname.write_text(buffer.read())
-
 
 
 def update_d(d, u):
@@ -100,27 +105,29 @@ def update_d(d, u):
             d[k] = v
     return d
 
+
 def convert_queue(config, queue):
     logger = logging.getLogger(__name__)
     queue = {k.lower(): v for k, v in queue.items()}
     converted = queue.get('deviants', {})
     if None in converted:
-        update_d(converted, {None:converted.pop(None)})
+        update_d(converted, {None: converted.pop(None)})
     for ndmode in config.get('deviantart', 'ndmodes').split(','):
         if ndmode in queue:
             mvals = queue.pop(ndmode)
-            update_d(converted, {None:{ndmode:mvals}})
+            update_d(converted, {None: {ndmode: mvals}})
     for mode in config.get('deviantart', 'modes').split(','):
         data = queue.get(mode)
         if isinstance(data, Mapping):
             for k, v in data.items():
-                update_d(converted, {k:{mode:v}})
+                update_d(converted, {k: {mode: v}})
         elif isinstance(data, Iterable):
             for v in data:
-                update_d(converted, {v:{mode:None}})
+                update_d(converted, {v: {mode: None}})
         else:
             logger.debug('Mode {} not present'.format(mode))
     return converted
+
 
 def load_bulk_files(files):
     logger = logging.getLogger(__name__)
@@ -132,24 +139,31 @@ def load_bulk_files(files):
             update_d(bulk_queue, json.load(fh))
     return bulk_queue
 
+
 def filter_deviants(dfilter, queue):
-    if dfilter is None or not dfilter: return queue
+    if dfilter is None or not dfilter:
+        return queue
     logger = logging.getLogger(__name__)
     logger.info('Deviant filter: {}'.format(pformat(dfilter)))
     results = dict((k, queue.get(k)) for k in queue.keys() if k in dfilter)
     logger.log(level=5, msg='Filter results: {}'.format(pformat(results)))
     return dict((k, queue.get(k)) for k in queue.keys() if k in dfilter)
 
+
 def compare_size(dest, content):
     logger = logging.getLogger(__name__)
     if not isinstance(dest, Path):
         dest = Path(dest)
-    if not dest.exists(): return False
+    if not dest.exists():
+        return False
     current_size = dest.stat().st_size
     best_size = len(content)
-    if not current_size < best_size: return True
-    logger.info('Current file {} is smaller by {} bytes'.format(dest, best_size - current_size))
+    if not current_size < best_size:
+        return True
+    logger.info('Current file {} is smaller by {} bytes'.format(
+        dest, best_size - current_size))
     return False
+
 
 def create_browser(mature=False, user_agent=None):
     user_agents = (
@@ -174,11 +188,13 @@ def create_browser(mature=False, user_agent=None):
         session.cookies.update({'agegate_state': '1'})
     session.mount('https://', req_adapters.HTTPAdapter(max_retries=3))
 
-    if user_agent is None: user_agent=choice(user_agents)
+    if user_agent is None:
+        user_agent = choice(user_agents)
 
     return StatefulBrowser(
         session=session,
         user_agent=user_agent)
+
 
 def unlink_lockfile(lockfile):
     logger = logging.getLogger(__name__)
@@ -190,17 +206,20 @@ def unlink_lockfile(lockfile):
         except PermissionError:
             logger.warning('Unable to unlock {}'.format(lockfile.parent))
 
+
 def shorten_url(url):
     p = PurePosixPath()
     for u in Path(url).parts[2:]:
         p = p.joinpath(u)
     return str(p)
 
+
 def artist_from_url(url):
     artist_url_p = PurePosixPath(url).parent.parent
     artist_name = artist_url_p.name
     shortname = PurePosixPath(url).name
     return (artist_url_p, artist_name, shortname)
+
 
 class DAGRUtilsCli():
 
@@ -223,10 +242,12 @@ Options:
     VERSION = __version__
 
     def __init__(self, config):
-        self.arguments = arguments = docopt(self.__doc__.format(self.NAME, self.VERSION), version=self.VERSION)
+        self.arguments = arguments = docopt(self.__doc__.format(
+            self.NAME, self.VERSION), version=self.VERSION)
         ll_arg = logging.WARN
         try:
-            ll_arg = int(arguments.get('--debug') or arguments.get('--verbose'))
+            ll_arg = int(arguments.get('--debug')
+                         or arguments.get('--verbose'))
         except Exception:
             dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
 
@@ -243,8 +264,6 @@ Options:
         }
 
 
-
-
 class DAGRUtils():
 
     def __init__(self, **kwargs):
@@ -256,15 +275,18 @@ class DAGRUtils():
             'finddupes': self.find_dupes,
             'updatedirscache': self.update_dirs_cache
         }
-        self.__utils_cmd                    = next((cmd for cmd in self.__utils_cmd_maping.keys() if kwargs.get(cmd)), None)
-        self.__config                       = kwargs.get('config') or DAGRConfig()
-        self.__cache                        = kwargs.get('cache') or DAGRCache
-        self.__filenames                    = kwargs.get('filenames')
-        self.__filter                       = None if kwargs.get('filter') is None else [s.strip().lower() for s in kwargs.get('filter').split(',')]
-        self.__global_files_mapping         = {}
-        self.__global_dirs_mapping          = {}
-        self.__global_deviant_dirs_cache    = dict((str(d.name).lower(), d) for d in (di for di in get_output_dir(self.__config).iterdir() if di.is_dir()))
-        self.__kwargs                       = kwargs
+        self.__utils_cmd = next(
+            (cmd for cmd in self.__utils_cmd_maping.keys() if kwargs.get(cmd)), None)
+        self.__config = kwargs.get('config') or DAGRConfig()
+        self.__cache = kwargs.get('cache') or DAGRCache
+        self.__filenames = kwargs.get('filenames')
+        self.__filter = None if kwargs.get('filter') is None else [
+            s.strip().lower() for s in kwargs.get('filter').split(',')]
+        self.__global_files_mapping = {}
+        self.__global_dirs_mapping = {}
+        self.__global_deviant_dirs_cache = dict((str(d.name).lower(), d) for d in (
+            di for di in get_output_dir(self.__config).iterdir() if di.is_dir()))
+        self.__kwargs = kwargs
 
     def handle_utils_cmd(self):
         self.__utils_cmd_maping.get(self.__utils_cmd)()
@@ -275,7 +297,6 @@ class DAGRUtils():
         wq = filter_deviants(self.__filter, wq)
         return wq
 
-
     def walk_queue(self, callback, inc_nd=False):
         wq = self.build_queue()
         if None in wq.keys():
@@ -283,7 +304,7 @@ class DAGRUtils():
         while True:
             try:
                 deviant = next(iter(sorted(wq.keys())))
-                modes =  wq.pop(deviant)
+                modes = wq.pop(deviant)
             except StopIteration:
                 break
             deviant = str(self.__global_deviant_dirs_cache.get(deviant))
@@ -302,11 +323,12 @@ class DAGRUtils():
         new = self.__kwargs.get('new').lower()
         print('Renaming from {} to {}'.format(old, new))
         wq = self.build_queue()
-        if None in wq.keys(): wq.pop(None)
+        if None in wq.keys():
+            wq.pop(None)
         while True:
             try:
                 deviant = next(iter(sorted(wq.keys())))
-                modes =  wq.pop(deviant)
+                modes = wq.pop(deviant)
             except StopIteration:
                 break
             for mode, mode_vals in modes.items():
@@ -324,18 +346,18 @@ class DAGRUtils():
         cache = self.__cache(self.__config, base_dir)
         renamed = cache.rename_deviant(old, new)
         print('Renamed {} deviations'.format(renamed))
-        if renamed > 0: cache.save()
+        if renamed > 0:
+            cache.save()
         return renamed
-
 
     def find_dupes(self):
         self.walk_queue(self._find_dupes, True)
-        duplicates = {k:v for k,v in self.__global_files_mapping.items() if len(v) > 1}
+        duplicates = {k: v for k,
+                      v in self.__global_files_mapping.items() if len(v) > 1}
         print(f'Total duplicates: {len(duplicates)}')
         od = get_output_dir(self.__config)
         of = od.joinpath('.duplicates.json')
         buffered_file_write(duplicates, of)
-
 
     def _find_dupes(self, mode, deviant, mval=None):
         base_dir = get_base_dir(self.__config, mode, deviant, mval)
@@ -347,7 +369,6 @@ class DAGRUtils():
                 self.__global_files_mapping[file_name] = []
             self.__global_files_mapping[file_name].append(str(rel_path))
         print(f'Total files: {len(self.__global_files_mapping)}')
-
 
     def update_dirs_cache(self):
         print('Scanning dirs')
@@ -366,17 +387,6 @@ class DAGRUtils():
             self.__global_dirs_mapping[dir_lower] = rel_path
 
 
-
-
-
-
-
-
-
-
-
-
-
 def main():
     config = DAGRConfig()
     cli = DAGRUtilsCli(config)
@@ -388,4 +398,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

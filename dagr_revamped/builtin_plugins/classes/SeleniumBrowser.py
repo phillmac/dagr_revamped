@@ -18,55 +18,64 @@ try:
 except ModuleNotFoundError:
     raise DagrImportError('Required package selenium not available')
 
+
 class SeleniumBrowser():
-    def __init__(self, app_config, config, mature, driver = None):
+    def __init__(self, app_config, config, mature, driver=None):
         self.__app_config = app_config
         self.__config = config
         self.__mature = mature
-        self.__login_url = self.__config.get('login_url', 'https://deviantart.com/users/login')
+        self.__login_url = self.__config.get(
+            'login_url', 'https://deviantart.com/users/login')
         if driver:
             self.__driver = driver
         else:
             options = webdriver.ChromeOptions()
             options.add_argument('--disable-web-security')
-            capabilities = {**options.to_capabilities(), **self.__config.get('capabilities', {})}
+            capabilities = {**options.to_capabilities(), **
+                            self.__config.get('capabilities', {})}
             config_ce_url = self.__config.get('webdriver_url', None)
-            ce_url = os.environ.get('dagr.plugins.selenium.webdriver.webdriver_url', config_ce_url)
+            ce_url = os.environ.get(
+                'dagr.plugins.selenium.webdriver.webdriver_url', config_ce_url)
             self.__driver = webdriver.Remote(
                 command_executor=ce_url,
                 desired_capabilities=capabilities)
         if self.__mature:
             self.__driver.get('https://deviantart.com')
             self.__driver.add_cookie({
-                    'name':'agegate_state',
-                    'value':'1',
-                    "domain": 'deviantart.com',
-                    "expires": '',
-                    'path': '/',
-                    'httpOnly': False,
-                    'HostOnly': False,
-                    'Secure': False
-                })
+                'name': 'agegate_state',
+                'value': '1',
+                "domain": 'deviantart.com',
+                "expires": '',
+                'path': '/',
+                'httpOnly': False,
+                'HostOnly': False,
+                'Secure': False
+            })
 
         self.__browser = utils_create_browser(
-            mature = self.__mature,
-            user_agent = self.__driver.execute_script("return navigator.userAgent;")
+            mature=self.__mature,
+            user_agent=self.__driver.execute_script(
+                "return navigator.userAgent;")
         )
 
     def wait_ready(self):
-        WebDriverWait(self.__driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+        WebDriverWait(self.__driver, 60).until(
+            lambda d: d.execute_script('return document.readyState') == 'complete')
 
     def wait_stale(self, element, message='Timed out while waiting for staleness', delay=3):
-        WebDriverWait(self.__driver, delay).until(staleness_of(element), message=message)
+        WebDriverWait(self.__driver, delay).until(
+            staleness_of(element), message=message)
 
     def do_login(self):
         if self.__driver.current_url != self.__login_url:
             self.__driver.get('https://deviantart.com/users/login')
 
-        config_user = self.__app_config.get('deviantart','username', key_errors=False)
+        config_user = self.__app_config.get(
+            'deviantart', 'username', key_errors=False)
         user = os.environ.get('deviantart.username', config_user)
 
-        config_pass = self.__app_config.get('deviantart','password', key_errors=False)
+        config_pass = self.__app_config.get(
+            'deviantart', 'password', key_errors=False)
         passwd = os.environ.get('deviantart.password', config_pass)
 
         if (not user) or (not passwd):
@@ -77,15 +86,15 @@ class SeleniumBrowser():
         self.__driver.find_element_by_id('loginbutton').send_keys(Keys.RETURN)
         self.wait_ready()
 
-
-
-
     @property
     def session(self):
         for cookie in self.__driver.get_cookies():
-            if 'httpOnly' in cookie: del cookie['httpOnly']
-            if 'expiry' in cookie: del cookie['expiry']
-            if 'sameSite' in cookie: del cookie['sameSite']
+            if 'httpOnly' in cookie:
+                del cookie['httpOnly']
+            if 'expiry' in cookie:
+                del cookie['expiry']
+            if 'sameSite' in cookie:
+                del cookie['sameSite']
             self.__browser.session.cookies.set(**cookie)
         return self.__browser.session
 
@@ -107,7 +116,7 @@ class SeleniumBrowser():
 
     def open_do_login(self, url):
         self.__open(url)
-        if self.get_current_page().find('a', {'href':'https://www.deviantart.com/users/login'}):
+        if self.get_current_page().find('a', {'href': 'https://www.deviantart.com/users/login'}):
             self.do_login()
         if self.__driver.current_url != url:
             self.__open(url)
@@ -126,8 +135,9 @@ class SeleniumBrowser():
         return Response(content=page_source)
 
     def get(self, url, timeout=30, *args, **kwargs):
-        cookies = dict((c['name'], c['value']) for c in self.__driver.get_cookies())
-        return  self.__browser.get(url, timeout=timeout, *args, **kwargs, cookies=cookies)
+        cookies = dict((c['name'], c['value'])
+                       for c in self.__driver.get_cookies())
+        return self.__browser.get(url, timeout=timeout, *args, **kwargs, cookies=cookies)
 
     def get_current_page(self):
         soup_config = self.__app_config.get('dagr.bs4.config')
@@ -138,10 +148,10 @@ class SeleniumBrowser():
             'a', href=True, *args, **kwargs)
         if url_regex is not None:
             all_links = [a for a in all_links
-                        if re.search(url_regex, a['href'])]
+                         if re.search(url_regex, a['href'])]
         if link_text is not None:
             all_links = [a for a in all_links
-                        if a.text == link_text]
+                         if a.text == link_text]
         return all_links
 
     def quit(self):

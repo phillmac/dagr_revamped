@@ -1,5 +1,6 @@
 from pprint import pprint
 
+
 class Response():
     def __init__(self, content='', headers={}, status=200):
         self.__status = status
@@ -24,7 +25,7 @@ class Response():
 
     @property
     def headers(self):
-        return dict(h.split('\u003a\u0020') for h in self.__headers.split('\u000d\u000a') if len(h.split('\u003a\u0020')) == 2 )
+        return dict(h.split('\u003a\u0020') for h in self.__headers.split('\u000d\u000a') if len(h.split('\u003a\u0020')) == 2)
 
     @property
     def content(self):

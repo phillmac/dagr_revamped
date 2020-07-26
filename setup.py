@@ -37,6 +37,6 @@ setup(
             'dagr-bulk.py=dagr_revamped.bulk:main',
             'dagr-utils.py=dagr_revamped.utils:main',
             'dagr-config.py=dagr_revamped.config:main'
-            ]
+        ]
     }
 )

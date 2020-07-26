@@ -7,6 +7,7 @@ from .config import DAGRConfig
 from .version import version
 from .dagr_logging import init_logging, log as dagr_log
 
+
 class DAGRBulkCli():
     """
 {} v{}
@@ -45,11 +46,13 @@ Options:
     NAME = __package__
     VERSION = version
 
-
     def __init__(self, config):
-        self.arguments = arguments = docopt(self.__doc__.format(self.NAME, self.VERSION), version=self.VERSION)
+        self.arguments = arguments = docopt(self.__doc__.format(
+            self.NAME, self.VERSION), version=self.VERSION)
+        ll_arg = None
         try:
-            ll_arg = int(arguments.get('--debug') or arguments.get('--verbose'))
+            ll_arg = int(arguments.get('--debug')
+                         or arguments.get('--verbose'))
         except Exception:
             dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
         self.args = {

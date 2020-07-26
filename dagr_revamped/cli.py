@@ -7,6 +7,7 @@ from .config import DAGRConfig
 from .version import version
 from .dagr_logging import init_logging, log as dagr_log
 
+
 class DAGRCli():
     """
 {} v{}
@@ -62,12 +63,15 @@ Options:
     VERSION = version
 
     def __init__(self, config):
-        self.arguments = arguments = docopt(self.__doc__.format(self.NAME, self.VERSION), version=self.VERSION)
+        self.arguments = arguments = docopt(self.__doc__.format(
+            self.NAME, self.VERSION), version=self.VERSION)
         cnf_modes, cnf_mval_args = config.get_modes()
         modes = [m for m in cnf_modes if arguments.get('--'+m)]
-        mode_val = next((arguments.get('--'+v) for v in cnf_mval_args if arguments.get('--'+v)), None)
+        mode_val = next((arguments.get('--'+v)
+                         for v in cnf_mval_args if arguments.get('--'+v)), None)
         try:
-            ll_arg = -1 if arguments.get('--quiet') else int(arguments.get('--debug') or int(arguments.get('--verbose')))
+            ll_arg = -1 if arguments.get('--quiet') else int(
+                arguments.get('--debug') or int(arguments.get('--verbose')))
         except Exception:
             dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
         self.args = {
@@ -112,7 +116,8 @@ def main():
     ripper.run()
     ripper.print_errors()
     ripper.print_dl_total()
-    if ripper.browser.quit: ripper.browser.quit()
+    if ripper.browser.quit:
+        ripper.browser.quit()
     if __name__ == '__main__':
         logging.shutdown()
 
