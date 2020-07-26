@@ -835,6 +835,10 @@ class DAGRDeviantionProcessor():
             self.__logger.log(level=5, msg='Found journal')
             self.__file_link, self.__found_type = self.browser.get_url(), 'journal'
             return self.__file_link, self.__found_type
+        #Check for antisocial
+        if current_page.find('div', {'class':'antisocial'}):
+            self.cache.add_nolink(self.page_link)
+            raise DagrException('deviation not available without login')
         search_tags = {}
         # Fallback 1: try collect_rid, full
         search_tags['img full'] = current_page.find('img',
