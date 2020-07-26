@@ -13,8 +13,8 @@ class PluginManager():
         self.__config = app.config.get('dagr.plugins')
         self.__disabled = self.__config.get('disabled') or []
         self.__funcs = {}
-        self.__loaded_plugins = []
-        plugin_base = PluginBase(package='{}.plugins'.format(__package__),
+        self.__loaded_plugins = {}
+        plugin_base = PluginBase(package=f'{__package__}.plugins',
             searchpath=[os.path.join(here, 'builtin_plugins')])
         if self.__locations:
             self.source = plugin_base.make_plugin_source(
@@ -25,14 +25,30 @@ class PluginManager():
                         if not pn in self.__disabled):
                 try:
                     plugin = self.source.load_plugin(plugin_name)
-                    plugin.setup(self)
-                    self.__loaded_plugins.append(plugin_name)
+                    enabled = plugin.setup(self)
+                    self.__loaded_plugins[plugin_name] = {
+                        'enabled': enabled
+                    }
                 except DagrImportError:
-                    logging.warning('Unable to import plugin {}'.format(plugin_name), exc_info=True)
+                    logging.warning(f'Unable to import plugin {plugin_name}', exc_info=True)
+                except DagrPluginConfigError:
+                    logging.warning(f'Unable to initialise plugin {plugin_name}', exc_info=True)
+
 
     @property
     def loaded_plugins(self):
-        return self.__loaded_plugins
+        return [k for k in self.__loaded_plugins.keys()]
+
+    @property
+    def enabled_plugins(self):
+        return [k for k,v in self.__loaded_plugins.items() if v['enabled']]
+
+    @property
+    def config(self):
+        return deepcopy(self.__config)
+    @property
+    def app_config(self):
+        return deepcopy(self.__app.config)
 
     def __register(self, cat, name, func):
         if not cat in self.__funcs:
@@ -40,7 +56,7 @@ class PluginManager():
         self.__funcs[cat][name] = func
 
     def get_funcs(self, cat):
-        return deepcopy(list(self.__funcs.get(cat, {}).items()))
+        return deepcopy(self.__funcs.get(cat, {}))
 
     def register_findlink(self, name, func):
         self.__register('findlink', name, func)
@@ -48,5 +64,13 @@ class PluginManager():
     def register_findlink_b(self, name, func):
         self.__register('findlink_b', name, func)
 
+    def register_browser(self, name, func):
+        self.__register('browser', name, func)
+
+
 class DagrImportError(Exception):
     pass
+
+class DagrPluginConfigError(Exception):
+    pass
+

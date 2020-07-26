@@ -14,6 +14,7 @@ from calmjs.parse.walkers import Walker as calmjs_walker
 
 def setup(manager):
     manager.register_findlink('std_video', find_video)
+    return True
 
 def find_video(current_page):
         #current_page = pickle.loads(current_page)

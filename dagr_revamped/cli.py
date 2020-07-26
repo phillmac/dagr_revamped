@@ -50,8 +50,12 @@ Options:
     --debug=DEBUGLVL                        Show still more detail
     --quiet                                 Suppress warnings
     --showqueue                             Display inital queue contents. Requires at least -v or --debug=1.
-    -h --help                               Show this screen.
-    --version                               Show version.
+    --useapi                                Use DA API
+    --clientid=CLIENTID                     DA API Client ID
+    --clientsecret=CLIENTSECRET             DA API Client Secret
+    --config_options=CONFIGOPTIONS
+    -h --help                               Show this screen
+    --version                               Show version
 
 """
     NAME = __package__
@@ -63,7 +67,7 @@ Options:
         modes = [m for m in cnf_modes if arguments.get('--'+m)]
         mode_val = next((arguments.get('--'+v) for v in cnf_mval_args if arguments.get('--'+v)), None)
         try:
-            ll_arg = -1 if arguments.get('--quiet') else int(arguments.get('--debug') or arguments.get('--verbose'))
+            ll_arg = -1 if arguments.get('--quiet') else int(arguments.get('--debug') or int(arguments.get('--verbose')))
         except Exception:
             dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
         self.args = {
@@ -87,8 +91,10 @@ Options:
             'unfindable': arguments.get('--unfindable'),
             'verifybest': arguments.get('--verifybest'),
             'verifyexists': arguments.get('--verifyexists'),
-            'conf_cmd': arguments.get('CONF_CMD'),
-            'conf_file': arguments.get('CONF_FILE'),
+            'useapi': arguments.get('--useapi'),
+            'clientid': arguments.get('--clientid'),
+            'clientsecret': arguments.get('--clientsecret'),
+            'config_options': arguments.get('--config_options'),
             'log_level': ll_arg
         }
 
@@ -101,13 +107,12 @@ def main():
     logger = logging.getLogger(__name__)
     logger.log(level=5, msg=pformat(cli.arguments))
     logger.debug(pformat(cli.args))
-    if cli.args.get('conf_cmd'):
-        config.conf_cmd()
-    else:
-        ripper = DAGR(config=config, **cli.args)
-        ripper.run()
-        ripper.print_errors()
-        ripper.print_dl_total()
+
+    ripper = DAGR(config=config, **cli.args)
+    ripper.run()
+    ripper.print_errors()
+    ripper.print_dl_total()
+    if ripper.browser.quit: ripper.browser.quit()
     if __name__ == '__main__':
         logging.shutdown()
 
