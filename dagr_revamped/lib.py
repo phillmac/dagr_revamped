@@ -281,18 +281,13 @@ class DAGR():
         if mval: msg += ' : {mval}'
         msg_formatted = msg.format(**locals())
         self.__logger.log(level=15, msg='Ripping {}'.format(msg_formatted))
-        base_dir = get_base_dir(self.config, mode, deviant, mval)
         self.__logger.log(level=3, msg=pformat(locals()))
-        if not base_dir: return
         if deviant: deviant_lower = deviant.lower()
-        lock_path = base_dir.joinpath('.lock')
         try:
-            with portalocker.Lock(lock_path, fail_when_locked = True):
+            with DAGRCache.get_cache(self.config, mode, deviant, mval) as cache:
                 pages = self.crawl_pages(url_fmt, mode, deviant, mval, msg)
                 if not self.keep_running():
-                    unlink_lockfile(lock_path)
                     return
-                cache = self.cache(self.config, base_dir)
                 if not pages and not self.nocrawl:
                     self.__logger.log(level=15, msg='{} had no deviations'.format(msg_formatted))
                     if self.test: return
@@ -306,22 +301,18 @@ class DAGR():
                     cache.save_crawled(self.maxpages is None)
                     cache.save_nolink()
                     cache.save_queue()
-            unlink_lockfile(lock_path)
+                    cache.save_premium()
         except (portalocker.exceptions.LockException,portalocker.exceptions.AlreadyLocked):
-            self.__logger.warning('Skipping locked directory {}'.format(base_dir))
+            pass
 
     def rip_single(self, url_fmt, deviant, mval):
-        base_dir = get_base_dir(self.config, 'gallery', deviant)
         base_url = self.base_url()
         deviant_lower = deviant.lower()
-        lock_path = base_dir.joinpath('.lock')
         try:
-            with portalocker.Lock(lock_path, fail_when_locked = True):
-                cache = self.cache(self.config, base_dir)
+            with DAGRCache.get_cache(self.config, 'gallery', deviant, mval) as cache:
                 self.process_deviations(cache, [url_fmt.format(**locals())])
-            unlink_lockfile(lock_path)
         except (portalocker.exceptions.LockException,portalocker.exceptions.AlreadyLocked):
-            self.__logger.warning('Skipping locked directory {}'.format(base_dir))
+            pass
 
     def crawl_pages(self, url_fmt, mode, deviant=None, mval=None, msg=None):
         if self.nocrawl:
@@ -617,7 +608,7 @@ class DAGRDeviantionProcessor():
         if isinstance(self.__response, Response):
             return self.__response
         self.__logger.log(level=4, msg='get_response no resonse')
-        flink, ltype = self.find_link()
+        flink, _ltype = self.find_link()
         self.__response = self.ripper.get(flink)
         return self.__response
 
@@ -667,7 +658,7 @@ class DAGRDeviantionProcessor():
     def process_deviation(self):
         try:
             if self.ripper.test:
-                flink, ltype = self.find_link()
+                flink, _ltype = self.find_link()
                 print(flink)
                 return
             #self.__logger.debug('File link: {}'.format(flink))
@@ -687,6 +678,9 @@ class DAGRDeviantionProcessor():
         except SystemExit:
             self.cache.save()
             self.ripper.stop_running.set()
+        except DagrPremiumUnavailable as ex:
+            self.cache.add_premium(self.page_link)
+            self.ripper.handle_download_error(self.page_link, ex)
         except DagrException as ex:
             self.ripper.handle_download_error(self.page_link, ex)
             return
@@ -712,7 +706,7 @@ class DAGRDeviantionProcessor():
     def verify_best(self):
         fullimg_ft = next(iter(self.ripper.fallbackorder()))
         self.__logger.log(level=15, msg='Verifying {}'.format(self.page_link))
-        flink, ltype =  self.find_link()
+        _flink, ltype =  self.find_link()
         if not ltype == fullimg_ft:
             self.__logger.log(level=15, msg='Not a full image')
             return False
@@ -815,6 +809,8 @@ class DAGRDeviantionProcessor():
         self.__logger.log(level=15, msg='Download link not found, falling back to alternate methods')
         stage = current_page.find('div', {'data-hook':'art_stage'})
         if stage:
+            if stage.find('div', string='Premium Deviation'):
+                raise DagrPremiumUnavailable()
             img_tag = stage.find('img')
             if img_tag and hasattr(img_tag, 'src'):
                 self.__logger.log(level=5, msg='Found eclipse art stage')
@@ -919,6 +915,10 @@ class DagrException(Exception):
     def __str__(self):
         return str(self.parameter)
 
+class DagrPremiumUnavailable(DagrException):
+    def __init__(self):
+        super(DagrPremiumUnavailable, self).__init__('Premium content unavailable')
+
 
 class DAGRCache():
 
@@ -944,12 +944,14 @@ class DAGRCache():
         self.crawled_name       = self.settings.get('crawled', '.crawled')
         self.nolink_name        = self.settings.get('nolink', '.nolink')
         self.queue_name         = self.settings.get('queue', '.queue')
+        self.premium_name       = self.settings.get('premium', '.premium')
         self.__files_list       = next(self.__load_cache(filenames=self.fn_name))
         self.existing_pages     = next(self.__load_cache(existing_pages=self.ep_name))
         self.artists            = next(self.__load_cache(artists=self.artists_name))
         self.last_crawled       = next(self.__load_cache(last_crawled=self.crawled_name))
         self.no_link            = next(self.__load_cache(no_link=self.nolink_name, warn_not_found=False))
         self.queue              = next(self.__load_cache(queue=self.queue_name, warn_not_found=False))
+        self.premium            = next(self.__load_cache(premium=self.premium_name, warn_not_found=False))
         self.__excluded_fnames  = [
             '.lock',
             self.settings_name,
@@ -958,7 +960,8 @@ class DAGRCache():
             self.artists_name,
             self.crawled_name,
             self.nolink_name,
-            self.queue_name
+            self.queue_name,
+            self.premium_name
         ]
         self.downloaded_pages   = []
         if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
@@ -1017,7 +1020,8 @@ class DAGRCache():
             'artists': lambda: {},
             'last_crawled': lambda : {'short': 'never', 'full': 'never'},
             'no_link': lambda: [],
-            'queue': lambda: []
+            'queue': lambda: [],
+            'premium': lambda: []
         }
         for cache_type, cache_file in kwargs.items():
             cache_contents = self.__load_cache_file(cache_file, use_backup=use_backup, warn_not_found=warn_not_found)
@@ -1127,6 +1131,9 @@ class DAGRCache():
     def save_queue(self):
         if not self.queue is None:
             self.__update_cache(self.queue_name, self.queue)
+    def save_premium(self):
+        if not self.premium is None:
+            self.__update_cache(self.premium_name, self.premium)
 
     def save_crawled(self, full_crawl=False):
         if full_crawl:
@@ -1135,9 +1142,16 @@ class DAGRCache():
             self.last_crawled['short'] = time()
         self.__update_cache(self.crawled_name, self.last_crawled)
 
+
+    def add_premium(self, page):
+        if page in self.premium:
+            return
+        self.dequeue_page(page)
+        self.premium.append(page)
+
     @property
     def nl_exclude(self):
-        return set([*self.downloaded_pages, *self.existing_pages, *self.no_link])
+        return set([*self.downloaded_pages, *self.existing_pages, *self.no_link, *self.premium])
 
     def add_nolink(self, page):
         if page in self.nl_exclude: return
@@ -1147,7 +1161,7 @@ class DAGRCache():
 
     @property
     def q_exclude(self):
-        return set([*self.downloaded_pages, *self.existing_pages, *self.no_link, *self.queue])
+        return set([*self.downloaded_pages, *self.existing_pages, *self.no_link, *self.queue, *self.premium])
 
     def add_queue(self, page):
         if page in self.q_exclude:
