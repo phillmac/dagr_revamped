@@ -4,6 +4,7 @@ import urllib
 
 from bs4 import BeautifulSoup
 
+from dagr_revamped.plugin import DagrImportError
 from dagr_revamped.utils import create_browser as utils_create_browser
 
 from .Response import Response
