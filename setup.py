@@ -20,7 +20,7 @@ setup(
         'pluginbase == 1.0.0',
         'portalocker == 1.4.0',
         'python-dateutil == 2.7.5',
-        'deviantart >= 0.2.0'
+        'deviantart == 0.2.0'
     ],
     dependency_links=[
         'git+https://github.com/phillmac/deviantart@0.2.0#egg=deviantart'
