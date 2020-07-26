@@ -56,7 +56,7 @@ class SeleniumBrowser():
     def wait_ready(self):
         WebDriverWait(self.__driver, 60).until(lambda d: d.execute_script('return document.readyState') == 'complete')
 
-    def wait_stale(self, element, message='Timed while waiting for staleness', delay=3):
+    def wait_stale(self, element, message='Timed out while waiting for staleness', delay=3):
         WebDriverWait(self.__driver, delay).until(staleness_of(element), message=message)
 
     def do_login(self):
