@@ -20,10 +20,7 @@ setup(
         'pluginbase == 1.0.0',
         'portalocker == 1.4.0',
         'python-dateutil == 2.7.5',
-        'deviantart == 0.2.0'
-    ],
-    dependency_links=[
-        'git+https://github.com/phillmac/deviantart@0.2.0#egg=deviantart'
+        'deviantart @ git+https://github.com/phillmac/deviantart@c21ce195b466618ae16a9146412b3b713be71ef5'
     ],
     extras_require={
         'calmjs':  ["calmjs==3.3.1"],
