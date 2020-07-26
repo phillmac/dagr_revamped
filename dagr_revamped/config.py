@@ -166,6 +166,7 @@ class DAGRConfig(DAGRBaseConf):
             'Reverse': False,
             #'RecursionLimit': 10000,
             'SaveProgress': 50,
+            'DownloadDelay': 0.300,
             'Verbose': False,
             },
         'Dagr.SubDirs':{

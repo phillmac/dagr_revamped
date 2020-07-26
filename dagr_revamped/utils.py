@@ -196,6 +196,12 @@ def shorten_url(url):
         p = p.joinpath(u)
     return str(p)
 
+def artist_from_url(url):
+    artist_url_p = PurePosixPath(url).parent.parent
+    artist_name = artist_url_p.name
+    shortname = PurePosixPath(url).name
+    return (artist_url_p, artist_name, shortname)
+
 class DAGRUtilsCli():
 
     """
