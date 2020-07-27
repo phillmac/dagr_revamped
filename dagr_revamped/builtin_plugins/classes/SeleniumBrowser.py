@@ -77,13 +77,11 @@ class SeleniumBrowser():
         if self.__driver.current_url != self.__login_url:
             self.__driver.get('https://deviantart.com/users/login')
 
-        config_user = self.__app_config.get(
+        user = self.__app_config.get(
             'deviantart', 'username', key_errors=False)
-        user = os.environ.get('deviantart.username', config_user)
 
-        config_pass = self.__app_config.get(
+        passwd = self.__app_config.get(
             'deviantart', 'password', key_errors=False)
-        passwd = os.environ.get('deviantart.password', config_pass)
 
         if (not user) or (not passwd):
             raise Exception('Username or password not configured')

@@ -1,6 +1,4 @@
-import os
-
-from dagr_revamped.plugin import DagrImportError, DagrPluginConfigError
+from dagr_revamped.plugin import DagrPluginConfigError
 
 from dagr_revamped.builtin_plugins.classes.SeleniumBrowser import SeleniumBrowser as Browser
 

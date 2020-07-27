@@ -251,6 +251,7 @@ class DAGRConfig(DAGRBaseConf):
         },
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', ['Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path']),
+        'Deviantart': get_os_options('Deviantart', ['Username', 'Password'])
     }
     SETTINGS_MAP = {
         'Dagr': {
