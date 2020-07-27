@@ -15,6 +15,7 @@ class PluginManager():
             'dagr.plugins.locations').items()]
         self.__config = app.config.get('dagr.plugins')
         self.__disabled = self.__config.get('disabled') or []
+        self.__disabled.append('classes')
         self.__funcs = {}
         self.__loaded_plugins = {}
         plugin_base = PluginBase(package=f'{__package__}.plugins',

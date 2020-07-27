@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import urllib
@@ -6,6 +7,7 @@ from bs4 import BeautifulSoup
 
 from dagr_revamped.plugin import DagrImportError
 from dagr_revamped.utils import create_browser as utils_create_browser
+from docopt import parse_seq
 
 from .Response import Response
 
@@ -23,6 +25,7 @@ class SeleniumBrowser():
     def __init__(self, app_config, config, mature, driver=None):
         self.__app_config = app_config
         self.__config = config
+        self.__logger = logging.getLogger(__name__)
         self.__mature = mature
         self.__login_url = self.__config.get(
             'login_url', 'https://deviantart.com/users/login')
@@ -36,13 +39,14 @@ class SeleniumBrowser():
             ce_url = self.__config.get('webdriver_url', None)
             webdriver_mode = config.get('webdriver_mode')
             if webdriver_mode == 'local':
+                self.__logger.info('Starting selenium in local mode')
                 driver_path = config.get('driver_path', None)
                 params = {'desired_capabilities': capabilities}
                 if driver_path:
                     params['executable_path'] = driver_path
-                else:
-                    self.__driver = webdriver.Chrome(**params)
+                self.__driver = webdriver.Chrome(**params)
             elif webdriver_mode == 'remote':
+                self.__logger.info('Starting selenium in remote mode')
                 self.__driver = webdriver.Remote(
                     command_executor=ce_url,
                     desired_capabilities=capabilities)
