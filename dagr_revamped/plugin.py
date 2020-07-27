@@ -1,6 +1,7 @@
 import logging
 import os
-from copy import deepcopy
+from sys import version_info
+from copy import copy, deepcopy
 from pathlib import Path
 
 from pluginbase import PluginBase
@@ -56,6 +57,8 @@ class PluginManager():
 
     @property
     def app_config(self):
+        if version_info < (3, 7):
+            return copy(self.__app.config)
         return deepcopy(self.__app.config)
 
     @property
