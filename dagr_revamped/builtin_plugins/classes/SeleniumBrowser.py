@@ -35,6 +35,7 @@ class SeleniumBrowser():
             options = webdriver.ChromeOptions()
             options.add_argument('--disable-web-security')
             options.add_argument("--start-maximized")
+            options.add_argument("--remote-debugging-port=9222")
             capabilities = {**options.to_capabilities(), **
                             self.__config.get('capabilities', {})}
             ce_url = self.__config.get('webdriver_url', None)
