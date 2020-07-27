@@ -2,7 +2,7 @@ import os
 
 from dagr_revamped.plugin import DagrImportError, DagrPluginConfigError
 
-from .classes.SeleniumBrowser import SeleniumBrowser as Browser
+from dagr_revamped.builtin_plugins.classes.SeleniumBrowser import SeleniumBrowser as Browser
 
 config_key = 'dagr.plugins.selenium'
 
