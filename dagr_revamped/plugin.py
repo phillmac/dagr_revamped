@@ -1,6 +1,8 @@
-import os
 import logging
+import os
 from copy import deepcopy
+from pathlib import Path
+
 from pluginbase import PluginBase
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -56,13 +58,17 @@ class PluginManager():
     def app_config(self):
         return deepcopy(self.__app.config)
 
+    @property
+    def output_dir(self):
+        return Path(self.__app.config.output_dir)
+
     def __register(self, cat, name, func):
         if not cat in self.__funcs:
             self.__funcs[cat] = {}
         self.__funcs[cat][name] = func
 
     def get_funcs(self, cat):
-        return {k:v for k,v in self.__funcs.get(cat, {}).items()}
+        return {k: v for k, v in self.__funcs.get(cat, {}).items()}
 
     def register_findlink(self, name, func):
         self.__register('findlink', name, func)
@@ -83,6 +89,7 @@ class DagrImportError(Exception):
 
 class DagrPluginConfigError(Exception):
     pass
+
 
 class DagrPluginDisabledError(Exception):
     pass

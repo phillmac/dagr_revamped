@@ -23,11 +23,6 @@ def make_dirs(directory):
         directory.mkdir(parents=True)
         logger.debug('Created dir {}'.format(directory))
 
-
-def get_output_dir(config):
-    return Path(config.get('dagr', 'outputdirectory')).expanduser().resolve()
-
-
 def strip_topdir(directory):
     if not isinstance(directory, Path):
         directory = Path(directory)
@@ -37,7 +32,7 @@ def strip_topdir(directory):
 
 def get_base_dir(config, mode, deviant=None, mval=None):
     logger = logging.getLogger(__name__)
-    directory = get_output_dir(config)
+    directory = config.output_dir
     if deviant:
         base_dir = directory.joinpath(deviant, mode)
     else:
@@ -307,7 +302,7 @@ class DAGRUtils():
         self.__global_files_mapping = {}
         self.__global_dirs_mapping = {}
         self.__global_deviant_dirs_cache = dict((str(d.name).lower(), d) for d in (
-            di for di in get_output_dir(self.__config).iterdir() if di.is_dir()))
+            di for di in self.__config.output_dir.iterdir() if di.is_dir()))
         self.__kwargs = kwargs
 
     def handle_utils_cmd(self):
@@ -377,7 +372,7 @@ class DAGRUtils():
         duplicates = {k: v for k,
                       v in self.__global_files_mapping.items() if len(v) > 1}
         print(f'Total duplicates: {len(duplicates)}')
-        od = get_output_dir(self.__config)
+        od = self.__config.output_dir
         of = od.joinpath('.duplicates.json')
         buffered_file_write(duplicates, of)
 
@@ -396,7 +391,7 @@ class DAGRUtils():
         print('Scanning dirs')
         self.walk_queue(self._update_dirs_cache, True)
         print('Saving cache')
-        od = get_output_dir(self.__config)
+        od = self.__config.output_dir
         of = od.joinpath('.dirs.json')
         buffered_file_write(self.__global_dirs_mapping, of)
 

@@ -249,7 +249,7 @@ class DAGRConfig(DAGRBaseConf):
     }
     OVERRIDES = {
         'Dagr': {
-            'OutputDirectory': Path.cwd()
+            'OutputDirectory': str(Path.cwd())
         },
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', ['Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path']),
@@ -335,6 +335,10 @@ class DAGRConfig(DAGRBaseConf):
 
     def map_log_level(self):
         return self.get('logging.map', self.get_log_level())
+
+    @property
+    def output_dir(self):
+        return Path(self.get('dagr', 'outputdirectory')).expanduser().resolve()
 
     def conf_cmd(self):
         conf_cmd_maping = {

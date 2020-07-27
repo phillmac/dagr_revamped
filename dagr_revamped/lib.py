@@ -65,7 +65,7 @@ class DAGR():
             'dagr.findlink', 'fallbackorder').split(','))
         self.mature = lambda: self.config.get('deviantart', 'maturecontent')
         self.antisocial = lambda: self.config.get('deviantart', 'antisocial')
-        self.outdir = lambda: self.config.get('dagr', 'outputdirectory')
+        self.outdir = lambda: self.config.output_dir
         self.overwrite = lambda: self.config.get('dagr', 'overwrite')
         self.progress = lambda: self.config.get('dagr', 'saveprogress')
         self.download_delay = lambda: self.config.get('dagr', 'downloaddelay')
