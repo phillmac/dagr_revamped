@@ -33,12 +33,19 @@ class SeleniumBrowser():
             options.add_argument('--disable-web-security')
             capabilities = {**options.to_capabilities(), **
                             self.__config.get('capabilities', {})}
-            config_ce_url = self.__config.get('webdriver_url', None)
-            ce_url = os.environ.get(
-                'dagr.plugins.selenium.webdriver.webdriver_url', config_ce_url)
-            self.__driver = webdriver.Remote(
-                command_executor=ce_url,
-                desired_capabilities=capabilities)
+            ce_url = self.__config.get('webdriver_url', None)
+            webdriver_mode = config.get('webdriver_mode')
+            if webdriver_mode == 'local':
+                driver_path = config.get('driver_path', None)
+                params = {'desired_capabilities': capabilities}
+                if driver_path:
+                    params['executable_path'] = driver_path
+                else:
+                    self.__driver = webdriver.Chrome(**params)
+            elif webdriver_mode == 'remote':
+                self.__driver = webdriver.Remote(
+                    command_executor=ce_url,
+                    desired_capabilities=capabilities)
         if self.__mature:
             self.__driver.get('https://deviantart.com')
             self.__driver.add_cookie({

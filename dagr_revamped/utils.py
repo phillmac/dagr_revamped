@@ -246,9 +246,10 @@ Options:
             self.NAME, self.VERSION), version=self.VERSION)
         ll_arg = logging.WARN
         try:
-            ll_arg = int(arguments.get('--debug')
-                         or arguments.get('--verbose'))
+            ll_arg = -1 if arguments.get('--quiet') else (int(arguments.get('--debug')) if arguments.get(
+                '--debug') else (int(arguments.get('--verbose') if arguments.get('--verbose') else 0)))
         except Exception:
+            ll_arg = 0
             dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
 
         self.args = {

@@ -1,35 +1,35 @@
+import json
+import logging
+import pathlib
 import re
 import sys
-import json
-import pathlib
-import logging
 import threading
+from copy import deepcopy
+from datetime import datetime
+from email.utils import parsedate
+from io import StringIO
+from mimetypes import add_type as add_mimetype
+from mimetypes import guess_extension
+from mimetypes import init as mimetypes_init
+from os import utime
+from pathlib import Path, PurePosixPath
+from pprint import pformat
+from time import mktime, sleep, time
+
 import deviantart
 import portalocker
-from os import utime
-from io import StringIO
-from copy import deepcopy
-from pprint import pformat
-from bs4.element import Tag
-from datetime import datetime
 from bs4 import BeautifulSoup
-from .config import DAGRConfig
-from email.utils import parsedate
-from .plugin import PluginManager
-from time import mktime, sleep, time
-from pathlib import Path, PurePosixPath
+from bs4.element import Tag
 from dateutil.parser import parse as date_parse
-from requests import codes as req_codes, Response
-from mimetypes import (
-    guess_extension, add_type as add_mimetype,
-    init as mimetypes_init
-)
-from .utils import (
-    get_base_dir, make_dirs, update_d, convert_queue,
-    load_bulk_files, compare_size, create_browser,
-    unlink_lockfile, shorten_url, StatefulBrowser,
-    filter_deviants, artist_from_url
-)
+from requests import Response
+from requests import codes as req_codes
+
+from .config import DAGRConfig
+from .plugin import PluginManager
+from .utils import (StatefulBrowser, artist_from_url, compare_size,
+                    convert_queue, create_browser, filter_deviants,
+                    get_base_dir, load_bulk_files, make_dirs, shorten_url,
+                    unlink_lockfile, update_d)
 
 
 class DAGR():
@@ -415,7 +415,7 @@ class DAGR():
 
     def browser_init(self):
         if not self.browser:
-            driver_name = self.config.get('dagr.browser', 'driver')
+            driver_name = self.config.get('dagr.plugins.classes', 'browser')
             if (driver_name is None) or (driver_name.lower() == 'default'):
                 self.__logger.info('Using default browser driver')
                 self.browser = create_browser()

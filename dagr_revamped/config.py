@@ -1,13 +1,16 @@
-import os
-import sys
 import json
 import logging
-from io import StringIO
-from pathlib import Path
-from copy import deepcopy
+import os
 from configparser import ConfigParser, NoSectionError
-from pprint import pprint, pformat
+from copy import deepcopy
+from pathlib import Path
+from pprint import pformat, pprint
+
+from docopt import docopt
+
+from .dagr_logging import init_logging
 from .dagr_logging import log as dagr_log
+from .version import version
 
 
 class DAGRBaseConf():
@@ -92,8 +95,16 @@ class DAGRBaseConf():
             self.__settings[sec_name.lower()] = merge_all(*conf_sections)
 
 
+def get_os_options(base_key, keys):
+    options = {}
+    for k in keys:
+        value = os.environ.get(f"{base_key}.{k}".lower(), None)
+        if not value is None:
+            options[k.lower()] = value
+    return options
+
+
 class DAGRConfig(DAGRBaseConf):
-    
     DEFAULTS = {
         "Logging": {
             'Format': '%(asctime)s - %(levelname)s - %(message)s'
@@ -185,10 +196,9 @@ class DAGRConfig(DAGRBaseConf):
             'NoLink': '.nolink',
             'Settings': '.settings',
             'Verified':  '.verified',
+            'Queue': '.queue',
+            'Premium': '.premium',
             'ShortUrls': False
-        },
-        'Dagr.Browser': {
-            'Driver': 'Default'
         },
         'Dagr.BS4.Config': {
             'Features': 'lxml'
@@ -209,9 +219,16 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr.Plugins': {
             'Disabled': ''
         },
+        'Dagr.Plugins.Classes': {
+            'Browser': 'Default',
+            'Ripper': 'Default',
+            'Crawler': 'Default',
+            'Processor': 'Default'
+        },
         'Dagr.Plugins.Locations': {
             'Default': '~/.config/dagr/plugins'
         },
+        'Dagr.Plugins.Selenium': {},
         'Dagr.Retry': {
             'SleepDuration': 0.5
         },
@@ -231,8 +248,9 @@ class DAGRConfig(DAGRBaseConf):
     OVERRIDES = {
         'Dagr': {
             'OutputDirectory': Path.cwd()
-        }
-        'Dagr.Plugins': get_os_options('')
+        },
+        'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Crawler', 'Processor']),
+        'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', ['Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path']),
     }
     SETTINGS_MAP = {
         'Dagr': {
@@ -258,18 +276,6 @@ class DAGRConfig(DAGRBaseConf):
             self.OVERRIDES.get,
             self.DEFAULTS.get,
         ))
-
-    def get_os_options(self, base_key, keys):
-        options = {}
-        for k in keys:
-            full_key = f"{base_key}.{k}".lower()
-            value = os.environ.get(full_key, None)
-            if not value is None:
-                options[full_key] = value
-        return options
-
-
-
 
     def set_args(self, arguments):
         self.__arguments = arguments
@@ -329,13 +335,34 @@ class DAGRConfig(DAGRBaseConf):
 
     def conf_cmd(self):
         conf_cmd_maping = {
+            None: self.action_missing,
+            'files': self.conf_files,
             'print': self.conf_print,
-            'files': self.conf_files
+            'get': self.show_config,
+            'set': self.set_config
         }
         cmd = self.__arguments.get('conf_cmd')
-        if conf_cmd_maping.get(cmd)():
+        mapped = conf_cmd_maping.get(cmd)
+        if mapped and mapped():
             return
-        print('Unrecognized {}'.format(cmd))
+        print(f"Unrecognized command {cmd}")
+
+    def action_missing(self):
+        print('CONF_CMD is required')
+        return True
+
+    def show_config(self):
+        section = self.__arguments.get('section')
+        if not section:
+            pprint(self.get_all())
+        else:
+            key = self.__arguments.get('key', None)
+            conf_val = self.get(section, key)
+            if not key:
+                pprint({f"{section}": conf_val})
+                return True
+            pprint({f"{section}.{key}": conf_val})
+        return True
 
     def conf_print(self):
         fname = self.__arguments.get('conf_file')
@@ -357,8 +384,13 @@ class DAGRConfig(DAGRBaseConf):
         return True
 
     def conf_files(self):
-        print('Loaded conf files {}'.format(pformat(self.get_conf_files())))
+        print('Loaded conf files:')
+        pprint([str(f) for f in self.get_conf_files()])
         return True
+
+    def set_config(self):
+        if not self.__arguments['section']:
+            print('--section is required')
 
 
 def dict_merge(dict_1, dict_2):
@@ -406,9 +438,52 @@ def convert_val(val):
 
 class DARGConfigCli():
     """
+{} v{}
 Usage:
-dagr.py config CONF_CMD [CONF_FILE] [-v|-vv|--debug=DEBUGLVL]
+dagr-config.py CONF_CMD [options] [CONF_FILE] [-v|-vv|--debug=DEBUGLVL]
 
 Options:
+    -k KEY --key=KEY                  Get or set value of config key
+    -s SECTION --section=SECTION      Get or set value of config section
 
 """
+
+    NAME = __package__
+    VERSION = version
+
+    def __init__(self, config):
+        self.config = DAGRConfig()
+        self.arguments = arguments = docopt(self.__doc__.format(
+            self.NAME, self.VERSION), version=self.VERSION)
+
+        try:
+            ll_arg = -1 if arguments.get('--quiet') else (int(arguments.get('--debug')) if arguments.get(
+                '--debug') else (int(arguments.get('--verbose') if arguments.get('--verbose') else 0)))
+        except Exception:
+            ll_arg = 0
+            dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
+
+        self.args = {
+            'conf_cmd': arguments.get('CONF_CMD', None),
+            'key': arguments.get('--key'),
+            'section': arguments.get('--section'),
+            'log_level': ll_arg
+        }
+
+
+def main():
+    config = DAGRConfig()
+    cli = DARGConfigCli(config)
+    config.set_args(cli.args)
+    init_logging(config)
+    logger = logging.getLogger(__name__)
+    logger.log(level=5, msg=pformat(cli.arguments))
+    logger.debug(pformat(cli.args))
+    config.conf_cmd()
+
+    if __name__ == '__main__':
+        logging.shutdown()
+
+
+if __name__ == '__main__':
+    main()

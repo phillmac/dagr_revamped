@@ -1,11 +1,14 @@
-import sys
 import logging
+import sys
+from pprint import pformat, pprint
+
 from docopt import docopt
-from pprint import pprint, pformat
-from .lib import DAGR
+
 from .config import DAGRConfig
+from .dagr_logging import init_logging
+from .dagr_logging import log as dagr_log
+from .lib import DAGR
 from .version import version
-from .dagr_logging import init_logging, log as dagr_log
 
 
 class DAGRCli():
@@ -70,9 +73,10 @@ Options:
         mode_val = next((arguments.get('--'+v)
                          for v in cnf_mval_args if arguments.get('--'+v)), None)
         try:
-            ll_arg = -1 if arguments.get('--quiet') else int(
-                arguments.get('--debug') or int(arguments.get('--verbose')))
+            ll_arg = -1 if arguments.get('--quiet') else (int(arguments.get('--debug')) if arguments.get(
+                '--debug') else (int(arguments.get('--verbose') if arguments.get('--verbose') else 0)))
         except Exception:
+            ll_arg = 0
             dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
         self.args = {
             'modes': modes, 'mode_val': mode_val,
