@@ -48,7 +48,8 @@ class SeleniumBrowser():
                 params = {'desired_capabilities': capabilities}
                 if driver_path:
                     params['executable_path'] = driver_path
-                self.__driver = webdriver.Chrome(**params)
+                command_executor = "http://localhost:4444/wd/hub"
+                self.__driver = webdriver.Remote(command_executor, desired_capabilities=options.to_capabilities())
             elif webdriver_mode == 'remote':
                 self.__logger.info('Starting selenium in remote mode')
                 self.__driver = webdriver.Remote(
