@@ -4,10 +4,10 @@ import re
 import urllib
 
 from bs4 import BeautifulSoup
+from docopt import parse_seq
 
 from dagr_revamped.plugin import DagrImportError
 from dagr_revamped.utils import create_browser as utils_create_browser
-from docopt import parse_seq
 
 from .Response import Response
 
@@ -34,6 +34,7 @@ class SeleniumBrowser():
         else:
             options = webdriver.ChromeOptions()
             options.add_argument('--disable-web-security')
+            options.add_argument("--start-maximized")
             capabilities = {**options.to_capabilities(), **
                             self.__config.get('capabilities', {})}
             ce_url = self.__config.get('webdriver_url', None)
@@ -162,6 +163,12 @@ class SeleniumBrowser():
             all_links = [a for a in all_links
                          if a.text == link_text]
         return all_links
+
+    def find_element_by_tag_name(self, *args, **kwargs):
+        return self.__driver.find_element_by_tag_name(*args, **kwargs)
+
+    def execute_async_script(self, *args, **kwargs):
+        return self.__driver.execute_async_script(*args, **kwargs)
 
     def quit(self):
         self.__driver.quit()

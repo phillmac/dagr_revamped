@@ -221,6 +221,27 @@ def artist_from_url(url):
     return (artist_url_p, artist_name, shortname)
 
 
+
+def save_json(fpath, data):
+    if isinstance(data, set):
+        data = list(data)
+    p = Path(fpath)
+    if p.exists():
+        backup = p.with_suffix('.bak')
+        if backup.exists():
+            backup.unlink()
+        p.rename(backup)
+    with p.open('w') as f:
+        json.dump(data, f, indent=4, sort_keys=True)
+    logging.getLogger(__name__).log(level=15, msg=f"Saved {len(data)} items to {fpath}")
+
+
+def load_json(fpath):
+    p = Path(fpath)
+    with p.open('r') as f:
+        return json.load(f)
+
+
 class DAGRUtilsCli():
 
     """

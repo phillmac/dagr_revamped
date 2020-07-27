@@ -74,14 +74,18 @@ class DAGR():
         self.retry_sleep_duration = lambda: self.config.get(
             'dagr.retry', 'sleepduration')
         self.reverse = lambda: self.config.get('dagr', 'reverse') or False
-        self.browser = kwargs.get('browser', None)
+        self.ripper = None
+        self.browser = None
+        self.devation_crawler = None
+        self.deviantion_pocessor = None
+        self.deviant_resolver = None
         self.stop_running = threading.Event()
         self.pl_manager = (kwargs.get('pl_manager') or PluginManager)(self)
         self.cache = kwargs.get('cache') or DAGRCache
         self.total_dl_count = 0
         self.init_mimetypes()
         self.init_classes()
-        self.browser_init()
+
         if self.deviants or (self.bulk and self.filenames) or (self.modes and 'search' in self.modes):
             self.__work_queue = self.__build_queue()
 
@@ -90,24 +94,69 @@ class DAGR():
         for k, v in self.config.get('dagr.mimetypes').items():
             add_mimetype(k, v)
 
+    # def init_classes(self):
+    #     if not self.use_api:
+    #         self.deviantion_pocessor = self.kwargs.get(
+    #             'processor') or DAGRDeviantionProcessor
+    #         self.deviant_resolver = self.kwargs.get(
+    #             'resolver') or DAGRDeviantResolver
+    #         self.devation_crawler = self.kwargs.get('crawler') or DAGRCrawler
+    #     else:
+    #         self.da_api = deviantart.Api(
+    #             self.kwargs.get('clientid'),
+    #             self.kwargs.get('clientsecret'),
+    #             mature_content=self.mature
+    #         )
+    #         self.deviantion_pocessor = self.kwargs.get(
+    #             'processor') or DAGRDeviantionProcessor
+    #         self.deviant_resolver = self.kwargs.get(
+    #             'resolver') or APIDeviantResolver
+    #         self.devation_crawler = self.kwargs.get('crawler') or APICrawler
+
     def init_classes(self):
-        if not self.use_api:
+        self.browser_init()
+        self.crawler_init()
+        self.ripper_init()
+        self.processor_init()
+        self.resolver_init()
+
+    def plugin_class_init(self, class_name, default=None):
+        plugin_name = self.config.get('dagr.plugins.classes', class_name)
+        if (plugin_name is None) or (plugin_name.lower() == 'default'):
+            self.__logger.info(f"Using default {class_name}")
+            return default
+
+        funcs = self.pl_manager.get_funcs(class_name)
+        if not plugin_name in funcs:
+            raise Exception(
+                f"Could not find {class_name} plugin {plugin_name}")
+        self.__logger.info(f"Using {plugin_name} {class_name} plugin")
+        return funcs.get(plugin_name)
+
+    def browser_init(self):
+        if not self.browser:
+            self.browser = self.kwargs.get('browser') or self.plugin_class_init(
+                'browser', create_browser)(self.mature)
+
+    def crawler_init(self):
+        if not self.devation_crawler:
+            self.devation_crawler = self.kwargs.get(
+                'crawler') or self.plugin_class_init('crawler', DAGRCrawler)(self)
+
+    def ripper_init(self):
+        if not self.ripper:
+            self.ripper = self.kwargs.get(
+                'ripper') or self.plugin_class_init('ripper', None)
+
+    def processor_init(self):
+        if not self.deviantion_pocessor:
             self.deviantion_pocessor = self.kwargs.get(
-                'processor') or DAGRDeviantionProcessor
+                'processor') or self.plugin_class_init('processor', DAGRDeviantionProcessor)
+
+    def resolver_init(self):
+        if not self.deviant_resolver:
             self.deviant_resolver = self.kwargs.get(
-                'resolver') or DAGRDeviantResolver
-            self.devation_crawler = self.kwargs.get('crawler') or DAGRCrawler
-        else:
-            self.da_api = deviantart.Api(
-                self.kwargs.get('clientid'),
-                self.kwargs.get('clientsecret'),
-                mature_content=self.mature
-            )
-            self.deviantion_pocessor = self.kwargs.get(
-                'processor') or DAGRDeviantionProcessor
-            self.deviant_resolver = self.kwargs.get(
-                'resolver') or APIDeviantResolver
-            self.devation_crawler = self.kwargs.get('crawler') or APICrawler
+                'resolver') or self.plugin_class_init('resolver', DAGRDeviantResolver)
 
     def get_queue(self):
         return self.__work_queue
@@ -378,7 +427,8 @@ class DAGR():
         return folders
 
     def resolve_deviant(self, deviant):
-        return self.deviant_resolver(self).resolve(deviant)
+        resolver = self.deviant_resolver(self)
+        return resolver.resolve(deviant)
 
     def process_deviations(self, cache, pages):
         if self.nocrawl:
@@ -412,21 +462,6 @@ class DAGR():
             self.errors_count[error_string] += 1
         else:
             self.errors_count[error_string] = 1
-
-    def browser_init(self):
-        if not self.browser:
-            driver_name = self.config.get('dagr.plugins.classes', 'browser')
-            if (driver_name is None) or (driver_name.lower() == 'default'):
-                self.__logger.info('Using default browser driver')
-                self.browser = create_browser()
-                return
-
-            funcs = self.pl_manager.get_funcs('browser')
-
-            if not driver_name in funcs:
-                raise Exception(f'Could not find browser driver {driver_name}')
-            self.__logger.info(f'Using {driver_name} browser driver')
-            self.browser = funcs.get(driver_name)(self.mature())
 
     def get(self, url):
         tries = {}

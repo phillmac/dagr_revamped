@@ -62,7 +62,7 @@ class PluginManager():
         self.__funcs[cat][name] = func
 
     def get_funcs(self, cat):
-        return deepcopy(self.__funcs.get(cat, {}))
+        return {k:v for k,v in self.__funcs.get(cat, {}).items()}
 
     def register_findlink(self, name, func):
         self.__register('findlink', name, func)
@@ -73,10 +73,16 @@ class PluginManager():
     def register_browser(self, name, func):
         self.__register('browser', name, func)
 
+    def register_crawler(self, name, func):
+        self.__register('crawler', name, func)
+
 
 class DagrImportError(Exception):
     pass
 
 
 class DagrPluginConfigError(Exception):
+    pass
+
+class DagrPluginDisabledError(Exception):
     pass
