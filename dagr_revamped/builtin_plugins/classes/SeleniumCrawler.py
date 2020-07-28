@@ -85,6 +85,9 @@ class SeleniumCrawler():
             pass
         if not full_crawl:
             pages.update(history)
-        self.__browser.open_do_login(
-            f"https://www.deviantart.com/{deviant}/{mode}/all")
+            url = {
+                'gallery': f"https://www.deviantart.com/{deviant}/gallery/all",
+                'favs': f"https://www.deviantart.com/{deviant}/favourites/all"
+                }.get(mode)
+        self.__browser.open_do_login(url)
         return self.crawl_action(save_file, pages, history)
