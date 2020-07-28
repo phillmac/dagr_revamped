@@ -17,7 +17,7 @@ class SeleniumCrawler():
         self.__cache = cache
 
     def collect_pages(self):
-        st = time()
+        collect_st = time()
         pages = set()
         try:
             pages.update(self.__browser.execute_async_script(
@@ -34,7 +34,7 @@ class SeleniumCrawler():
         except:
             self.__logger.exception('Error while collecting pages')
         self.__logger.log(
-            level=15, msg=f"Collect pages took {time() - st} seconds")
+            level=15, msg=f"Collect pages took {'{:.4f}'.format(time() - collect_st)} seconds")
         return pages
 
     def crawl_action(self, save_file, pages=set(), history=set()):
@@ -44,7 +44,7 @@ class SeleniumCrawler():
         while (pcount is None) or (pcount < len(pages)):
             pcount = len(pages)
             for _pd in range(self.__config.get('page_down_count', 7)):
-                st = time()
+                crawl_st = time()
                 collected = self.collect_pages()
                 if len(collected - pages) > 0:
                     sleep_time = self.__config.get('page_sleep_time', 15)
@@ -52,11 +52,13 @@ class SeleniumCrawler():
                 else:
                     sleep_time = self.__config.get('page_sleep_time', 5)
                 self.__logger.info(f"URL count {len(pages)}")
+                pd_st = time()
                 body.send_keys(Keys.PAGE_DOWN)
-                self.__logger.log(level=15, msg='Sent page down key')
+                self.__logger.log(level=15, msg=f"Sending page down key took {'{:.4f}'.format(time() - pd_st )} seconds")
                 new_pages = pages - history
                 if len(new_pages) > 0:
                     history.update(pages)
+                    save_st = time()
                     try:
                         try:
                             history.update(load_json(save_file))
@@ -65,10 +67,12 @@ class SeleniumCrawler():
                         save_json(save_file, history)
                     except:
                         self.__logger.exception('Unable to save history')
-                while time() - st < sleep_time:
+                    self.__logger.log(
+                        level=15, msg=f"Save took {'{:.4f}'.format(time() - save_st)} seconds")
+                while time() - crawl_st < sleep_time:
                     sleep(1)
                 self.__logger.log(
-                    level=15, msg=f"Crawl took {time() - st} seconds")
+                    level=15, msg=f"Crawl took {'{:.4f}'.format(time() - crawl_st )} seconds")
         return pages
 
     def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False):
