@@ -158,6 +158,9 @@ class DAGR():
             self.deviant_resolver = self.kwargs.get(
                 'resolver') or self.plugin_class_init('resolver', DAGRDeviantResolver)
 
+    def create_crawler(self):
+        return self.devation_crawler(self)
+
     def get_queue(self):
         return self.__work_queue
 
@@ -398,7 +401,8 @@ class DAGR():
         if self.nocrawl:
             self.__logger.debug('No crawl mode, skipping pages crawl')
             return []
-        return self.devation_crawler(self).crawl(url_fmt, mode, deviant, mval, msg)
+        crawler = self.create_crawler()
+        return crawler.crawl(url_fmt, mode, deviant, mval, msg)
 
     def get_folders(self, url_fmt, folder_regex, deviant):
         deviant_lower = deviant.lower()
