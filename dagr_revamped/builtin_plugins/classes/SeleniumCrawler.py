@@ -60,9 +60,9 @@ class SeleniumCrawler():
                 self.__logger.log(level=15, msg=f"Sending page down keypress took {'{:.4f}'.format(time() - pd_st )} seconds")
                 new_pages = pages - history
                 if len(new_pages) > 0:
+                    hlen = len(history)
                     history.update(pages)
                     save_st = time()
-                    hlen = len(history)
                     try:
                         try:
                             history.update(load_json(save_file))
