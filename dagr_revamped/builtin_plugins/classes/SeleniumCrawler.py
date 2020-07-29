@@ -68,7 +68,7 @@ class SeleniumCrawler():
                         if len(history) > hlen:
                             save_json(save_file, history)
                         else:
-                            self.logger.info('History unchanged')
+                            self.__logger.info('History unchanged')
                     except:
                         self.__logger.exception('Unable to save history')
                     self.__logger.log(
@@ -90,9 +90,12 @@ class SeleniumCrawler():
             pass
         if not full_crawl:
             pages.update(history)
-            url = {
-                'gallery': f"https://www.deviantart.com/{deviant}/gallery/all",
-                'favs': f"https://www.deviantart.com/{deviant}/favourites/all"
-                }.get(mode)
+        else:
+            self.__logger.info('Performing full crawl, no history loaded')
+        url = {
+            'gallery': f"https://www.deviantart.com/{deviant}/gallery/all",
+            'favs': f"https://www.deviantart.com/{deviant}/favourites/all"
+            }.get(mode)
+
         self.__browser.open_do_login(url)
         return self.crawl_action(save_file, pages, history)
