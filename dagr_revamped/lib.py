@@ -1,6 +1,5 @@
 import json
 import logging
-import pathlib
 import re
 import sys
 import threading
