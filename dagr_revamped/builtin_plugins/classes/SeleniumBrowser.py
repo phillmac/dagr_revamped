@@ -4,7 +4,7 @@ import re
 import urllib
 
 from bs4 import BeautifulSoup
-from docopt import parse_seq
+from selenium.webdriver import ActionChains
 
 from dagr_revamped.plugin import DagrImportError
 from dagr_revamped.utils import create_browser as utils_create_browser
@@ -20,6 +20,35 @@ try:
 except ModuleNotFoundError:
     raise DagrImportError('Required package selenium not available')
 
+logger = logging.getLogger(__name__)
+
+
+def create_driver(config):
+    driver = None
+    options = webdriver.ChromeOptions()
+    options.add_argument('--disable-web-security')
+    options.add_argument("--start-maximized")
+    # options.add_argument("--no-sandbox") #See: https://bugs.chromium.org/p/chromedriver/issues/detail?id=2473
+    # options.add_argument("--disable-dev-shm-usage")
+    # options.add_argument("--remote-debugging-port=9222")
+    capabilities = {**options.to_capabilities(), **
+                    config.get('capabilities', {})}
+    ce_url = config.get('webdriver_url', None)
+    webdriver_mode = config.get('webdriver_mode')
+    if webdriver_mode == 'local':
+        logger.info('Starting selenium in local mode')
+        driver_path = config.get('driver_path', None)
+        params = {'desired_capabilities': capabilities}
+        if driver_path:
+            params['executable_path'] = driver_path
+        driver = webdriver.Chrome(**params)
+    elif webdriver_mode == 'remote':
+        logger.info('Starting selenium in remote mode')
+        driver = webdriver.Remote(
+            command_executor=ce_url,
+            desired_capabilities=capabilities)
+    return driver
+
 
 class SeleniumBrowser():
     def __init__(self, app_config, config, mature, driver=None):
@@ -32,28 +61,7 @@ class SeleniumBrowser():
         if driver:
             self.__driver = driver
         else:
-            options = webdriver.ChromeOptions()
-            options.add_argument('--disable-web-security')
-            options.add_argument("--start-maximized")
-            # options.add_argument("--no-sandbox") #See: https://bugs.chromium.org/p/chromedriver/issues/detail?id=2473
-            # options.add_argument("--disable-dev-shm-usage")
-            # options.add_argument("--remote-debugging-port=9222")
-            capabilities = {**options.to_capabilities(), **
-                            self.__config.get('capabilities', {})}
-            ce_url = self.__config.get('webdriver_url', None)
-            webdriver_mode = config.get('webdriver_mode')
-            if webdriver_mode == 'local':
-                self.__logger.info('Starting selenium in local mode')
-                driver_path = config.get('driver_path', None)
-                params = {'desired_capabilities': capabilities}
-                if driver_path:
-                    params['executable_path'] = driver_path
-                self.__driver = webdriver.Chrome(**params)
-            elif webdriver_mode == 'remote':
-                self.__logger.info('Starting selenium in remote mode')
-                self.__driver = webdriver.Remote(
-                    command_executor=ce_url,
-                    desired_capabilities=capabilities)
+            self.__driver = create_driver(self.__config)
         if self.__mature:
             self.__driver.get('https://deviantart.com')
             self.__driver.add_cookie({
@@ -167,11 +175,20 @@ class SeleniumBrowser():
                          if a.text == link_text]
         return all_links
 
+    def refresh(self):
+        self.__driver.refresh()
+
+    def find_element_by_css_selector(self, *args, **kwargs):
+        return self.__driver.find_element_by_css_selector(*args, **kwargs)
+
     def find_element_by_tag_name(self, *args, **kwargs):
         return self.__driver.find_element_by_tag_name(*args, **kwargs)
 
     def execute_async_script(self, *args, **kwargs):
         return self.__driver.execute_async_script(*args, **kwargs)
+
+    def click_element(self, elem):
+        ActionChains(self.__driver).move_to_element(elem).click().perform()
 
     def quit(self):
         self.__driver.quit()
