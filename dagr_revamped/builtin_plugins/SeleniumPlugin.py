@@ -15,7 +15,7 @@ class SeleniumPlugin():
         self.__manager = manager
         self.__app_config = manager.app_config
         self.__config = self.__app_config.get(self.__config_key, None)
-        self.__output_dir = manager.output_dir
+        self.__output_dir = self.__app_config.output_dir
         self.__browser = None
         self.__cache = self.__output_dir.joinpath(self.__config.get('cachepath','.selenium'))
 
