@@ -1,5 +1,4 @@
 import logging
-import os
 import re
 import urllib
 
@@ -54,10 +53,12 @@ class SeleniumBrowser():
     def __init__(self, app_config, config, mature, driver=None):
         self.__app_config = app_config
         self.__config = config
-        self.__logger = logging.getLogger(__name__)
         self.__mature = mature
         self.__login_url = self.__config.get(
-            'login_url', 'https://deviantart.com/users/login')
+            'login_url', [
+                'https://deviantart.com/users/login',
+                'https://www.deviantart.com/users/login'
+            ])
         if driver:
             self.__driver = driver
         else:
@@ -85,13 +86,16 @@ class SeleniumBrowser():
         WebDriverWait(self.__driver, 60).until(
             lambda d: d.execute_script('return document.readyState') == 'complete')
 
-    def wait_stale(self, element, message='Timed out while waiting for staleness', delay=3):
+    def wait_stale(self, element, message='Timed out while waiting for staleness', delay=None):
+        if delay is None:
+            delay = self.__config.get('stale_delay', 30)
+            logger.log(level=15, msg=f"Stale delay: {delay}")
         WebDriverWait(self.__driver, delay).until(
             staleness_of(element), message=message)
 
     def do_login(self):
-        if self.__driver.current_url != self.__login_url:
-            self.__driver.get('https://deviantart.com/users/login')
+        if not self.__driver.current_url in self.__login_url:
+            self.__driver.get(next(iter(self.__login_url)))
 
         user = self.__app_config.get(
             'deviantart', 'username', key_errors=False)
@@ -105,7 +109,8 @@ class SeleniumBrowser():
         self.__driver.find_element_by_id('username').send_keys(user)
         self.__driver.find_element_by_id('password').send_keys(passwd)
         self.__driver.find_element_by_id('loginbutton').send_keys(Keys.RETURN)
-        self.wait_ready()
+        while self.__driver.current_url in self.__login_url:
+            self.wait_ready()
 
     @property
     def session(self):
@@ -132,15 +137,18 @@ class SeleniumBrowser():
     def __open(self, url):
         self.__driver.get(url)
         self.wait_ready()
-        if self.__driver.current_url == self.__login_url:
+        if self.__driver.current_url in self.__login_url:
+            logger.info('Detected login required')
             self.do_login()
+            if self.__driver.current_url != url:
+                self.__driver.get(url)
 
     def open_do_login(self, url):
         self.__open(url)
-        if self.get_current_page().find('a', {'href': 'https://www.deviantart.com/users/login'}):
+        if self.get_current_page().find('a', {'href': self.__login_url}):
             self.do_login()
         if self.__driver.current_url != url:
-            self.__open(url)
+                self.__driver.get(url)
 
     def open(self, url):
         self.__open(url)
