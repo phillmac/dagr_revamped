@@ -59,12 +59,16 @@ class SeleniumCrawler():
                 if len(new_pages) > 0:
                     history.update(pages)
                     save_st = time()
+                    hlen = len(history)
                     try:
                         try:
                             history.update(load_json(save_file))
                         except:
                             self.__logger.exception('Unable to load history')
-                        save_json(save_file, history)
+                        if len(history) > hlen:
+                            save_json(save_file, history)
+                        else:
+                            self.logger.info('History unchanged')
                     except:
                         self.__logger.exception('Unable to save history')
                     self.__logger.log(
