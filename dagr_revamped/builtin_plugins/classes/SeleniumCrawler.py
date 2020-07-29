@@ -76,6 +76,7 @@ class SeleniumCrawler():
         return pages
 
     def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False):
+        full_crawl = full_crawl or self.__config.get('full_crawl', '').lower() == 'force'
         save_file = self.__cache.joinpath(f"{deviant}_{mode}.json")
         pages = set()
         history = set()
