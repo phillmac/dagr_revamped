@@ -12,7 +12,6 @@ from dagr_revamped.plugin import DagrPluginConfigError, DagrPluginDisabledError
 class SeleniumPlugin():
     def __init__(self, manager):
         self.__config_key = 'dagr.plugins.selenium'
-        self.__manager = manager
         self.__app_config = manager.app_config
         self.__config = self.__app_config.get(self.__config_key, None)
         self.__output_dir = self.__app_config.output_dir
