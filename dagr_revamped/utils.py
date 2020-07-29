@@ -221,13 +221,15 @@ def save_json(fpath, data):
     if isinstance(data, set):
         data = list(data)
     p = Path(fpath)
+    buffer = StringIO()
+    json.dump(data, buffer, indent=4, sort_keys=True)
     if p.exists():
         backup = p.with_suffix('.bak')
         if backup.exists():
             backup.unlink()
         p.rename(backup)
-    with p.open('w') as f:
-        json.dump(data, f, indent=4, sort_keys=True)
+    buffer.seek(0)
+    p.write_text(buffer.read())
     logging.getLogger(__name__).log(level=15, msg=f"Saved {len(data)} items to {fpath}")
 
 
