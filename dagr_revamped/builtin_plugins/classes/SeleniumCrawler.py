@@ -53,8 +53,11 @@ class SeleniumCrawler():
                     sleep_time = self.__config.get('page_sleep_time', 5)
                 self.__logger.info(f"URL count {len(pages)}")
                 pd_st = time()
-                body.send_keys(Keys.PAGE_DOWN)
-                self.__logger.log(level=15, msg=f"Sending page down key took {'{:.4f}'.format(time() - pd_st )} seconds")
+                try:
+                    body.send_keys(Keys.PAGE_DOWN)
+                except:
+                    self.__logger.exception('Error while sending page down keypress')
+                self.__logger.log(level=15, msg=f"Sending page down keypress took {'{:.4f}'.format(time() - pd_st )} seconds")
                 new_pages = pages - history
                 if len(new_pages) > 0:
                     history.update(pages)
