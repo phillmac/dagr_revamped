@@ -11,7 +11,7 @@ class SlugCache():
         self.__local_values = set()
         self.__remote_values = set()
         self.__values = {
-            'remote_values': self.____remote_values,
+            'remote_values': self.__remote_values,
             'local_values': self.__local_values
         }
         self.__loaded = []
