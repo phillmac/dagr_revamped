@@ -37,9 +37,12 @@ class SeleniumCrawler():
             level=15, msg=f"Collect pages took {'{:.4f}'.format(time() - collect_st)} seconds")
         return pages
 
-    def crawl_action(self, save_file, pages=set(), history=set()):
+    def crawl_action(self, save_file, pages=None, history=None):
         pcount = None
         sleep_time = 0
+        if pages is None: pages = set()
+        if isinstance(pages, list): pages = set(pages)
+        if history is None: history = set()
         body = self.__browser.find_element_by_tag_name('body')
         while (pcount is None) or (pcount < len(pages)):
             pcount = len(pages)
