@@ -319,7 +319,7 @@ class DAGRUtils():
     def walk_queue(self, callback, inc_nd=False):
         wq = self.build_queue()
         if None in wq.keys():
-            nd = wq.pop(None)
+            _nd = wq.pop(None)
         while True:
             try:
                 deviant = next(iter(sorted(wq.keys())))
