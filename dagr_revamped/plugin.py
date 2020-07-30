@@ -44,7 +44,7 @@ class PluginManager():
                         f'Unable to initialise plugin {plugin_name}', exc_info=True)
 
     def shutdown(self):
-        for func in self.get_funcs('shutdown'):
+        for _name, func in self.get_funcs('shutdown').items():
             func()
 
     @property

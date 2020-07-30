@@ -89,7 +89,7 @@ class DAGR():
             self.__work_queue = self.__build_queue()
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.pl_manager.shutdown()
