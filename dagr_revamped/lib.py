@@ -1046,7 +1046,7 @@ class DAGRCache():
 
     @staticmethod
     def get_cache(config, mode, deviant, mval=None):
-        base_dir = get_base_dir(config, "gallery", deviant, None)
+        base_dir = get_base_dir(config, mode, deviant, mval)
         return DAGRCache(config, base_dir)
 
     def __init__(self, dagr_config, base_dir):
