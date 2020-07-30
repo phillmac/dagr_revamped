@@ -43,6 +43,10 @@ class PluginManager():
                     logging.warning(
                         f'Unable to initialise plugin {plugin_name}', exc_info=True)
 
+    def shutdown(self):
+        for func in self.get_funcs('shutdown'):
+            func()
+
     @property
     def loaded_plugins(self):
         return [k for k in self.__loaded_plugins.keys()]
@@ -84,6 +88,9 @@ class PluginManager():
 
     def register_crawler(self, name, func):
         self.__register('crawler', name, func)
+
+    def register_shutdown(self, name, func):
+        self.__register('shutdown', name, func)
 
 
 class DagrImportError(Exception):

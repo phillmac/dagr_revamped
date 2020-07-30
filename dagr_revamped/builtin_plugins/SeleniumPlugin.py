@@ -32,6 +32,7 @@ class SeleniumPlugin():
                     "Selenium remote mode requires the 'webdriver_url' option to be configured")
         manager.register_browser('selenium', self.create_browser)
         manager.register_crawler('selenium', self.create_crawler)
+        manager.register_shutdown('selenium', self.shutdown)
 
     def create_browser(self, mature):
         self.__browser = Browser(self.__app_config, self.__config, mature)
@@ -41,6 +42,9 @@ class SeleniumPlugin():
         if self.__browser is None:
             raise Exception('Cannot init crawler before browser')
         return lambda ripper: Crawler(self.__app_config, self.__config, self.__browser, self.__cache)
+
+    def shutdown(self):
+        self.__cache.flush()
 
 
 def setup(manager):

@@ -116,12 +116,10 @@ def main():
     logger.log(level=5, msg=pformat(cli.arguments))
     logger.debug(pformat(cli.args))
 
-    ripper = DAGR(config=config, **cli.args)
-    ripper.run()
-    ripper.print_errors()
-    ripper.print_dl_total()
-    if ripper.browser.quit:
-        ripper.browser.quit()
+    with DAGR(config=config, **cli.args) as ripper:
+        ripper.run()
+        ripper.print_errors()
+        ripper.print_dl_total()
     if __name__ == '__main__':
         logging.shutdown()
 

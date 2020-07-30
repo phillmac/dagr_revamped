@@ -88,6 +88,14 @@ class DAGR():
         if self.deviants or (self.bulk and self.filenames) or (self.modes and 'search' in self.modes):
             self.__work_queue = self.__build_queue()
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.pl_manager.shutdown()
+        if self.browser.quit:
+            self.browser.quit()
+
     def init_mimetypes(self):
         mimetypes_init()
         for k, v in self.config.get('dagr.mimetypes').items():
