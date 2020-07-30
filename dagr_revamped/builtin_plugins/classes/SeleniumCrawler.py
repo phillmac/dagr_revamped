@@ -5,12 +5,8 @@ from time import sleep, time
 
 from selenium.webdriver.common.keys import Keys
 
-from dagr_revamped.utils import load_json, save_json
-
-
 class SeleniumCrawler():
     def __init__(self, app_config, config, browser, cache):
-        self.__app_config = app_config
         self.__logger = logging.getLogger(__name__)
         self.__config = config
         self.__browser = browser
@@ -37,7 +33,7 @@ class SeleniumCrawler():
             level=15, msg=f"Collect pages took {'{:.4f}'.format(time() - collect_st)} seconds")
         return pages
 
-    def crawl_action(self, save_file, pages=None, history=None):
+    def crawl_action(self, slug, pages=None, history=None):
         pcount = None
         sleep_time = 0
         if pages is None: pages = set()
@@ -66,17 +62,10 @@ class SeleniumCrawler():
                     hlen = len(history)
                     history.update(pages)
                     save_st = time()
-                    try:
-                        try:
-                            history.update(load_json(save_file))
-                        except:
-                            self.__logger.exception('Unable to load history')
-                        if len(history) > hlen:
-                            save_json(save_file, history)
-                        else:
-                            self.__logger.info('History unchanged')
-                    except:
-                        self.__logger.exception('Unable to save history')
+                    if len(history) > hlen:
+                        self.__cache.update(slug, history)
+                    else:
+                        self.__logger.info('History unchanged')
                     self.__logger.log(
                         level=15, msg=f"Save took {'{:.4f}'.format(time() - save_st)} seconds")
                 while time() - crawl_st < sleep_time:
@@ -87,13 +76,10 @@ class SeleniumCrawler():
 
     def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False):
         full_crawl = full_crawl or self.__config.get('full_crawl', '').lower() == 'force'
-        save_file = self.__cache.joinpath(f"{deviant}_{mode}.json")
+        slug = f"{deviant}_{mode}"
         pages = set()
         history = set()
-        try:
-            history.update(load_json(save_file))
-        except:
-            pass
+        history.update(self.__cache.query(slug))
         if not full_crawl:
             pages.update(history)
         else:
@@ -104,4 +90,4 @@ class SeleniumCrawler():
             }.get(mode)
 
         self.__browser.open_do_login(url)
-        return self.crawl_action(save_file, pages, history)
+        return self.crawl_action(slug, pages, history)

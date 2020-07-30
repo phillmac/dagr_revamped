@@ -4,6 +4,8 @@ from pprint import pprint
 
 from dagr_revamped.builtin_plugins.classes.SeleniumBrowser import \
     SeleniumBrowser as Browser
+from dagr_revamped.builtin_plugins.classes.SeleniumCache import \
+    SeleniumCache as Cache
 from dagr_revamped.builtin_plugins.classes.SeleniumCrawler import \
     SeleniumCrawler as Crawler
 from dagr_revamped.plugin import DagrPluginConfigError, DagrPluginDisabledError
@@ -14,12 +16,8 @@ class SeleniumPlugin():
         self.__config_key = 'dagr.plugins.selenium'
         self.__app_config = manager.app_config
         self.__config = self.__app_config.get(self.__config_key, None)
-        self.__output_dir = self.__app_config.output_dir
         self.__browser = None
-        self.__cache = self.__output_dir.joinpath(self.__config.get('cachepath','.selenium'))
-
-        if not self.__cache.exists():
-            self.__cache.mkdir()
+        self.__cache = Cache(self.__app_config, self.__config)
 
         if self.__config is None:
             raise DagrPluginConfigError('Selenium plugin config missing')
