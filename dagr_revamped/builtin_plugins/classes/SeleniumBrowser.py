@@ -161,6 +161,9 @@ class SeleniumBrowser():
         if '403 ERROR' in page_source:
             return Response(content=page_source, status=403)
 
+        if '504 Gateway Time-out' in page_source:
+            return Response(content=page_source, status=504)
+
         return Response(content=page_source)
 
     def get(self, url, timeout=30, *args, **kwargs):
