@@ -220,7 +220,7 @@ def artist_from_url(url):
 def save_json(fpath, data):
     if isinstance(data, set):
         data = list(data)
-    p = Path(fpath)
+    p = fpath if isinstance(fpath, Path) else Path(fpath)
     buffer = StringIO()
     json.dump(data, buffer, indent=4, sort_keys=True)
     if p.exists():
@@ -234,7 +234,7 @@ def save_json(fpath, data):
 
 
 def load_json(fpath):
-    p = Path(fpath)
+    p = fpath if isinstance(fpath, Path) else Path(fpath)
     with p.open('r') as f:
         return json.load(f)
 
