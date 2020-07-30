@@ -10,6 +10,10 @@ class SlugCache():
         self.__slug = slug
         self.__local_values = set()
         self.__remote_values = set()
+        self.__values = {
+            'remote_values': self.____remote_values,
+            'local_values': self.__local_values
+        }
         self.__loaded = []
 
         self.__caches = {
@@ -26,7 +30,7 @@ class SlugCache():
                 cpath = self.__caches.get(cname)
                 try:
                     if cpath.exists():
-                        getattr(self, f"__{ctype}_values").update(
+                        self.__values.get(f"{ctype}_values").update(
                             load_json(cpath))
                         self.__loaded.append(cname)
                         break
