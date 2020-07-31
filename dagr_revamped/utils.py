@@ -130,8 +130,7 @@ def load_bulk_files(files):
     files = [Path(fn).resolve() for fn in files]
     for fn in files:
         logger.debug('Loading file {}'.format(fn))
-        with fn.open('r') as fh:
-            update_d(bulk_queue, json.load(fh))
+        update_d(bulk_queue, load_json(fn))
     return bulk_queue
 
 
@@ -190,6 +189,15 @@ def create_browser(mature=False, user_agent=None):
         session=session,
         user_agent=user_agent)
 
+def backup_cache_file(fpath):
+    if not isinstance(fpath, Path):
+        fpath = Path(fpath)
+    fpath = fpath.resolve()
+    backup = fpath.with_suffix('.bak')
+    if fpath.exists():
+        if backup.exists():
+            backup.unlink()
+        fpath.rename(backup)
 
 def unlink_lockfile(lockfile):
     logger = logging.getLogger(__name__)
@@ -222,23 +230,18 @@ def save_json(fpath, data):
         data = list(data)
     p = fpath if isinstance(fpath, Path) else Path(fpath)
     p = p.resolve()
-    buffer = StringIO()
-    json.dump(data, buffer, indent=4, sort_keys=True)
-    if p.exists():
-        backup = p.with_suffix('.bak')
-        if backup.exists():
-            backup.unlink()
-        p.rename(backup)
-    buffer.seek(0)
-    p.write_text(buffer.read())
+    backup_cache_file(p)
+    buffered_file_write(data, p)
     logging.getLogger(__name__).log(level=15, msg=f"Saved {len(data)} items to {fpath}")
 
 
 def load_json(fpath):
     p = fpath if isinstance(fpath, Path) else Path(fpath)
     p = p.resolve()
-    with p.open('r') as f:
-        return json.load(f)
+    buffer = StringIO
+    buffer.write(p.read_text())
+    buffer.seek(0)
+    return json.load(buffer)
 
 
 class DAGRUtilsCli():

@@ -25,10 +25,10 @@ from requests import codes as req_codes
 
 from .config import DAGRConfig
 from .plugin import PluginManager
-from .utils import (StatefulBrowser, artist_from_url, compare_size,
-                    convert_queue, create_browser, filter_deviants,
-                    get_base_dir, load_bulk_files, make_dirs, shorten_url,
-                    unlink_lockfile, update_d)
+from .utils import (StatefulBrowser, artist_from_url, backup_cache_file,
+                    compare_size, convert_queue, create_browser,
+                    filter_deviants, get_base_dir, load_bulk_files, make_dirs,
+                    shorten_url, unlink_lockfile, update_d)
 
 
 class DAGR():
@@ -1053,11 +1053,16 @@ class DagrPremiumUnavailable(DagrException):
 class DAGRCache():
 
     @staticmethod
+    def get_queue(config, mode, deviant, mval=None):
+        base_dir = get_base_dir(config, mode, deviant, mval)
+        return DAGRCache(config, base_dir, queue_only=True)
+
+    @staticmethod
     def get_cache(config, mode, deviant, mval=None):
         base_dir = get_base_dir(config, mode, deviant, mval)
         return DAGRCache(config, base_dir)
 
-    def __init__(self, dagr_config, base_dir):
+    def __init__(self, dagr_config, base_dir, queue_only=False):
         self.__logger = logging.getLogger(__name__)
         if not isinstance(base_dir, Path):
             base_dir = Path(base_dir)
@@ -1077,12 +1082,8 @@ class DAGRCache():
         self.nolink_name = self.settings.get('nolink', '.nolink')
         self.queue_name = self.settings.get('queue', '.queue')
         self.premium_name = self.settings.get('premium', '.premium')
-        self.__files_list = next(self.__load_cache(filenames=self.fn_name))
         self.existing_pages = next(
             self.__load_cache(existing_pages=self.ep_name))
-        self.artists = next(self.__load_cache(artists=self.artists_name))
-        self.last_crawled = next(self.__load_cache(
-            last_crawled=self.crawled_name))
         self.no_link = next(self.__load_cache(
             no_link=self.nolink_name, warn_not_found=False))
         self.queue = next(self.__load_cache(
@@ -1100,9 +1101,21 @@ class DAGRCache():
             self.queue_name,
             self.premium_name
         ]
+
         self.downloaded_pages = []
-        if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
-            self.__convert_urls()
+
+        if queue_only:
+            self.__files_list = None
+            self.artists = None
+            self.last_crawled = None
+        else:
+            self.__files_list = next(self.__load_cache(filenames=self.fn_name))
+            self.artists = next(self.__load_cache(artists=self.artists_name))
+            self.last_crawled = next(self.__load_cache(
+                last_crawled=self.crawled_name))
+
+            if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
+                self.__convert_urls()
 
     def __enter__(self):
         try:
@@ -1189,17 +1202,10 @@ class DAGRCache():
     def __settings_exists(self):
         return self.base_dir.joinpath(self.settings_name).exists()
 
-    def __backup_cache_file(self, f):
-        backup = f.with_suffix('.bak')
-        if f.exists():
-            if backup.exists():
-                backup.unlink()
-            f.rename(backup)
-
     def __update_cache(self, cache_file, cache_contents, do_backup=True):
         full_path = self.base_dir.joinpath(cache_file)
         if do_backup:
-            self.__backup_cache_file(full_path)
+            backup_cache_file(full_path)
         self.__logger.log(level=15, msg='Updating {} cache'.format(cache_file))
         buffer = StringIO()
         json.dump(cache_contents, buffer, indent=4, sort_keys=True)
