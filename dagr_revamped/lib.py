@@ -158,7 +158,7 @@ class DAGR():
     def processor_init(self):
         if not self.deviantion_pocessor:
             self.deviantion_pocessor = self.kwargs.get(
-                'processor') or self.plugin_class_init('processor', DAGRDeviantionProcessor)
+                'processor') or self.plugin_class_init('processor', DAGRDeviationProcessor)
 
     def resolver_init(self):
         if not self.deviant_resolver:
@@ -676,7 +676,7 @@ class DAGRDeviantResolver():
         raise DagrException('Unable to get deviant info')
 
 
-class DAGRDeviantionProcessor():
+class DAGRDeviationProcessor():
     def __init__(self, ripper, cache, page_link, **kwargs):
         self.__logger = logging.getLogger(__name__)
         self.ripper = ripper
