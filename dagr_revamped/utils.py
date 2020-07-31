@@ -1,6 +1,6 @@
 import json
 import logging
-from io import StringIO
+from io import StringIO, BytesIO
 from docopt import docopt
 from random import choice
 from . import __version__
@@ -238,8 +238,8 @@ def save_json(fpath, data):
 def load_json(fpath):
     p = fpath if isinstance(fpath, Path) else Path(fpath)
     p = p.resolve()
-    buffer = StringIO
-    buffer.write(p.read_text())
+    buffer = BytesIO
+    buffer.write(p.read_bytes())
     buffer.seek(0)
     return json.load(buffer)
 
