@@ -89,6 +89,9 @@ class PluginManager():
     def register_crawler(self, name, func):
         self.__register('crawler', name, func)
 
+    def register_crawler_cache(self, name, func):
+        self.__register('crawler_cache', name, func)
+
     def register_shutdown(self, name, func):
         self.__register('shutdown', name, func)
 

@@ -33,6 +33,10 @@ class SeleniumPlugin():
         manager.register_browser('selenium', self.create_browser)
         manager.register_crawler('selenium', self.create_crawler)
         manager.register_shutdown('selenium', self.shutdown)
+        manager.register_crawler_cache('selenium', self.get_cache)
+
+    def get_cache(self):
+        return self.__cache
 
     def create_browser(self, mature):
         self.__browser = Browser(self.__app_config, self.__config, mature)
