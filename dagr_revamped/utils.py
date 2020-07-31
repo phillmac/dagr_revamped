@@ -221,6 +221,7 @@ def save_json(fpath, data):
     if isinstance(data, set):
         data = list(data)
     p = fpath if isinstance(fpath, Path) else Path(fpath)
+    p = p.resolve()
     buffer = StringIO()
     json.dump(data, buffer, indent=4, sort_keys=True)
     if p.exists():
@@ -235,6 +236,7 @@ def save_json(fpath, data):
 
 def load_json(fpath):
     p = fpath if isinstance(fpath, Path) else Path(fpath)
+    p = p.resolve()
     with p.open('r') as f:
         return json.load(f)
 
