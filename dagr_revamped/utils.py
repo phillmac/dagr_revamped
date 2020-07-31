@@ -238,10 +238,9 @@ def save_json(fpath, data):
 def load_json(fpath):
     p = fpath if isinstance(fpath, Path) else Path(fpath)
     p = p.resolve()
-    buffer = BytesIO
-    buffer.write(p.read_bytes())
-    buffer.seek(0)
+    buffer = StringIO(p.read_text())
     return json.load(buffer)
+
 
 
 class DAGRUtilsCli():
