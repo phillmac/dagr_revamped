@@ -14,7 +14,7 @@ class SlugCache():
             'remote_values': self.__remote_values,
             'local_values': self.__local_values
         }
-        self.__loaded = []
+        self.__loaded = set()
 
         self.__caches = {
             'remote primary': remote.joinpath(slug).with_suffix('.json'),
@@ -32,7 +32,7 @@ class SlugCache():
                     if cpath.exists():
                         self.__values.get(f"{ctype}_values").update(
                             load_json(cpath))
-                        self.__loaded.append(cname)
+                        self.__loaded.add(cname)
                         break
                 except:
                     logger.log(
