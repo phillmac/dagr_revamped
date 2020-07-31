@@ -39,6 +39,8 @@ class SlugCache():
                         level=25, msg=f"Failed to load {self.__slug} {cname} cache {cpath}", exc_info=True)
         if not len(self.__loaded) > 0:
             logger.warning(f"Unable to load any caches for {self.__slug}")
+        else:
+            logger.log(level=15, msg=f"Loaded caches {self.__loaded}")
 
     @property
     def local_stale(self):
