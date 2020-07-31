@@ -855,11 +855,13 @@ class DAGRDeviationProcessor():
 
     def save_content(self):
         dest = self.get_dest()
+        tmp = dest.with_suffix('.tmp')
         tries = {}
         while True:
             try:
                 response = self.get_response()
-                dest.write_bytes(self.__response.content)
+                tmp.write_bytes(self.__response.content)
+                tmp.rename(dest)
                 self.__logger.log(
                     level=4, msg='Wrote devation to {}'.format(dest))
                 break
