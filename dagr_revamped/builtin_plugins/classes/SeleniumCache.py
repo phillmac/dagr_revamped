@@ -59,6 +59,7 @@ class SlugCache():
         save_json(self.__caches.get('remote primary'), self.__remote_values)
 
     def flush(self):
+        logger.log(level=15, msg=f"Flushing {self.__slug}")
         self.__load()
         if self.local_stale:
             self.__flush_local()
@@ -88,6 +89,7 @@ class SeleniumCache():
         self.__remote_cache = output_dir.joinpath(
             config.get('remote_cache_path', '.selenium')).expanduser().resolve()
         self.__caches = {}
+        self.__flushed = {}
 
         if not self.__local_cache.exists():
             self.__local_cache.mkdir(parents=True)
@@ -98,11 +100,13 @@ class SeleniumCache():
     def flush(self, slug=None):
         if slug is None:
             for s in self.__caches.keys():
-                self.__caches.get(s).flush()
+                if not self.__flushed.get(s, False) == True:
+                    self.__caches.get(s).flush()
         else:
             cache = self.__caches.get(slug)
             if cache:
                 cache.flush()
+                self.__flushed[slug] = True
 
     def query(self, slug):
         if not slug in self.__caches.keys():
@@ -115,3 +119,4 @@ class SeleniumCache():
             self.__caches[slug] = SlugCache(
                 slug, self.__local_cache, self.__remote_cache)
         self.__caches.get(slug).update(values)
+        self.__flushed[slug] = False
