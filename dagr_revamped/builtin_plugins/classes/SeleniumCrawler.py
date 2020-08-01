@@ -56,7 +56,7 @@ class SeleniumCrawler():
                     body.send_keys(Keys.PAGE_DOWN)
                 except:
                     self.__logger.exception('Error while sending page down keypress')
-                self.__logger.log(level=15, msg=f"Sending page down keypress took {'{:.4f}'.format(time() - pd_st )} seconds")
+                self.__logger.log(level=15, msg=f"Sending page down keypress took {'{:.4f}'.format(time() - pd_st)} seconds")
                 new_pages = pages - history
                 if len(new_pages) > 0:
                     hlen = len(history)
