@@ -388,10 +388,7 @@ class DAGR():
                     msg_formatted, len(pages)))
                 self.process_deviations(cache, pages)
                 if not self.nocrawl and not self.test:
-                    cache.save_crawled(self.maxpages is None)
-                    cache.save_nolink()
-                    cache.save_queue()
-                    cache.save_premium()
+                    cache.save_extras(self.maxpages is None)
         except (DagrCacheLockException):
             pass
 
@@ -1283,6 +1280,13 @@ class DAGRCache():
             if self.downloaded_pages or fix_artists or save_artists == 'force':
                 self.update_artists(save_artists == 'force')
         self.__logger.log(level=5, msg=pformat(locals()))
+
+    def save_extras(self, full_crawl):
+        self.save_nolink()
+        self.save_queue()
+        self.save_premium()
+        if full_crawl is True or full_crawl is False:
+            self.save_crawled(full_crawl)
 
     def save_nolink(self):
         if not self.no_link is None:
