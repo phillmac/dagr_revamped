@@ -206,7 +206,7 @@ def unlink_lockfile(lockfile):
     if lockfile.exists():
         try:
             lockfile.unlink()
-        except PermissionError:
+        except (PermissionError, OSError):
             logger.warning('Unable to unlock {}'.format(lockfile.parent))
 
 
