@@ -72,7 +72,7 @@ class SeleniumCrawler():
                     sleep(1)
                 self.__logger.log(
                     level=15, msg=f"Crawl took {'{:.4f}'.format(time() - crawl_st)} seconds")
-                self.__cache.flush(slug)
+        self.__cache.flush(slug)
         return pages
 
     def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False):
