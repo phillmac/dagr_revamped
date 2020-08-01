@@ -392,7 +392,7 @@ class DAGR():
                     cache.save_nolink()
                     cache.save_queue()
                     cache.save_premium()
-        except (portalocker.exceptions.LockException, portalocker.exceptions.AlreadyLocked):
+        except (DagrCacheLockException):
             pass
 
     def rip_single(self, url_fmt, deviant, mval):
@@ -1051,6 +1051,9 @@ class DagrPremiumUnavailable(DagrException):
         super(DagrPremiumUnavailable, self).__init__(
             'Premium content unavailable')
 
+class DagrCacheLockException(Exception):
+    pass
+
 
 class DAGRCache():
 
@@ -1127,9 +1130,9 @@ class DAGRCache():
                     self.__lock_path, fail_when_locked=True)
             self.__lock.acquire()
             return self
-        except (portalocker.exceptions.LockException, portalocker.exceptions.AlreadyLocked):
+        except (portalocker.exceptions.LockException, portalocker.exceptions.AlreadyLocked, OSError) as ex:
             self.__logger.warning(f"Skipping locked directory {self.base_dir}")
-            raise
+            raise DagrCacheLockException(ex)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.__lock.release()
