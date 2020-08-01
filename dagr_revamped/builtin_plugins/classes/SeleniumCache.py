@@ -95,9 +95,14 @@ class SeleniumCache():
         if not self.__remote_cache.exists():
             self.__remote_cache.mkdir()
 
-    def flush(self):
-        for s in self.__caches.keys():
-            self.__caches.get(s).flush()
+    def flush(self, slug=None):
+        if slug is None:
+            for s in self.__caches.keys():
+                self.__caches.get(s).flush()
+        else:
+            cache = self.__caches.get(slug)
+            if cache:
+                cache.flush()
 
     def query(self, slug):
         if not slug in self.__caches.keys():
