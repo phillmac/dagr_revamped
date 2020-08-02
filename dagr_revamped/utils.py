@@ -1,6 +1,6 @@
 import json
 import logging
-from io import StringIO, BytesIO
+from io import StringIO
 from docopt import docopt
 from random import choice
 from . import __version__
@@ -14,6 +14,8 @@ from requests import(
     session as req_session, adapters as req_adapters
 )
 
+logger = logging.getLogger(__name__)
+
 
 def make_dirs(directory):
     logger = logging.getLogger(__name__)
@@ -22,6 +24,7 @@ def make_dirs(directory):
     if not directory.exists():
         directory.mkdir(parents=True)
         logger.debug('Created dir {}'.format(directory))
+
 
 def strip_topdir(directory):
     if not isinstance(directory, Path):
@@ -189,6 +192,7 @@ def create_browser(mature=False, user_agent=None):
         session=session,
         user_agent=user_agent)
 
+
 def backup_cache_file(fpath):
     if not isinstance(fpath, Path):
         fpath = Path(fpath)
@@ -198,6 +202,7 @@ def backup_cache_file(fpath):
         if backup.exists():
             backup.unlink()
         fpath.rename(backup)
+
 
 def unlink_lockfile(lockfile):
     logger = logging.getLogger(__name__)
@@ -224,23 +229,51 @@ def artist_from_url(url):
     return (artist_url_p, artist_name, shortname)
 
 
-
-def save_json(fpath, data):
+def save_json(fpath, data, do_backup=True):
     if isinstance(data, set):
         data = list(data)
     p = fpath if isinstance(fpath, Path) else Path(fpath)
     p = p.resolve()
-    backup_cache_file(p)
+    if do_backup:
+        backup_cache_file(p)
     buffered_file_write(data, p)
-    logging.getLogger(__name__).log(level=15, msg=f"Saved {len(data)} items to {fpath}")
+    logger.log(
+        level=15, msg=f"Saved {len(data)} items to {fpath}")
 
 
 def load_json(fpath):
-    p = fpath if isinstance(fpath, Path) else Path(fpath)
-    p = p.resolve()
+    p = fpath.resolve() if isinstance(fpath, Path) else Path(fpath).resolve()
     buffer = StringIO(p.read_text())
     return json.load(buffer)
 
+
+def load_primary_or_backup(fpath, use_backup=True, warn_not_found=True):
+    if not isinstance(fpath, Path):
+        fpath = Path(fpath)
+    backup = fpath.with_suffix('.bak')
+    try:
+        if fpath.exists():
+            return load_json(fpath)
+        elif warn_not_found:
+            logger.log(
+                level=15, msg='Primary {} cache not found'.format(fpath.name))
+    except json.JSONDecodeError:
+        logger.warning(
+            'Unable to decode primary {} cache:'.format(fpath.name), exc_info=True)
+        fpath.replace(fpath.with_suffix('.bad'))
+    except:
+        logger.warning(
+            'Unable to load primary {} cache:'.format(fpath.name), exc_info=True)
+    try:
+        if use_backup:
+            if backup.exists():
+                return load_json(backup)
+        elif warn_not_found:
+            logger.log(
+                level=15, msg='Backup {} cache not found'.format(backup.name))
+    except:
+        logger.warning(
+            'Unable to load backup {} cache:'.format(backup.name), exc_info=True)
 
 
 class DAGRUtilsCli():
@@ -290,8 +323,7 @@ Options:
 class DAGRUtils():
 
     def __init__(self, **kwargs):
-        from .lib import DAGRCache
-        self.__logger = logging.getLogger(__name__)
+        from .DAGRCache import DAGRCache
         self.__utils_cmd_maping = {
             'shortenurlcache': self.shorten_url_cache,
             'renamedeviant': self.rename_deviant,
