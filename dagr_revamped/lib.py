@@ -783,6 +783,7 @@ class DAGRDeviationProcessor():
             self.ripper.handle_download_error(self.page_link, ex)
         except Dagr404Exception as ex:
             self.cache.add_httperror(self.page_link, ex)
+            self.ripper.handle_download_error(self.page_link, ex)
         except DagrException as ex:
             self.ripper.handle_download_error(self.page_link, ex)
             return
