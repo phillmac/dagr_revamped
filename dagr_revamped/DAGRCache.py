@@ -294,7 +294,7 @@ class DAGRCache():
 
     @property
     def nl_exclude(self):
-        return set([*self.downloaded_pages, *self.__no_link, *self.existing_pages, *self.__premium, *self.__httperrors])
+        return set([*self.downloaded_pages, *self.existing_pages, *self.__no_link, *self.__premium, *self.__httperrors])
 
     def add_nolink(self, page):
         if page in self.nl_exclude:
@@ -311,6 +311,16 @@ class DAGRCache():
             self.__nolink_stale = True
             self.__no_link = list(set(self.__no_link) - remove)
         return rcount
+
+    def prune_nolink(self):
+        nlcount = len(self.__no_link)
+        keep = set(self.__no_link) - self.nl_exclude
+        kcount = len(keep)
+        delta = nlcount - kcount
+        if not delta == 0:
+            self.__nolink_stale = True
+            self.__no_link = list(keep)
+        return delta
 
     def get_nolink(self):
         return copy(self.__no_link)
@@ -336,6 +346,16 @@ class DAGRCache():
             self.__queue += enqueue
             self.save_queue()
         return len(enqueue)
+
+    def prune_queue(self):
+        qcount = len(self.__queue)
+        keep = set(self.__queue) - self.q_exclude
+        kcount = len(keep)
+        delta = qcount - kcount
+        if not delta == 0:
+            self.__queue_stale = True
+            self.__queue = list(keep)
+        return delta
 
     def remove_page_extras(self, page, reason):
         if page in self.__queue:
