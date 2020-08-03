@@ -2,6 +2,7 @@ import logging
 import sys
 import threading
 from logging.handlers import RotatingFileHandler
+from pathlib import Path
 
 __logging_ready = threading.Event()
 __buffered_records = {}
@@ -29,10 +30,11 @@ def init_logging(config):
     frmt = config.get('logging', 'format')
     logging.basicConfig(format=frmt,
                         stream=sys.stdout, level=config.map_log_level() or logging.WARN)
-    for fn in config.get('logging.files').values():
-        log(lname=__name__, level=logging.info,
-            msg=f"Creating logging file handler {fn}")
-        fh = RobustRFileHandler(filename=fn,
+    for fn in config.get('logging.files.locations').values():
+        fp = Path(fn).expanduser().resolve()
+        log(lname=__name__, level=logging.INFO,
+            msg=f"Creating logging file handler {fp}")
+        fh = RobustRFileHandler(filename=fp,
                                 maxBytes=config.get(
                                     'logging.files', 'maxbytes'),
                                 backupCount=config.get(

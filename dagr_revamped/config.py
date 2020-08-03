@@ -126,10 +126,12 @@ class DAGRConfig(DAGRBaseConf):
             5: 4
         },
         'Logging.Files': {
-            'Local': '~/dagr.log.txt',
-            'Remote': 'dagr.log.txt',
             'MaxBytes': 1024**2*10,
             'BackupCount': 5
+        },
+        'Logging.Files.Locations': {
+            'Local': '~/dagr.log.txt',
+            'Remote': 'dagr.log.txt',
         },
         'Conf': {
             'Version': '0.1.0'
@@ -258,8 +260,8 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr': {
             'OutputDirectory': str(Path.cwd())
         },
-        'Logging.Files': {
-            'Remote': f"{get_hostname()}dagr.log.txt"
+        'Logging.Files.Locations': {
+            'Remote': f"{get_hostname()}.dagr.log.txt"
         },
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', ['Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl']),
