@@ -190,7 +190,7 @@ class DAGRConfig(DAGRBaseConf):
             'Reverse': False,
             # 'RecursionLimit': 10000,
             'SaveProgress': 50,
-            'DownloadDelay': 3.00,
+            'DownloadDelay': 5.00,
             'Verbose': False,
         },
         'Dagr.SubDirs': {
@@ -264,7 +264,7 @@ class DAGRConfig(DAGRBaseConf):
             'Remote': f"{get_hostname()}.dagr.log.txt"
         },
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
-        'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', ['Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl']),
+        'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', ['Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Disable_Login']),
         'Deviantart': get_os_options('Deviantart', ['Username', 'Password'])
     }
     SETTINGS_MAP = {

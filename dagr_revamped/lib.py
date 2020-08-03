@@ -437,7 +437,7 @@ class DAGR():
         return resolver.resolve(deviant)
 
     def process_deviations(self, cache, pages):
-        pstart = time()
+        dl_delay = self.download_delay()
         if self.nocrawl:
             pages = cache.existing_pages
         if not (self.overwrite() or self.fixmissing or self.verifybest):
@@ -448,6 +448,7 @@ class DAGR():
             level=15, msg='Total deviations to download: {}'.format(page_count))
         progress = self.progress()
         for count, link in enumerate(pages, start=1):
+            pstart = time()
             if not self.verifybest and progress > 0 and count % progress == 0:
                 cache.save()
             self.__logger.info(
@@ -456,9 +457,10 @@ class DAGR():
             dp.process_deviation()
             if not self.keep_running():
                 return
-            dl_delay = self.download_delay()
-            while time() - pstart < dl_delay:
-                sleep(1)
+            delay_needed = dl_delay - (time() - pstart)
+            if delay_needed > 0:
+                self.__logger.log(level=5, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
+                sleep(delay_needed)
         cache.save('force' if self.fixartists else True)
 
     def handle_download_error(self, link, link_error):
@@ -786,7 +788,6 @@ class DAGRDeviationProcessor():
             self.ripper.handle_download_error(self.page_link, ex)
         except DagrException as ex:
             self.ripper.handle_download_error(self.page_link, ex)
-            return
         else:
             self.cache.add_link(self.page_link)
 
