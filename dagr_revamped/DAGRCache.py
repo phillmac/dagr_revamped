@@ -271,6 +271,9 @@ class DAGRCache():
         self.__premium.append(page)
         self.__premium_stale = True
 
+    def get_premium(self):
+        return copy(self.__premium)
+
     def get_httperrors(self):
         return copy(self.__httperrors)
 
