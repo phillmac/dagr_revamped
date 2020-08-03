@@ -1,6 +1,7 @@
-import sys
 import logging
+import sys
 import threading
+from logging.handlers import RotatingFileHandler
 
 __logging_ready = threading.Event()
 __buffered_records = {}
@@ -25,8 +26,21 @@ def log(lname, *args, **kwargs):
 
 
 def init_logging(config):
-    logging.basicConfig(format=config.get('logging', 'format'),
+    frmt = config.get('logging', 'format')
+    logging.basicConfig(format=frmt,
                         stream=sys.stdout, level=config.map_log_level() or logging.WARN)
+    for fn in config.get('logging.files').values():
+        log(lname=__name__, level=logging.info,
+            msg=f"Creating logging file handler {fn}")
+        fh = RobustRFileHandler(filename=fn,
+                                maxBytes=config.get(
+                                    'logging.files', 'maxbytes'),
+                                backupCount=config.get(
+                                    'logging.files', 'backupcount')
+                                )
+        fh.setFormatter(logging.Formatter(frmt))
+        logging.getLogger().addHandler(fh)
+
     for k, v in config.get('logging.extra').items():
         logging.addLevelName(int(k), v)
     __logging_ready.set()
@@ -38,3 +52,19 @@ def flush_buffer():
         logger = logging.getLogger(lname)
         for args, kwargs in records:
             logger.log(*args, **kwargs)
+
+
+class RobustRFileHandler(RotatingFileHandler):
+
+    def shouldRollover(self, record):
+        try:
+            return super().shouldRollover(record)
+        except (OSError, ValueError):
+            try:
+                self.stream.close()
+                self.stream = None
+                self.stream = self._open()
+                return super().shouldRollover(record)
+            except:
+                print(f"Unable to handle logging error:")
+                raise

@@ -4,6 +4,7 @@ import os
 from configparser import ConfigParser, NoSectionError
 from copy import deepcopy
 from pathlib import Path
+from platform import node as get_hostname
 from pprint import pformat, pprint
 
 from docopt import docopt
@@ -124,6 +125,12 @@ class DAGRConfig(DAGRBaseConf):
             4: 5,
             5: 4
         },
+        'Logging.Files': {
+            'Local': '~/dagr.log.txt',
+            'Remote': 'dagr.log.txt',
+            'MaxBytes': 1024**2*10,
+            'BackupCount': 5
+        },
         'Conf': {
             'Version': '0.1.0'
         },
@@ -181,7 +188,7 @@ class DAGRConfig(DAGRBaseConf):
             'Reverse': False,
             # 'RecursionLimit': 10000,
             'SaveProgress': 50,
-            'DownloadDelay': 0.300,
+            'DownloadDelay': 2.00,
             'Verbose': False,
         },
         'Dagr.SubDirs': {
@@ -250,6 +257,9 @@ class DAGRConfig(DAGRBaseConf):
     OVERRIDES = {
         'Dagr': {
             'OutputDirectory': str(Path.cwd())
+        },
+        'Logging.Files': {
+            'Remote': f"{get_hostname()}dagr.log.txt"
         },
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', ['Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl']),
