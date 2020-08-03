@@ -457,7 +457,7 @@ class DAGR():
             if not self.keep_running():
                 return
             dl_delay = self.download_delay()
-            while not time() - pstart < dl_delay:
+            while time() - pstart < dl_delay:
                 sleep(1)
         cache.save('force' if self.fixartists else True)
 
