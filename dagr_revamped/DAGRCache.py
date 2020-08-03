@@ -1,5 +1,7 @@
 import logging
+from copy import copy
 from pathlib import Path, PurePosixPath
+from platform import node as get_hostname
 from pprint import pformat
 from time import time
 
@@ -14,7 +16,7 @@ logger = logging.getLogger(__name__)
 class DAGRCache():
 
     @staticmethod
-    def get_queue(config, mode, deviant, mval=None):
+    def with_queue_only(config, mode, deviant, mval=None):
         base_dir = get_base_dir(config, mode, deviant, mval)
         return DAGRCache(config, base_dir, queue_only=True)
 
@@ -42,14 +44,18 @@ class DAGRCache():
         self.nolink_name = self.settings.get('nolink', '.nolink')
         self.queue_name = self.settings.get('queue', '.queue')
         self.premium_name = self.settings.get('premium', '.premium')
+        self.httperrors_name = self.settings.get('httperrors', '.httperrors')
         self.existing_pages = next(
             self.__load_cache(existing_pages=self.ep_name))
-        self.no_link = next(self.__load_cache(
+        self.__no_link = next(self.__load_cache(
             no_link=self.nolink_name, warn_not_found=False))
-        self.queue = next(self.__load_cache(
+        self.__queue = next(self.__load_cache(
             queue=self.queue_name, warn_not_found=False))
-        self.premium = next(self.__load_cache(
+        self.__premium = next(self.__load_cache(
             premium=self.premium_name, warn_not_found=False))
+        self.__httperrors = next(self.__load_cache(
+            httperrors=self.httperrors_name, warn_not_found=False))
+
         self.__excluded_fnames = [
             '.lock',
             self.settings_name,
@@ -59,10 +65,16 @@ class DAGRCache():
             self.crawled_name,
             self.nolink_name,
             self.queue_name,
-            self.premium_name
+            self.premium_name,
+            self.httperrors_name
         ]
 
         self.downloaded_pages = []
+
+        self.__queue_stale = False
+        self.__premium_stale = False
+        self.__nolink_stale = False
+        self.__httperrors_stale = False
 
         if queue_only:
             self.__files_list = None
@@ -115,7 +127,8 @@ class DAGRCache():
             'last_crawled': lambda: {'short': 'never', 'full': 'never'},
             'no_link': lambda: [],
             'queue': lambda: [],
-            'premium': lambda: []
+            'premium': lambda: [],
+            'httperrors': lambda: {}
         }
         for cache_type, cache_file in kwargs.items():
             cache_contents = self.__load_cache_file(
@@ -213,23 +226,36 @@ class DAGRCache():
         logger.log(level=5, msg=pformat(locals()))
 
     def save_extras(self, full_crawl):
-        self.save_nolink()
-        self.save_queue()
-        self.save_premium()
-        if full_crawl is True or full_crawl is False:
+        if self.__nolink_stale:
+            self.save_nolink()
+        if self.__queue_stale:
+            self.save_queue()
+        if self.__premium_stale:
+            self.save_premium()
+        if self.__httperrors_stale:
+            self.save_httperrors()
+        if not full_crawl is None:
             self.save_crawled(full_crawl)
 
     def save_nolink(self):
-        if not self.no_link is None:
-            self.__update_cache(self.nolink_name, self.no_link)
+        if not self.__no_link is None:
+            self.__update_cache(self.nolink_name, self.__no_link)
+        self.__nolink_stale = False
 
     def save_queue(self):
-        if not self.queue is None:
-            self.__update_cache(self.queue_name, self.queue)
+        if not self.__queue is None:
+            self.__update_cache(self.queue_name, self.__queue)
+        self.__queue_stale = False
 
     def save_premium(self):
-        if not self.premium is None:
-            self.__update_cache(self.premium_name, self.premium)
+        if not self.__premium is None:
+            self.__update_cache(self.premium_name, self.__premium)
+        self.__premium_stale = False
+
+    def save_httperrors(self):
+        if not self.__httperrors is None:
+            self.__update_cache(self.httperrors_name, self.__httperrors)
+        self.__httperrors_stale = False
 
     def save_crawled(self, full_crawl=False):
         if full_crawl:
@@ -239,48 +265,102 @@ class DAGRCache():
         self.__update_cache(self.crawled_name, self.last_crawled)
 
     def add_premium(self, page):
-        if page in self.premium:
+        if page in self.__premium:
             return
-        self.dequeue_page(page)
-        self.premium.append(page)
+        self.remove_page_extras(page, 'premium')
+        self.__premium.append(page)
+        self.__premium_stale = True
+
+    def get_httperrors(self):
+        return copy(self.__httperrors)
+
+    @property
+    def httperrors_exclude(self):
+        return set([*self.downloaded_pages, *self.existing_pages])
+
+    def add_httperror(self, page, page_error):
+        if not page in self.httperrors_exclude:
+            self.__httperrors_stale = True
+            if not page in self.__httperrors:
+                self.__httperrors[page] = []
+            self.__httperrors[page].append({
+                'host': get_hostname(),
+                'time': time(),
+                'error_type': str(type(page_error))
+            })
 
     @property
     def nl_exclude(self):
-        return set([*self.downloaded_pages, *self.existing_pages, *self.no_link, *self.premium])
+        return set([*self.downloaded_pages, *self.__no_link, *self.existing_pages, *self.__premium, *self.__httperrors])
 
     def add_nolink(self, page):
         if page in self.nl_exclude:
             return
-        if page in self.queue:
-            self.queue.remove(page)
-        self.no_link.append(page)
+        self.__nolink_stale = True
+        self.remove_page_extras(page, 'nolink')
+        self.__no_link.append(page)
+
+    def remove_nolink(self, pages):
+        remove = set([p for p in (pages if isinstance(pages, list)
+                                  else list(pages)) if p in self.__no_link])
+        rcount = len(remove)
+        if rcount > 0:
+            self.__nolink_stale = True
+            self.__no_link = list(set(self.__no_link) - remove)
+        return rcount
+
+    def get_nolink(self):
+        return copy(self.__no_link)
+
+    def get_queue(self):
+        return copy(self.__queue)
 
     @property
     def q_exclude(self):
-        return set([*self.downloaded_pages, *self.existing_pages, *self.no_link, *self.queue, *self.premium])
+        return set([*self.downloaded_pages, *self.existing_pages, *self.__queue, *self.__premium, *self.__httperrors])
 
     def add_queue(self, page):
         if page in self.q_exclude:
             return
-        self.queue.append(page)
+        self.__queue_stale = True
+        self.__queue.append(page)
 
-    def dequeue_page(self, page):
-        if page in self.queue:
-            self.queue.remove(page)
+    def update_queue(self, pages):
+        exclude = self.q_exclude
+        enqueue = [p for p in pages if not p in exclude]
+        if enqueue:
+            self.__queue_stale = True
+            self.__queue += enqueue
+            self.save_queue()
+        return len(enqueue)
+
+    def remove_page_extras(self, page, reason):
+        if page in self.__queue:
+            self.__queue.remove(page)
+            self.__queue_stale = True
             logger.log(level=5, msg=f"Removed {page} from queue")
-        if page in self.no_link:
-            self.no_link.remove(page)
+        if not reason == 'nolink' and page in self.__no_link:
+            self.__no_link.remove(page)
+            self.__nolink_stale = True
             logger.log(level=5, msg=f"Removed {page} from no-link list")
+        if not reason == 'premium' and page in self.__premium:
+            self.__premium.remove(page)
+            self.__premium_stale = True
+            logger.log(level=5, msg=f"Removed {page} from premium list")
+        if not reason == 'httperror' and page in self.__httperrors:
+            del self.__httperrors[page]
+            self.__httperrors_stale = True
+            logger.log(level=5, msg=f"Removed {page} from httperrors list")
 
     def add_link(self, page):
-        self.dequeue_page(page)
+        self.remove_page_extras(page, 'found')
         if self.settings.get('shorturls'):
             page = shorten_url(page)
         if page not in self.existing_pages:
             self.downloaded_pages.append(page)
             self.existing_pages.append(page)
-            if page in self.queue:
-                self.queue.re
+            if page in self.__queue:
+                self.__queue.re
         elif self.dagr_config.get('dagr', 'overwrite'):
             self.downloaded_pages.append(page)
 

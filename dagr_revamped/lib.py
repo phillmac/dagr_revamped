@@ -780,6 +780,8 @@ class DAGRDeviationProcessor():
         except DagrPremiumUnavailable as ex:
             self.cache.add_premium(self.page_link)
             self.ripper.handle_download_error(self.page_link, ex)
+        except Dagr404Exception as ex:
+            self.cache.add_httperror(self.page_link, ex)
         except DagrException as ex:
             self.ripper.handle_download_error(self.page_link, ex)
             return
@@ -900,6 +902,8 @@ class DAGRDeviationProcessor():
         soup_config = self.config.get('dagr.bs4.config')
         resp = self.browser.open(self.page_link)
         if not resp.status_code == req_codes.ok:
+            if resp.status_code == req_codes.not_found:
+                raise Dagr404Exception()
             raise DagrException(
                 'incorrect status code - {}'.format(resp.status_code))
         current_page = self.browser.get_current_page()
@@ -1043,5 +1047,10 @@ class DagrException(Exception):
 
 class DagrPremiumUnavailable(DagrException):
     def __init__(self):
-        super(DagrPremiumUnavailable, self).__init__(
+        super().__init__(
             'Premium content unavailable')
+
+class Dagr404Exception(DagrException):
+    def __init__(self):
+        super().__init__(
+            'HTTP 404 error')
