@@ -112,7 +112,7 @@ class DAGRCache():
 
     def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
         full_path = self.base_dir.joinpath(cache_file)
-        return load_primary_or_backup(full_path)
+        return load_primary_or_backup(full_path, use_backup=use_backup, warn_not_found=warn_not_found)
 
     def __load_cache(self, use_backup=True, warn_not_found=True, **kwargs):
         def filenames():
