@@ -12,7 +12,7 @@ from mimetypes import init as mimetypes_init
 from os import utime
 from pathlib import Path, PurePosixPath
 from pprint import pformat
-from time import mktime, sleep
+from time import mktime, sleep, time
 
 import deviantart
 from bs4 import BeautifulSoup
@@ -437,6 +437,7 @@ class DAGR():
         return resolver.resolve(deviant)
 
     def process_deviations(self, cache, pages):
+        pstart = time()
         if self.nocrawl:
             pages = cache.existing_pages
         if not (self.overwrite() or self.fixmissing or self.verifybest):
@@ -456,8 +457,8 @@ class DAGR():
             if not self.keep_running():
                 return
             dl_delay = self.download_delay()
-            if not dl_delay == 0:
-                sleep(dl_delay)
+            while not time() - pstart < dl_delay:
+                sleep(1)
         cache.save('force' if self.fixartists else True)
 
     def handle_download_error(self, link, link_error):
