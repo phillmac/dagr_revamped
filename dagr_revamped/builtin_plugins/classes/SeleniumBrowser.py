@@ -54,6 +54,7 @@ class SeleniumBrowser():
         self.__app_config = app_config
         self.__config = config
         self.__mature = mature
+        self.__disable_login = self.__config.get('disable_login')
         self.__login_url = self.__config.get(
             'login_url', [
                 'https://deviantart.com/users/login',
@@ -94,6 +95,9 @@ class SeleniumBrowser():
             staleness_of(element), message=message)
 
     def do_login(self):
+        if self.__disable_login:
+            logger.warning('Ignoring login request')
+            return
         if not self.__driver.current_url in self.__login_url:
             self.__driver.get(next(iter(self.__login_url)))
 
