@@ -783,7 +783,7 @@ class DAGRDeviationProcessor():
         except DagrPremiumUnavailable as ex:
             self.cache.add_premium(self.page_link)
             self.ripper.handle_download_error(self.page_link, ex)
-        except Dagr404Exception as ex:
+        except (Dagr403Exception, Dagr404Exception) as ex:
             self.cache.add_httperror(self.page_link, ex)
             self.ripper.handle_download_error(self.page_link, ex)
         except DagrException as ex:
@@ -905,6 +905,8 @@ class DAGRDeviationProcessor():
         soup_config = self.config.get('dagr.bs4.config')
         resp = self.browser.open(self.page_link)
         if not resp.status_code == req_codes.ok:
+            if resp.status_code == req_codes.forbidden:
+                raise Dagr403Exception()
             if resp.status_code == req_codes.not_found:
                 raise Dagr404Exception()
             raise DagrException(
@@ -1057,3 +1059,15 @@ class Dagr404Exception(DagrException):
     def __init__(self):
         super().__init__(
             'HTTP 404 error')
+    @property
+    def httpcode(self):
+        return 404
+
+
+class Dagr403Exception(DagrException):
+    def __init__(self):
+        super().__init__(
+            'HTTP 403 error')
+    @property
+    def httpcode(self):
+        return 403
