@@ -35,7 +35,7 @@ setup(
         'console_scripts': [
             'dagr.py=dagr_revamped.cli:main',
             'dagr-bulk.py=dagr_revamped.bulk:main',
-            'dagr-utils.py=dagr_revamped.utils:main',
+            'dagr-utils.py=dagr_revamped.utils_cli:main',
             'dagr-config.py=dagr_revamped.config:main'
         ]
     }

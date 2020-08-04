@@ -1,18 +1,14 @@
 import json
 import logging
+from collections.abc import Iterable, Mapping
 from io import StringIO
-from docopt import docopt
-from random import choice
-from . import __version__
-from pprint import pformat, pprint
-from .config import DAGRConfig
-from .dagr_logging import init_logging, log as dagr_log
 from pathlib import Path, PurePosixPath
+from pprint import pformat, pprint
+from random import choice
+
 from mechanicalsoup import StatefulBrowser
-from collections.abc import Mapping, Iterable
-from requests import(
-    session as req_session, adapters as req_adapters
-)
+from requests import adapters as req_adapters
+from requests import session as req_session
 
 logger = logging.getLogger(__name__)
 
@@ -20,16 +16,18 @@ logger = logging.getLogger(__name__)
 def make_dirs(directory):
     logger = logging.getLogger(__name__)
     if not isinstance(directory, Path):
-        directory = Path(directory)
+        directory = Path(directory).resolve()
     if not directory.exists():
         directory.mkdir(parents=True)
         logger.debug('Created dir {}'.format(directory))
 
 
-def strip_topdir(directory):
+def strip_topdirs(config, directory):
     if not isinstance(directory, Path):
-        directory = Path(directory)
-    dirparts = directory.parts[2:]
+        directory = Path(directory).resolve()
+
+    index = len(config.output_dir.parts)
+    dirparts = directory.parts[index:]
     return Path(*dirparts)
 
 
@@ -275,181 +273,3 @@ def load_primary_or_backup(fpath, use_backup=True, warn_not_found=True):
         logger.warning(
             'Unable to load backup {} cache:'.format(backup.name), exc_info=True)
 
-
-class DAGRUtilsCli():
-
-    """
-{} v{}
-
-Usage:
-dagr-utils.py renamedeviant OLD NEW [-v|-vv|--debug=DEBUGLVL] FILENAMES ...
-dagr-utils.py shortenurlcache [-v|-vv|--debug=DEBUGLVL] FILENAMES ...
-dagr-utils.py finddupes [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
-dagr-utils.py updatedirscache [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
-
-
-Options:
-    -v --verbose                            Show more detail, -vv for debug
-    --debug=DEBUGLVL                        Show still more detail
-
-    """
-    NAME = __package__
-    VERSION = __version__
-
-    def __init__(self, config):
-        self.arguments = arguments = docopt(self.__doc__.format(
-            self.NAME, self.VERSION), version=self.VERSION)
-        ll_arg = logging.WARN
-        try:
-            ll_arg = -1 if arguments.get('--quiet') else (int(arguments.get('--debug')) if arguments.get(
-                '--debug') else (int(arguments.get('--verbose') if arguments.get('--verbose') else 0)))
-        except Exception:
-            ll_arg = 0
-            dagr_log(__name__, logging.WARN, 'Unrecognized debug level')
-
-        self.args = {
-            'log_level': ll_arg,
-            'renamedeviant':  arguments.get('renamedeviant'),
-            'shortenurlcache': arguments.get('shortenurlcache'),
-            'finddupes': arguments.get('finddupes'),
-            'updatedirscache': arguments.get('updatedirscache'),
-            'filenames': arguments.get('FILENAMES'),
-            'filter': arguments.get('--filter'),
-            'old': arguments.get('OLD'),
-            'new': arguments.get('NEW'),
-        }
-
-
-class DAGRUtils():
-
-    def __init__(self, **kwargs):
-        from .DAGRCache import DAGRCache
-        self.__utils_cmd_maping = {
-            'shortenurlcache': self.shorten_url_cache,
-            'renamedeviant': self.rename_deviant,
-            'finddupes': self.find_dupes,
-            'updatedirscache': self.update_dirs_cache
-        }
-        self.__utils_cmd = next(
-            (cmd for cmd in self.__utils_cmd_maping.keys() if kwargs.get(cmd)), None)
-        self.__config = kwargs.get('config') or DAGRConfig()
-        self.__cache = kwargs.get('cache') or DAGRCache
-        self.__filenames = kwargs.get('filenames')
-        self.__filter = None if kwargs.get('filter') is None else [
-            s.strip().lower() for s in kwargs.get('filter').split(',')]
-        self.__global_files_mapping = {}
-        self.__global_dirs_mapping = {}
-        self.__global_deviant_dirs_cache = dict((str(d.name).lower(), d) for d in (
-            di for di in self.__config.output_dir.iterdir() if di.is_dir()))
-        self.__kwargs = kwargs
-
-    def handle_utils_cmd(self):
-        self.__utils_cmd_maping.get(self.__utils_cmd)()
-
-    def build_queue(self):
-        wq = load_bulk_files(self.__filenames)
-        wq = convert_queue(self.__config, wq)
-        wq = filter_deviants(self.__filter, wq)
-        return wq
-
-    def walk_queue(self, callback, inc_nd=False):
-        wq = self.build_queue()
-        if None in wq.keys():
-            _nd = wq.pop(None)
-        while True:
-            try:
-                deviant = next(iter(sorted(wq.keys())))
-                modes = wq.pop(deviant)
-            except StopIteration:
-                break
-            deviant = str(self.__global_deviant_dirs_cache.get(deviant))
-            for mode, mode_vals in modes.items():
-                if mode_vals:
-                    for mval in mode_vals:
-                        callback(mode, deviant, mval)
-                else:
-                    callback(mode, deviant)
-
-    def shorten_url_cache(self):
-        wq = self.build_queue()
-
-    def rename_deviant(self):
-        old = self.__kwargs.get('old').lower()
-        new = self.__kwargs.get('new').lower()
-        print('Renaming from {} to {}'.format(old, new))
-        wq = self.build_queue()
-        if None in wq.keys():
-            wq.pop(None)
-        while True:
-            try:
-                deviant = next(iter(sorted(wq.keys())))
-                modes = wq.pop(deviant)
-            except StopIteration:
-                break
-            for mode, mode_vals in modes.items():
-                if mode_vals:
-                    for mval in mode_vals:
-                        self._rename_deviant(mode, deviant, mval)
-                else:
-                    self._rename_deviant(mode, deviant)
-
-    def _rename_deviant(self, mode, deviant, mval=None):
-        old = self.__kwargs.get('old').lower()
-        new = self.__kwargs.get('new').lower()
-        base_dir = get_base_dir(self.__config, mode, deviant, mval)
-        print('Scanning {}'.format(base_dir))
-        cache = self.__cache(self.__config, base_dir)
-        renamed = cache.rename_deviant(old, new)
-        print('Renamed {} deviations'.format(renamed))
-        if renamed > 0:
-            cache.save()
-        return renamed
-
-    def find_dupes(self):
-        self.walk_queue(self._find_dupes, True)
-        duplicates = {k: v for k,
-                      v in self.__global_files_mapping.items() if len(v) > 1}
-        print(f'Total duplicates: {len(duplicates)}')
-        od = self.__config.output_dir
-        of = od.joinpath('.duplicates.json')
-        buffered_file_write(duplicates, of)
-
-    def _find_dupes(self, mode, deviant, mval=None):
-        base_dir = get_base_dir(self.__config, mode, deviant, mval)
-        rel_path = str(strip_topdir(base_dir))
-        print(f'Scanning {rel_path}')
-        cache = self.__cache(self.__config, base_dir)
-        for file_name in cache.files_list:
-            if not file_name in self.__global_files_mapping:
-                self.__global_files_mapping[file_name] = []
-            self.__global_files_mapping[file_name].append(str(rel_path))
-        print(f'Total files: {len(self.__global_files_mapping)}')
-
-    def update_dirs_cache(self):
-        print('Scanning dirs')
-        self.walk_queue(self._update_dirs_cache, True)
-        print('Saving cache')
-        od = self.__config.output_dir
-        of = od.joinpath('.dirs.json')
-        buffered_file_write(self.__global_dirs_mapping, of)
-
-    def _update_dirs_cache(self, mode, deviant, mval=None):
-        base_dir = get_base_dir(self.__config, mode, deviant, mval)
-        rel_path = str(strip_topdir(base_dir))
-        print(f'Scanning {rel_path}')
-        dir_lower = rel_path.lower()
-        if not dir_lower in self.__global_dirs_mapping:
-            self.__global_dirs_mapping[dir_lower] = rel_path
-
-
-def main():
-    config = DAGRConfig()
-    cli = DAGRUtilsCli(config)
-    config.set_args(cli.args)
-    init_logging(config)
-    utils = DAGRUtils(config=config, **cli.args)
-    utils.handle_utils_cmd()
-
-
-if __name__ == '__main__':
-    main()
