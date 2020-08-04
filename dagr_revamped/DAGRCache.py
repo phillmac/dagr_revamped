@@ -25,7 +25,7 @@ class DAGRCache():
         base_dir = get_base_dir(config, mode, deviant, mval)
         return DAGRCache(config, base_dir)
 
-    def __init__(self, dagr_config, base_dir, queue_only=False):
+    def __init__(self, dagr_config, base_dir, queue_only=False, warn_not_found=None):
         if not isinstance(base_dir, Path):
             base_dir = Path(base_dir)
         self.base_dir = base_dir
@@ -46,15 +46,21 @@ class DAGRCache():
         self.premium_name = self.settings.get('premium', '.premium')
         self.httperrors_name = self.settings.get('httperrors', '.httperrors')
         self.existing_pages = next(
-            self.__load_cache(existing_pages=self.ep_name))
+            self.__load_cache(
+                existing_pages=self.ep_name,
+                warn_not_found=True if warn_not_found is None else warn_not_found))
         self.__no_link = next(self.__load_cache(
-            no_link=self.nolink_name, warn_not_found=False))
+            no_link=self.nolink_name,
+            warn_not_found=False if warn_not_found is None else warn_not_found))
         self.__queue = next(self.__load_cache(
-            queue=self.queue_name, warn_not_found=False))
+            queue=self.queue_name,
+            warn_not_found=False if warn_not_found is None else warn_not_found))
         self.__premium = next(self.__load_cache(
-            premium=self.premium_name, warn_not_found=False))
+            premium=self.premium_name,
+            warn_not_found=False if warn_not_found is None else warn_not_found))
         self.__httperrors = next(self.__load_cache(
-            httperrors=self.httperrors_name, warn_not_found=False))
+            httperrors=self.httperrors_name,
+            warn_not_found=False if warn_not_found is None else warn_not_found))
 
         self.__excluded_fnames = [
             '.lock',
@@ -81,10 +87,15 @@ class DAGRCache():
             self.artists = None
             self.last_crawled = None
         else:
-            self.__files_list = next(self.__load_cache(filenames=self.fn_name))
-            self.artists = next(self.__load_cache(artists=self.artists_name))
+            self.__files_list = next(self.__load_cache(
+                filenames=self.fn_name,
+                warn_not_found=True if warn_not_found is None else warn_not_found))
+            self.artists = next(self.__load_cache(
+                artists=self.artists_name,
+                warn_not_found=False if warn_not_found is None else warn_not_found))
             self.last_crawled = next(self.__load_cache(
-                last_crawled=self.crawled_name))
+                last_crawled=self.crawled_name,
+                warn_not_found=False if warn_not_found is None else warn_not_found))
 
             if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
                 self.__convert_urls()
