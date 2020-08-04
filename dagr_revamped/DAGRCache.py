@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 class DAGRCache():
 
     @staticmethod
-    def with_queue_only(config, mode, deviant, mval=None):
+    def with_queue_only(config, mode, deviant, mval=None, warn_not_found=None):
         base_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, queue_only=True)
+        return DAGRCache(config, base_dir, queue_only=True, warn_not_found=warn_not_found)
 
     @staticmethod
-    def get_cache(config, mode, deviant, mval=None):
+    def get_cache(config, mode, deviant, mval=None, warn_not_found=None):
         base_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir)
+        return DAGRCache(config, base_dir, warn_not_found=warn_not_found)
 
     def __init__(self, dagr_config, base_dir, queue_only=False, warn_not_found=None):
         if not isinstance(base_dir, Path):
