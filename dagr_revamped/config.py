@@ -190,8 +190,12 @@ class DAGRConfig(DAGRBaseConf):
             'Reverse': False,
             # 'RecursionLimit': 10000,
             'SaveProgress': 50,
-            'DownloadDelay': 3.00,
+            'DownloadDelay': 6.00,
             'Verbose': False,
+        },
+        'Dagr.Bulk.Filenames': {
+            'load': '.dagr_bulk.json,dagr_bulk.json',
+            'save': '.dagr_bulk.json'
         },
         'Dagr.SubDirs': {
             'UseOldFormat': False,
