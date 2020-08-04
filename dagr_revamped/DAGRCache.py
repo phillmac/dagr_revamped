@@ -300,7 +300,7 @@ class DAGRCache():
             self.__httperrors[page].append({
                 'host': get_hostname(),
                 'time': time(),
-                'error_type': str(type(page_error))
+                'error_code': page_error.httpcode
             })
 
     @property
