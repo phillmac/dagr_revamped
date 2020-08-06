@@ -606,7 +606,7 @@ class DAGRCrawler():
         pages_offset = (self.config.get('deviantart.offsets', 'search')
                         if mode == 'search'
                         else self.config.get('deviantart.offsets', 'page'))
-        art_regex = self.config.get('deviantart', 'artregex')
+        art_regex = self.config.get('deviantart.regexes', 'art')
         if deviant:
             deviant_lower = deviant.lower()
         self.__logger.log(level=3, msg=pformat(locals()))

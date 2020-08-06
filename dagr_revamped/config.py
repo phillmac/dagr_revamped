@@ -138,13 +138,20 @@ class DAGRConfig(DAGRBaseConf):
         },
         'DeviantArt': {
             'BaseUrl': 'https://www.deviantart.com',
-            'ArtRegex': (r"https://www\.deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
+            'GalleryRegex'
             'MatureContent': False,
             'Antisocial': True,
             'Modes': 'album,collection,query,scraps,favs,gallery,search,page',
             'MValArgs': 'album,collection,query,category,page,search',
             'NDModes': 'search',
             'MaxPages': 15000
+        },
+        "DeviantArt.Regexes": {
+            'Art': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
+            'Favs': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/favourites/all"),
+            'Gallery': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/gallery/all"),
+            'Collection': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/favourites/[a-zA-Z0-9_-]*/[a-zA-Z0-9_-]*"),
+            'Album': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/gallery/[a-zA-Z0-9_-]*/[a-zA-Z0-9_-]*")
         },
         'DeviantArt.Modes.Album': {
             'url_fmt': '{base_url}/{deviant_lower}/gallery/{mval}?offset={offset}'
