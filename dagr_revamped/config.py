@@ -275,7 +275,9 @@ class DAGRConfig(DAGRBaseConf):
             'Remote': f"{get_hostname()}.dagr.log.txt"
         },
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
-        'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', ['Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Disable_Login']),
+        'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
+            'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Disable_Login', 'OOM_Max_Pages'
+            ]),
         'Deviantart': get_os_options('Deviantart', ['Username', 'Password'])
     }
     SETTINGS_MAP = {
