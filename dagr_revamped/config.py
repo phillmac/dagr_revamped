@@ -96,8 +96,8 @@ class DAGRBaseConf():
             self.__settings[sec_name.lower()] = merge_all(*conf_sections)
 
 
-def get_os_options(base_key, keys):
-    options = {}
+def get_os_options(base_key, keys, defaults=None):
+    options = {} if defaults is None else defaults
     for k in keys:
         value = os.environ.get(f"{base_key}.{k}".lower(), None)
         if not value is None:
@@ -272,12 +272,15 @@ class DAGRConfig(DAGRBaseConf):
             'OutputDirectory': str(Path.cwd())
         },
         'Logging.Files.Locations': {
-            'Remote': f"{get_hostname()}.dagr.log.txt"
+            'Remote': get_os_options("Logging.Files.Locations", ["Local", "Remote"],
+                                    defaults={
+                'Remote': f"{get_hostname()}.dagr.log.txt"
+            })
         },
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Disable_Login', 'OOM_Max_Pages'
-            ]),
+        ]),
         'Deviantart': get_os_options('Deviantart', ['Username', 'Password'])
     }
     SETTINGS_MAP = {
