@@ -97,11 +97,13 @@ class DAGRBaseConf():
 
 
 def get_os_options(base_key, keys, defaults=None):
+    pprint(defaults)
     options = {} if defaults is None else defaults
     for k in keys:
         value = os.environ.get(f"{base_key}.{k}".lower(), None)
         if not value is None:
             options[k.lower()] = value
+    pprint(options)
     return options
 
 
@@ -271,12 +273,10 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr': {
             'OutputDirectory': str(Path.cwd())
         },
-        'Logging.Files.Locations': {
-            'Remote': get_os_options("Logging.Files.Locations", ["Local", "Remote"],
+        'Logging.Files.Locations': get_os_options("Logging.Files.Locations", ["Local", "Remote"],
                                     defaults={
                 'Remote': f"{get_hostname()}.dagr.log.txt"
-            })
-        },
+        }),
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Disable_Login', 'OOM_Max_Pages'
