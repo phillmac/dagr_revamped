@@ -120,9 +120,8 @@ def main():
         ripper.run()
         ripper.print_errors()
         ripper.print_dl_total()
-    if __name__ == '__main__':
-        logging.shutdown()
 
 
 if __name__ == '__main__':
     main()
+    logging.shutdown()
