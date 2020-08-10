@@ -6,6 +6,12 @@ from dagr_revamped.utils import load_json, save_json
 logger = logging.getLogger(__name__)
 
 
+def deep_tuple(x):
+    if isinstance(x, tuple):
+        return x
+    return map(deep_tuple, x)
+
+
 class SlugCache():
     def __init__(self, slug, local, remote):
         self.__slug = slug
@@ -31,14 +37,8 @@ class SlugCache():
                 cpath = self.__caches.get(cname)
                 try:
                     if cpath.exists():
-                        loaded = set()
-                        items = load_json(cpath)
-                        for i in items:
-                            if isinstance(i, list):
-                                loaded.add(tuple(i))
-                            else:
-                                loaded.add(i)
-                        self.__values.get(f"{ctype}_values").update(loaded)
+                        self.__values.get(f"{ctype}_values").update(
+                            i if isinstance(i, str) else deep_tuple(i) for i in load_json(cpath))
                         self.__loaded.add(cname)
                         break
                 except:
