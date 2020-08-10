@@ -71,9 +71,9 @@ class SlugCache():
         logger.log(level=15, msg=f"Flushing {self.__slug}")
         if not force_overwrite:
             self.__load()
-        if self.local_stale:
+        if force_overwrite or self.local_stale:
             self.__flush_local(force_overwrite=force_overwrite)
-        if self.remote_stale:
+        if force_overwrite or self.remote_stale:
             self.__flush_remote(force_overwrite=force_overwrite)
 
     def query(self):
