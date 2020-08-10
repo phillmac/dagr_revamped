@@ -1,6 +1,7 @@
-from dagr_revamped.utils import load_json, save_json
-from pathlib import Path
 import logging
+from pathlib import Path
+
+from dagr_revamped.utils import load_json, save_json
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,9 @@ class SlugCache():
         return result
 
     def update(self, values):
-        if not isinstance(values, set):
+        if isinstance(values, dict):
+            values = set([tuple(values.items())])
+        elif not isinstance(values, set):
             values = set(values)
 
         if len(values - self.__local_values) > 0:
