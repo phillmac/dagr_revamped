@@ -95,7 +95,7 @@ class SlugCache():
         elif not isinstance(values, set):
             values = set(values)
         if len(self.__local_values - values) > 0:
-            self.__local_values.remove(values)
+            self.__local_values.difference_update(values)
             self.__flush_local()
 
 
