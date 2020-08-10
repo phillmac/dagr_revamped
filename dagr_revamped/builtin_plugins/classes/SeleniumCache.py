@@ -101,7 +101,7 @@ class SlugCache():
             self.__local_values.difference_update(values)
             self.__flush_local(force_overwrite=True)
         if len(self.__remote_values - values) > 0:
-            self.__flush_remote.difference_update(values)
+            self.__remote_values.difference_update(values)
             self.__flush_remote(force_overwrite=True)
 
 
