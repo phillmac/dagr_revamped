@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def deep_tuple(x):
     if isinstance(x, tuple):
         return x
-    return map(deep_tuple, x)
+    return tuple(deep_tuple(i) if isinstance(i, list) else i for i in x)
 
 
 class SlugCache():
