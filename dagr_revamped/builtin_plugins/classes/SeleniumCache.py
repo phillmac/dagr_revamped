@@ -57,21 +57,24 @@ class SlugCache():
     def remote_stale(self):
         return len(self.__local_values - self.__remote_values) > 0
 
-    def __flush_local(self):
-        self.__local_values.update(self.__remote_values)
+    def __flush_local(self, force_overwrite):
+        if not force_overwrite:
+            self.__local_values.update(self.__remote_values)
         save_json(self.__caches.get('local primary'), self.__local_values)
 
-    def __flush_remote(self):
-        self.__remote_values.update(self.__local_values)
+    def __flush_remote(self, force_overwrite):
+        if not force_overwrite:
+            self.__remote_values.update(self.__local_values)
         save_json(self.__caches.get('remote primary'), self.__remote_values)
 
-    def flush(self):
+    def flush(self, force_overwrite=False):
         logger.log(level=15, msg=f"Flushing {self.__slug}")
-        self.__load()
+        if not force_overwrite:
+            self.__load()
         if self.local_stale:
-            self.__flush_local()
+            self.__flush_local(force_overwrite=force_overwrite)
         if self.remote_stale:
-            self.__flush_remote()
+            self.__flush_remote(force_overwrite=force_overwrite)
 
     def query(self):
         result = set()
@@ -115,7 +118,7 @@ class SeleniumCache():
         if not self.__remote_cache.exists():
             self.__remote_cache.mkdir()
 
-    def flush(self, slug=None):
+    def flush(self, slug=None, force_overwrite=False):
         if slug is None:
             for s in self.__caches.keys():
                 if not self.__flushed.get(s, False) == True:
@@ -123,7 +126,7 @@ class SeleniumCache():
         else:
             cache = self.__caches.get(slug)
             if cache:
-                cache.flush()
+                cache.flush(force_overwrite=force_overwrite)
                 self.__flushed[slug] = True
 
     def query(self, slug):
