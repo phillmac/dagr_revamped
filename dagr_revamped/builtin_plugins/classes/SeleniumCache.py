@@ -83,6 +83,15 @@ class SlugCache():
             self.__local_values.update(values)
             self.__flush_local()
 
+    def remove(self, values):
+        if isinstance(values, dict):
+            values = set([tuple(values.items())])
+        elif not isinstance(values, set):
+            values = set(values)
+        if len(self.__local_values - values) > 0:
+            self.__local_values.remove(values)
+            self.__flush_local()
+
 
 class SeleniumCache():
     def __init__(self, app_config, config):
@@ -122,4 +131,11 @@ class SeleniumCache():
             self.__caches[slug] = SlugCache(
                 slug, self.__local_cache, self.__remote_cache)
         self.__caches.get(slug).update(values)
+        self.__flushed[slug] = False
+
+    def remove(self, slug, values):
+        if not slug in self.__caches.keys():
+            self.__caches[slug] = SlugCache(
+                slug, self.__local_cache, self.__remote_cache)
+        self.__caches.get(slug).remove(values)
         self.__flushed[slug] = False
