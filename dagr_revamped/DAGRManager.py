@@ -13,7 +13,7 @@ class DAGRManager():
     def get_crawler(self):
         return self.get_dagr().create_crawler()
 
-    def get_dagr(self):
+    def get_dagr(self) -> DAGR:
         if self.__dagr is None:
             self.__dagr = DAGR(
                 config=self.__config)
