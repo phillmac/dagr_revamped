@@ -31,8 +31,14 @@ class SlugCache():
                 cpath = self.__caches.get(cname)
                 try:
                     if cpath.exists():
-                        self.__values.get(f"{ctype}_values").update(
-                            load_json(cpath))
+                        loaded = set()
+                        items = load_json(cpath)
+                        for i in items:
+                            if isinstance(i, list):
+                                loaded.add(tuple(i))
+                            else:
+                                loaded.add(i)
+                        self.__values.get(f"{ctype}_values").update(loaded)
                         self.__loaded.add(cname)
                         break
                 except:
