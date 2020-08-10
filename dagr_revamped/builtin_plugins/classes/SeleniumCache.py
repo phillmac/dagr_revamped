@@ -57,12 +57,12 @@ class SlugCache():
     def remote_stale(self):
         return len(self.__local_values - self.__remote_values) > 0
 
-    def __flush_local(self, force_overwrite):
+    def __flush_local(self, force_overwrite=False):
         if not force_overwrite:
             self.__local_values.update(self.__remote_values)
         save_json(self.__caches.get('local primary'), self.__local_values)
 
-    def __flush_remote(self, force_overwrite):
+    def __flush_remote(self, force_overwrite=False):
         if not force_overwrite:
             self.__remote_values.update(self.__local_values)
         save_json(self.__caches.get('remote primary'), self.__remote_values)
@@ -99,7 +99,7 @@ class SlugCache():
             values = set(values)
         if len(self.__local_values - values) > 0:
             self.__local_values.difference_update(values)
-            self.__flush_local()
+            self.__flush_local(force_overwrite=True)
 
 
 class SeleniumCache():
