@@ -100,6 +100,9 @@ class SlugCache():
         if len(self.__local_values - values) > 0:
             self.__local_values.difference_update(values)
             self.__flush_local(force_overwrite=True)
+        if len(self.__remote_values - values) > 0:
+            self.__local_values.difference_update(values)
+            self.__flush_remote(force_overwrite=True)
 
 
 class SeleniumCache():
