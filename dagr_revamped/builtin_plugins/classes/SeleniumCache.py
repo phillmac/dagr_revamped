@@ -97,11 +97,19 @@ class SlugCache():
             values = set([tuple(values.items())])
         elif not isinstance(values, set):
             values = set(values)
-        if len(self.__local_values - values) > 0:
-            self.__local_values.difference_update(values)
+
+        local_before = set(self.__local_values)
+        remote_before = set(self.__remote_values)
+
+        self.__local_values.difference_update(values)
+        self.__remote_values.difference_update(values)
+
+        if not local_before == self.__local_values:
+            logger.log(level=15, msg='flushing removed local cache values')
             self.__flush_local(force_overwrite=True)
-        if len(self.__remote_values - values) > 0:
-            self.__remote_values.difference_update(values)
+
+        if not remote_before == self.__remote_values:
+            logger.log(level=15, msg='flushing removed remote cache values')
             self.__flush_remote(force_overwrite=True)
 
 
