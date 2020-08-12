@@ -268,9 +268,9 @@ class DAGRConfig(DAGRBaseConf):
         },
     }
     OVERRIDES = {
-        'Dagr': {
+        'Dagr': get_os_options ('Dagr', ['OutputDirectory'], defaults={
             'OutputDirectory': str(Path.cwd())
-        },
+        }),
         'Logging.Files.Locations': get_os_options("Logging.Files.Locations", ["Local", "Remote"],
                                                   defaults={
             'Remote': f"{get_hostname()}.dagr.log.txt"
