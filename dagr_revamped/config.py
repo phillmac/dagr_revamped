@@ -24,7 +24,7 @@ class DAGRBaseConf():
         self.__json_files = self.find_configs('.json')
         self.__ini_config = self.load_ini_config()
         self.__json_config = self.load_json_config()
-        self.__conf_files = set([*self.__ini_files , *self.__json_files])
+        self.__conf_files = set([*self.__ini_files, *self.__json_files])
         dagr_log(__name__, logging.DEBUG, 'Loaded config files {}'.format(
             pformat(self.__conf_files)))
 
@@ -105,8 +105,12 @@ def get_os_options(base_key, keys, defaults=None):
     return options
 
 
+def normalize_dict(d):
+    return {str(k).lower(): convert_val(v) for k, v in d.items()}
+
+
 class DAGRConfig(DAGRBaseConf):
-    DEFAULTS = {
+    DEFAULTS = normalize_dict({
         "Logging": {
             'Format': '%(asctime)s - %(levelname)s - %(message)s'
         },
@@ -266,9 +270,9 @@ class DAGRConfig(DAGRBaseConf):
             'DebugLocation': '',
             'FallbackOrder': 'img full,meta,img normal'
         },
-    }
-    OVERRIDES = {
-        'Dagr': get_os_options ('Dagr', ['OutputDirectory'], defaults={
+    })
+    OVERRIDES = normalize_dict({
+        'Dagr': get_os_options('Dagr', ['OutputDirectory'], defaults={
             'OutputDirectory': str(Path.cwd())
         }),
         'Logging.Files.Locations': get_os_options("Logging.Files.Locations", ["Local", "Remote"],
@@ -280,8 +284,8 @@ class DAGRConfig(DAGRBaseConf):
             'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Disable_Login', 'OOM_Max_Pages'
         ]),
         'Deviantart': get_os_options('Deviantart', ['Username', 'Password'])
-    }
-    SETTINGS_MAP = {
+    })
+    SETTINGS_MAP = normalize_dict({
         'Dagr': {
             'OutputDirectory': 'directory',
             'Overwrite': 'overwrite',
@@ -293,10 +297,10 @@ class DAGRConfig(DAGRBaseConf):
             'MatureContent': 'mature',
             'MaxPages': 'maxpages',
         }
-    }
+    })
 
     def __init__(self, *args, **kwargs):
-        outputdir =  self.OVERRIDES.get('Dagr', {}).get('OutputDirectory')
+        outputdir = self.OVERRIDES.get('dagr', {}).get('outputdirectory')
         include = [Path(outputdir).resolve()] if not outputdir is None else []
         super().__init__(*args, include=include, **kwargs)
         self.__arguments = None
@@ -446,10 +450,6 @@ def merge_all(*dicts):
         result = dict_merge(result, item)
     dagr_log(__name__, 4, 'Result: {}'.format(result))
     return result
-
-
-def normalize_dict(d):
-    return dict((str(k).lower(), convert_val(v)) for k, v in d.items())
 
 
 def convert_val(val):
