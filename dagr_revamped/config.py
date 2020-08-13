@@ -105,6 +105,25 @@ def get_os_options(base_key, keys, defaults=None):
     return options
 
 
+def convert_val(val):
+    if isinstance(val, str):
+        true_vals = ['true', 'yes', 'on', '1']
+        false_vals = ['false', 'no', 'off', '0']
+        if val.lower() in true_vals:
+            return True
+        if val.lower() in false_vals:
+            return False
+        try:
+            return int(val)
+        except:
+            pass
+        try:
+            return float(val)
+        except:
+            pass
+    return val
+
+
 def normalize_dict(d):
     return {str(k).lower(): convert_val(v) for k, v in d.items()}
 
@@ -450,25 +469,6 @@ def merge_all(*dicts):
         result = dict_merge(result, item)
     dagr_log(__name__, 4, 'Result: {}'.format(result))
     return result
-
-
-def convert_val(val):
-    if isinstance(val, str):
-        true_vals = ['true', 'yes', 'on', '1']
-        false_vals = ['false', 'no', 'off', '0']
-        if val.lower() in true_vals:
-            return True
-        if val.lower() in false_vals:
-            return False
-        try:
-            return int(val)
-        except:
-            pass
-        try:
-            return float(val)
-        except:
-            pass
-    return val
 
 
 class DARGConfigCli():
