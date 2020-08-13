@@ -31,7 +31,7 @@ def init_logging(config):
     logging.basicConfig(format=frmt,
                         stream=sys.stdout, level=config.map_log_level() or logging.WARN)
     for fn in config.get('logging.files.locations').values():
-        fp = Path(fn).expanduser().resolve()
+        fp = Path(fn) if fn == "NUL:" else Path(fn).expanduser().resolve()
         log(lname=__name__, level=logging.INFO,
             msg=f"Creating logging file handler {fp}")
         fh = RobustRFileHandler(filename=fp,

@@ -1,17 +1,40 @@
-import json
 import logging
 import os
 from configparser import ConfigParser, NoSectionError
-from copy import deepcopy
+from copy import copy, deepcopy
 from pathlib import Path
 from platform import node as get_hostname
 from pprint import pformat, pprint
 
 from docopt import docopt
 
+from .utils import load_json
 from .dagr_logging import init_logging
 from .dagr_logging import log as dagr_log
 from .version import version
+
+
+def convert_val(val):
+    if isinstance(val, str):
+        true_vals = ['true', 'yes', 'on', '1']
+        false_vals = ['false', 'no', 'off', '0']
+        if val.lower() in true_vals:
+            return True
+        if val.lower() in false_vals:
+            return False
+        try:
+            return int(val)
+        except:
+            pass
+        try:
+            return float(val)
+        except:
+            pass
+    return val
+
+
+def normalize_dict(d):
+    return {str(k).lower(): normalize_dict(v) if isinstance(v, dict) else convert_val(v) for k, v in d.items()}
 
 
 class DAGRBaseConf():
@@ -41,26 +64,22 @@ class DAGRBaseConf():
         if self.__ini_files:
             config = ConfigParser(allow_no_value=True)
             config.read(self.__ini_files)
-            return config
+            return normalize_dict({s: {k: v for k, v in config.items(s)} for s in config.sections()})
 
     def load_json_config(self):
         settings = {}
         for json_file in self.__json_files:
             with open(json_file, 'r') as fh:
-                settings = dict_merge(settings, json.load(fh))
+                settings = dict_merge(settings, normalize_dict(load_json(fh)))
         return settings
 
     def get_ini_section(self, section):
-        if not self.__ini_config:
+        if self.__ini_config is None:
             return {}
-        try:
-            return dict((key, value)
-                        for key, value in self.__ini_config.items(section))
-        except:
-            return {}
+        return copy(self.__ini_config.get(section))
 
     def get_json_section(self, section):
-        return deepcopy(self.__json_config.get(section))
+        return copy(self.__json_config.get(section))
 
     def get(self, section, key=None, key_errors=True):
         section = str(section).lower()
@@ -87,7 +106,7 @@ class DAGRBaseConf():
         return deepcopy(self.__settings)
 
     def get_conf_files(self):
-        return deepcopy(self.__conf_files)
+        return copy(self.__conf_files)
 
     def merge_configs(self, section_names, conf_calbacks):
         for sec_name in section_names:
@@ -103,29 +122,6 @@ def get_os_options(base_key, keys, defaults=None):
         if not value is None:
             options[k.lower()] = value
     return options
-
-
-def convert_val(val):
-    if isinstance(val, str):
-        true_vals = ['true', 'yes', 'on', '1']
-        false_vals = ['false', 'no', 'off', '0']
-        if val.lower() in true_vals:
-            return True
-        if val.lower() in false_vals:
-            return False
-        try:
-            return int(val)
-        except:
-            pass
-        try:
-            return float(val)
-        except:
-            pass
-    return val
-
-
-def normalize_dict(d):
-    return {str(k).lower(): convert_val(v) for k, v in d.items()}
 
 
 class DAGRConfig(DAGRBaseConf):
@@ -161,13 +157,14 @@ class DAGRConfig(DAGRBaseConf):
         },
         'DeviantArt': {
             'BaseUrl': 'https://www.deviantart.com',
-            'GalleryRegex'
             'MatureContent': False,
             'Antisocial': True,
             'Modes': 'album,collection,query,scraps,favs,gallery,search,page',
             'MValArgs': 'album,collection,query,category,page,search',
             'NDModes': 'search',
-            'MaxPages': 15000
+            'MaxPages': 15000,
+            'Username': '',
+            'Password': ''
         },
         "DeviantArt.Regexes": {
             'Art': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
@@ -241,6 +238,7 @@ class DAGRConfig(DAGRBaseConf):
             'Verified':  '.verified',
             'Queue': '.queue',
             'Premium': '.premium',
+            'HTTPErrors': '.httperrors',
             'ShortUrls': False
         },
         'Dagr.BS4.Config': {
@@ -302,7 +300,7 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Disable_Login', 'OOM_Max_Pages'
         ]),
-        'Deviantart': get_os_options('Deviantart', ['Username', 'Password'])
+        'DeviantArt': get_os_options('DeviantArt', ['Username', 'Password'])
     })
     SETTINGS_MAP = normalize_dict({
         'Dagr': {
@@ -397,6 +395,9 @@ class DAGRConfig(DAGRBaseConf):
             'files': self.conf_files,
             'print': self.conf_print,
             'get': self.show_config,
+            'getini': lambda: self.show_loaded('ini'),
+            'getjson': lambda: self.show_loaded('json'),
+            'getoutputdir': lambda: print(self.output_dir) or True,
             'set': self.set_config
         }
         cmd = self.__arguments.get('conf_cmd')
@@ -421,6 +422,14 @@ class DAGRConfig(DAGRBaseConf):
                 return True
             pprint({f"{section}.{key}": conf_val})
         return True
+
+    def show_loaded(self, ftype):
+        if ftype == 'ini':
+            print(self.get_ini_section(self.__arguments.get('section')))
+            return True
+        elif ftype == 'json':
+            print(self.get_json_section(self.__arguments.get('section')))
+            return True
 
     def conf_print(self):
         fname = self.__arguments.get('conf_file')
@@ -449,7 +458,6 @@ class DAGRConfig(DAGRBaseConf):
     def set_config(self):
         if not self.__arguments['section']:
             print('--section is required')
-
 
 def dict_merge(dict_1, dict_2):
     """Merge two dictionaries.
@@ -500,6 +508,7 @@ Options:
 
         self.args = {
             'conf_cmd': arguments.get('CONF_CMD', None),
+            'conf_file': arguments.get('CONF_FILE'),
             'key': arguments.get('--key'),
             'section': arguments.get('--section'),
             'log_level': ll_arg
