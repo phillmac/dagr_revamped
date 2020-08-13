@@ -26,12 +26,28 @@ def log(lname, *args, **kwargs):
         buffer_record(lname, (args, kwargs))
 
 
+def determine_path(config, lname, lvalue):
+    if lvalue == 'NUL:':
+        return Path('NUL:')
+    if isinstance(lvalue, str):
+        placeholders = {
+            'outputdirectory': str(config.output_dir)
+        }
+        lvalue = lvalue.format(**placeholders)
+    prefix = config.get('logging.files.names.prefixes', lname)
+    fname = config.get('logging.files.names', lname)
+    return Path(lvalue, prefix+fname).expanduser().resolve()
+
+
+def get_logging_paths(config):
+    return set([determine_path(config, k, v) for k, v in config.get('logging.files.locations').items()])
+
+
 def init_logging(config):
     frmt = config.get('logging', 'format')
     logging.basicConfig(format=frmt,
                         stream=sys.stdout, level=config.map_log_level() or logging.WARN)
-    for fn in config.get('logging.files.locations').values():
-        fp = Path(fn) if fn == "NUL:" else Path(fn).expanduser().resolve()
+    for fp in get_logging_paths(config):
         log(lname=__name__, level=logging.INFO,
             msg=f"Creating logging file handler {fp}")
         fh = RobustRFileHandler(filename=fp,

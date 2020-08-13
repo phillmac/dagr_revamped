@@ -149,8 +149,16 @@ class DAGRConfig(DAGRBaseConf):
             'BackupCount': 5
         },
         'Logging.Files.Locations': {
-            'Local': '~/dagr.log.txt',
+            'Local': '~',
+            'Remote': '{outputdirectory}',
+        },
+        'Logging.Files.Names': {
+            'Local': 'dagr.log.txt',
             'Remote': 'dagr.log.txt',
+        },
+        'Logging.Files.Names.Prefixes': {
+            'Local': '',
+            'Remote': '',
         },
         'Conf': {
             'Version': '0.1.0'
@@ -292,10 +300,9 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr': get_os_options('Dagr', ['OutputDirectory'], defaults={
             'OutputDirectory': str(Path.cwd())
         }),
-        'Logging.Files.Locations': get_os_options("Logging.Files.Locations", ["Local", "Remote"],
-                                                  defaults={
-            'Remote': f"{get_hostname()}.dagr.log.txt"
-        }),
+        'Logging.Files.Locations': get_os_options('Logging.Files.Locations', ['Local', 'Remote']),
+        'Logging.Files.Names': get_os_options('Logging.Files.Names', ['Local', 'Remote']),
+        'Logging.Files.Names.Prefixes': get_os_options('Logging.Files.Names.Prefixes', ['Local', 'Remote']),
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Disable_Login', 'OOM_Max_Pages'
