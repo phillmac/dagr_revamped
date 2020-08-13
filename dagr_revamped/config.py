@@ -24,7 +24,7 @@ class DAGRBaseConf():
         self.__json_files = self.find_configs('.json')
         self.__ini_config = self.load_ini_config()
         self.__json_config = self.load_json_config()
-        self.__conf_files = self.__ini_files + self.__json_files
+        self.__conf_files = set([*self.__ini_files , *self.__json_files])
         dagr_log(__name__, logging.DEBUG, 'Loaded config files {}'.format(
             pformat(self.__conf_files)))
 
@@ -296,7 +296,9 @@ class DAGRConfig(DAGRBaseConf):
     }
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        outputdir =  self.OVERRIDES.get('Dagr', {}).get('OutputDirectory')
+        include = [outputdir] if not outputdir is None else []
+        super().__init__(*args, include=include, **kwargs)
         self.__arguments = None
         self.__config_options = {}
         self.merge_configs(self.DEFAULTS.keys(), (
