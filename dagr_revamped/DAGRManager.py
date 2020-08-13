@@ -18,7 +18,7 @@ class DAGRManager():
     def init_logging(self):
         self.__config.set_args({'log_level': 2})
         self.__config.set_section('logging.files.names.prefixes', {
-            "remote": f"{self.get_host_mode}.",
+            "remote": f"{self.get_host_mode()}.",
             "local": f"{self.__mode}."
         })
         init_logging(self.__config)
