@@ -297,7 +297,7 @@ class DAGRConfig(DAGRBaseConf):
 
     def __init__(self, *args, **kwargs):
         outputdir =  self.OVERRIDES.get('Dagr', {}).get('OutputDirectory')
-        include = [outputdir] if not outputdir is None else []
+        include = [Path(outputdir).resolve()] if not outputdir is None else []
         super().__init__(*args, include=include, **kwargs)
         self.__arguments = None
         self.__config_options = {}
