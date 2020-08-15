@@ -79,8 +79,9 @@ class RobustRFileHandler(RotatingFileHandler):
             return super().shouldRollover(record)
         except (OSError, ValueError):
             try:
-                self.stream.close()
-                self.stream = None
+                if not self.stream is None:
+                    self.stream.close()
+                    self.stream = None
                 self.stream = self._open()
                 return super().shouldRollover(record)
             except:
