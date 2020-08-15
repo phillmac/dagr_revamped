@@ -99,25 +99,6 @@ class DAGR():
         for k, v in self.config.get('dagr.mimetypes').items():
             add_mimetype(k, v)
 
-    # def init_classes(self):
-    #     if not self.use_api:
-    #         self.deviantion_pocessor = self.kwargs.get(
-    #             'processor') or DAGRDeviantionProcessor
-    #         self.deviant_resolver = self.kwargs.get(
-    #             'resolver') or DAGRDeviantResolver
-    #         self.devation_crawler = self.kwargs.get('crawler') or DAGRCrawler
-    #     else:
-    #         self.da_api = deviantart.Api(
-    #             self.kwargs.get('clientid'),
-    #             self.kwargs.get('clientsecret'),
-    #             mature_content=self.mature
-    #         )
-    #         self.deviantion_pocessor = self.kwargs.get(
-    #             'processor') or DAGRDeviantionProcessor
-    #         self.deviant_resolver = self.kwargs.get(
-    #             'resolver') or APIDeviantResolver
-    #         self.devation_crawler = self.kwargs.get('crawler') or APICrawler
-
     def init_classes(self):
         self.browser_init()
         self.crawler_init()
@@ -459,7 +440,7 @@ class DAGR():
                 return
             delay_needed = dl_delay - (time() - pstart)
             if delay_needed > 0:
-                self.__logger.log(level=5, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
+                self.__logger.log(level=15, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
                 sleep(delay_needed)
         cache.save('force' if self.fixartists else True)
 
