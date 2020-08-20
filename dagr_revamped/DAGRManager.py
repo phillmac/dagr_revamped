@@ -13,7 +13,12 @@ class DAGRManager():
         self.__dagr = None
         self.__cache = None
         self.__mode = None
+        self.__stop_check = None
         self.__hostname = get_hostname().lower()
+
+    @property
+    def mode(self):
+        return self.__mode
 
     def init_logging(self):
         self.__config.set_args({'log_level': 2})
@@ -33,7 +38,8 @@ class DAGRManager():
     def get_dagr(self) -> DAGR:
         if self.__dagr is None:
             self.__dagr = DAGR(
-                config=self.__config)
+                config=self.__config,
+                stop_check=self.__stop_check)
         return self.__dagr
 
     def get_cache(self):
@@ -49,3 +55,6 @@ class DAGRManager():
 
     def set_mode(self, mode):
         self.__mode = mode
+
+    def set_stop_check(self, func):
+        self.__stop_check = func

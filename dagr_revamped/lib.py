@@ -45,6 +45,7 @@ class DAGR():
         self.maxpages = kwargs.get('maxpages')
         self.refresh_only = kwargs.get('refreshonly')
         self.refresh_only_days = kwargs.get('refreshonlydays')
+        self.stop_check = kwargs.get('stop_check')
         self.bulk = bool(kwargs.get('bulk'))
         self.test = bool(kwargs.get('test'))
         self.isdeviant = bool(kwargs.get('isdeviant'))
@@ -254,7 +255,9 @@ class DAGR():
     def queue_add(self, work):
         return update_d(self.get_queue(), work)
 
-    def keep_running(self):
+    def keep_running(self, check_stop=False):
+        if check_stop and type(self.stop_check).__name__ == 'function':
+            return not self.stop_check()
         return not self.stop_running.is_set()
 
     def run(self):
@@ -436,7 +439,7 @@ class DAGR():
                 'Processing deviation {} of {} ( {} )'.format(count, len(pages), link))
             dp = self.deviantion_pocessor(self, cache, link)
             dp.process_deviation()
-            if not self.keep_running():
+            if not self.keep_running(check_stop=count % progress == 0):
                 return
             delay_needed = dl_delay - (time() - pstart)
             if delay_needed > 0:
@@ -496,6 +499,10 @@ class DAGR():
             for error in self.errors_count:
                 self.__logger.warning(
                     '* {} : {}'.format(error, self.errors_count[error]))
+
+    def reset_stats(self):
+        self.errors_count = {}
+        self.total_dl_count = 0
 
 
 class APIDeviantResolver():
@@ -921,6 +928,11 @@ class DAGRDeviationProcessor():
                 self.__logger.log(level=5, msg='Found eclipse art stage')
                 self.__file_link, self.__found_type = img_tag.get(
                     'src'), 'art_stage'
+                return self.__file_link, self.__found_type
+            pdf_object = stage.find('object', {'type':'application/pdf'})
+            if pdf_object:
+                self.__file_link, self.__found_type = pdf_object.get(
+                    'data'), 'pdf_object'
                 return self.__file_link, self.__found_type
         page_title = current_page.find('span', {'itemprop': 'title'})
         if page_title and page_title.text == 'Literature':
