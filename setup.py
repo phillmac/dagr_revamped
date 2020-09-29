@@ -20,6 +20,7 @@ setup(
         'pluginbase == 1.0.0',
         'portalocker == 1.4.0',
         'python-dateutil == 2.7.5',
+        'pybreaker == 0.6.0',
         'deviantart @ git+https://github.com/phillmac/deviantart@c21ce195b466618ae16a9146412b3b713be71ef5'
     ],
     extras_require={
