@@ -1,6 +1,11 @@
 import logging
 from pathlib import Path
 
+import pybreaker
+
+# Used in database integration points
+remote_breaker = pybreaker.CircuitBreaker(fail_max=1, reset_timeout=1200)
+
 from dagr_revamped.utils import load_json, save_json
 
 logger = logging.getLogger(__name__)
@@ -62,6 +67,7 @@ class SlugCache():
             self.__local_values.update(self.__remote_values)
         save_json(self.__caches.get('local primary'), self.__local_values)
 
+    @remote_breaker
     def __flush_remote(self, force_overwrite=False):
         if not force_overwrite:
             self.__remote_values.update(self.__local_values)
