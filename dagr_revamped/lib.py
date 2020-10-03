@@ -23,6 +23,8 @@ from requests import codes as req_codes
 
 from .config import DAGRConfig
 from .DAGRCache import DAGRCache, DagrCacheLockException
+from .exceptions import (Dagr403Exception, Dagr404Exception, DagrException,
+                         DagrPremiumUnavailable)
 from .plugin import PluginManager
 from .utils import (StatefulBrowser, compare_size, convert_queue,
                     create_browser, filter_deviants, get_base_dir,
@@ -424,6 +426,8 @@ class DAGR():
         dl_delay = self.download_delay()
         if self.nocrawl:
             pages = cache.existing_pages
+            if not self.reverse():
+                pages.reverse()
         if not (self.overwrite() or self.fixmissing or self.verifybest):
             self.__logger.log(level=5, msg='Filtering links')
             pages = cache.filter_links(pages)
@@ -793,18 +797,20 @@ class DAGRDeviationProcessor():
         return False
 
     def checks_fail(self):
-        if self.verify_exists():
+        if self.verify_exists(warn_on_existing=not self.ripper.verifybest):
             return True
         if self.ripper.verifybest and self.verify_best():
+            self.__logger.log(level=15, msg="Verify best fail")
             return True
         return False
 
     def verify_best(self):
         fullimg_ft = next(iter(self.ripper.fallbackorder()))
+        best_res = ['download', 'art_stage', fullimg_ft]
         self.__logger.log(level=15, msg='Verifying {}'.format(self.page_link))
         _flink, ltype = self.find_link()
-        if not ltype == fullimg_ft:
-            self.__logger.log(level=15, msg='Not a full image')
+        if not ltype in best_res:
+            self.__logger.log(level=15, msg=f"Not a full image, found type is {ltype}")
             return False
         if self.get_fext() == '.htm':
             self.__logger.log(level=15, msg='Skipping htm file')
@@ -812,7 +818,7 @@ class DAGRDeviationProcessor():
         dest = self.get_dest()
         response = self.get_response()
         if compare_size(dest, response.content):
-            self.__logger.log(level=15, msg='Sizes match')
+            self.__logger.log(level=15, msg=f"Sizes match, found type is {ltype}"),
             return False
         if self.__verify_debug_loc:
             debug = self.base_dir.joinpath(
@@ -823,17 +829,18 @@ class DAGRDeviationProcessor():
             self.__logger.debug('Debug file {}'.format(debug_file))
         return True
 
-    def verify_exists(self):
+    def verify_exists(self, warn_on_existing=True):
         fname = self.get_fname()
         if not self.ripper.verifyexists:
             if fname in self.cache.files_list:
-                self.__logger.warning(
-                    "Cache entry {} exists - skipping".format(fname))
+                if warn_on_existing:
+                    self.__logger.warning(
+                        "Cache entry {} exists - skipping".format(fname))
                 return False
         dest = self.get_dest()
         if self.ripper.verifyexists:
             self.__logger.log(
-                level=5, msg='Verifying {} really esists'.format(dest.name))
+                level=5, msg='Verifying {} really exists'.format(dest.name))
         if dest.exists():
             self.cache.add_filename(fname)
             self.__logger.warning(
@@ -849,7 +856,7 @@ class DAGRDeviationProcessor():
             try:
                 response = self.get_response()
                 tmp.write_bytes(self.__response.content)
-                tmp.rename(dest)
+                tmp.replace(dest)
                 self.__logger.log(
                     level=4, msg='Wrote devation to {}'.format(dest))
                 break
@@ -864,10 +871,10 @@ class DAGRDeviationProcessor():
                     if tries[except_name] < 3:
                         sleep(self.ripper.retry_sleep_duration())
                         continue
-                    raise DagrException(f'Failed to get url: {except_name}')
+                    raise DagrException(f'Failed to save content: {except_name}')
                 else:
                     # self.__logger.error('Exception name {}'.format(except_name))
-                    raise DagrException(f'Failed to get url: {except_name}')
+                    raise DagrException(f'Failed to save content: {except_name}')
         if response.headers.get('last-modified'):
             # Set file dates to last modified time
             mod_time = mktime(parsedate(response.headers.get('last-modified')))
@@ -1032,35 +1039,3 @@ class DAGRDeviationProcessor():
             self.__logger.info('Dumping html to {}'.format(debug_output))
             debug_output.write_bytes(resp.content)
         raise DagrException('all attemps to find a link failed')
-
-
-class DagrException(Exception):
-    def __init__(self, value):
-        super(DagrException, self).__init__(value)
-        self.parameter = value
-
-    def __str__(self):
-        return str(self.parameter)
-
-
-class DagrPremiumUnavailable(DagrException):
-    def __init__(self):
-        super().__init__(
-            'Premium content unavailable')
-
-class Dagr404Exception(DagrException):
-    def __init__(self):
-        super().__init__(
-            'HTTP 404 error')
-    @property
-    def httpcode(self):
-        return 404
-
-
-class Dagr403Exception(DagrException):
-    def __init__(self):
-        super().__init__(
-            'HTTP 403 error')
-    @property
-    def httpcode(self):
-        return 403
