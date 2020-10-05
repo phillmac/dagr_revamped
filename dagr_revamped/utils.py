@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from collections.abc import Iterable, Mapping
 from io import StringIO
 from pathlib import Path, PurePosixPath
@@ -14,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 def make_dirs(directory):
-    logger = logging.getLogger(__name__)
     if not isinstance(directory, Path):
         directory = Path(directory).resolve()
     if not directory.exists():
@@ -32,7 +32,6 @@ def strip_topdirs(config, directory):
 
 
 def get_base_dir(config, mode, deviant=None, mval=None):
-    logger = logging.getLogger(__name__)
     directory = config.output_dir
     if deviant:
         base_dir = directory.joinpath(deviant, mode)
@@ -103,7 +102,6 @@ def update_d(d, u):
 
 
 def convert_queue(config, queue):
-    logger = logging.getLogger(__name__)
     queue = {k.lower(): v for k, v in queue.items()}
     converted = queue.get('deviants', {})
     if None in converted:
@@ -126,19 +124,61 @@ def convert_queue(config, queue):
 
 
 def load_bulk_files(files):
-    logger = logging.getLogger(__name__)
     bulk_queue = {}
-    files = [Path(fn).resolve() for fn in files]
-    for fn in files:
-        logger.debug('Loading file {}'.format(fn))
-        update_d(bulk_queue, load_json(fn))
+    for fp in files:
+        logger.debug(f"Loading file {fp}")
+        update_d(bulk_queue, load_json(fp))
     return bulk_queue
+
+
+def get_bulk_files_contents(config):
+    output_dir = config.output_dir
+    filenames = config.get('dagr.bulk.filenames', 'load')
+    files_list = (fp for fp in (output_dir.joinpath(fn)
+                                for fn in filenames) if fp.exists())
+    return load_bulk_files(files_list)
+
+
+def update_bulk_list(config, mode, deviant=None, mval=None):
+    bulk = convert_queue(config,
+                         get_bulk_files_contents(config))
+
+    updated = False
+
+    if deviant is None:
+        entry = bulk.get(mode)
+        if entry is None:
+            entry = []
+            bulk[mode] = entry
+
+        if not mval in entry:
+            entry.append(mval)
+            updated = True
+
+    else:
+        bulk_deviants = bulk.get('deviants', {})
+        entry = bulk_deviants.get(
+            deviant, bulk_deviants.get(deviant.lower(), {}))
+
+        if not deviant.lower() in [d.lower() for d in bulk_deviants]:
+            bulk_deviants[deviant] = entry
+            updated = True
+
+        if not mode in entry:
+            entry[mode] = []
+            updated - True
+
+        if not mval is None and not mval in entry[mode]:
+            entry[mode].append(mval)
+            updated = True
+
+    if updated:
+        save_json(config.get('dagr.bulk.filenames', 'save'), bulk)
 
 
 def filter_deviants(dfilter, queue):
     if dfilter is None or not dfilter:
         return queue
-    logger = logging.getLogger(__name__)
     logger.info('Deviant filter: {}'.format(pformat(dfilter)))
     results = dict((k, queue.get(k)) for k in queue.keys() if k in dfilter)
     logger.log(level=5, msg='Filter results: {}'.format(pformat(results)))
@@ -146,7 +186,6 @@ def filter_deviants(dfilter, queue):
 
 
 def compare_size(dest, content):
-    logger = logging.getLogger(__name__)
     if not isinstance(dest, Path):
         dest = Path(dest)
     if not dest.exists():
@@ -203,7 +242,6 @@ def backup_cache_file(fpath):
 
 
 def unlink_lockfile(lockfile):
-    logger = logging.getLogger(__name__)
     if not isinstance(lockfile, Path):
         lockfile = Path(lockfile)
     if lockfile.exists():
@@ -230,19 +268,22 @@ def artist_from_url(url):
 def save_json(fpath, data, do_backup=True):
     if isinstance(data, set):
         data = list(data)
-    p = fpath if isinstance(fpath, Path) else Path(fpath)
-    p = p.resolve()
+    fp = ensure_path(fpath)
     if do_backup:
-        backup_cache_file(p)
-    buffered_file_write(data, p)
+        backup_cache_file(fp)
+    buffered_file_write(data, fp)
     logger.log(
-        level=15, msg=f"Saved {len(data)} items to {fpath}")
+        level=15, msg=f"Saved {len(data)} items to {fp}")
 
 
 def load_json(fpath):
-    p = fpath.resolve() if isinstance(fpath, Path) else Path(fpath).resolve()
-    buffer = StringIO(p.read_text())
+    fp = ensure_path(fpath)
+    buffer = StringIO(fp.read_text())
     return json.load(buffer)
+
+
+def ensure_path(fpath):
+    return (fpath if isinstance(fpath, Path) else Path(fpath)).resolve()
 
 
 def load_primary_or_backup(fpath, use_backup=True, warn_not_found=True):
@@ -273,3 +314,12 @@ def load_primary_or_backup(fpath, use_backup=True, warn_not_found=True):
         logger.warning(
             'Unable to load backup {} cache:'.format(backup.name), exc_info=True)
 
+
+def dump_html(fpath, page, content):
+    if not fpath.exists():
+        fpath.mkdir(parents=True)
+    fname = (fpath
+                .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)))
+                .with_suffix('.html'))
+    logger.info('Dumping html to {}'.format(fname))
+    fname.write_bytes(content)

@@ -27,7 +27,7 @@ from .exceptions import (Dagr403Exception, Dagr404Exception, DagrException,
                          DagrPremiumUnavailable)
 from .plugin import PluginManager
 from .utils import (StatefulBrowser, compare_size, convert_queue,
-                    create_browser, filter_deviants, get_base_dir,
+                    create_browser, dump_html, filter_deviants, get_base_dir,
                     load_bulk_files, make_dirs, shorten_url, update_d)
 
 
@@ -422,13 +422,13 @@ class DAGR():
         resolver = self.deviant_resolver(self)
         return resolver.resolve(deviant)
 
-    def process_deviations(self, cache, pages):
+    def process_deviations(self, cache, pages, disable_filter=False, callback=None):
         dl_delay = self.download_delay()
         if self.nocrawl:
             pages = cache.existing_pages
             if not self.reverse():
                 pages.reverse()
-        if not (self.overwrite() or self.fixmissing or self.verifybest):
+        if not (self.overwrite() or self.fixmissing or self.verifybest or disable_filter):
             self.__logger.log(level=5, msg='Filtering links')
             pages = cache.filter_links(pages)
         page_count = len(pages)
@@ -443,11 +443,14 @@ class DAGR():
                 'Processing deviation {} of {} ( {} )'.format(count, len(pages), link))
             dp = self.deviantion_pocessor(self, cache, link)
             dp.process_deviation()
+            if callback:
+                callback(link, dp.get_page_content().content)
             if not self.keep_running(check_stop=count % progress == 0):
                 return
             delay_needed = dl_delay - (time() - pstart)
             if delay_needed > 0:
-                self.__logger.log(level=15, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
+                self.__logger.log(
+                    level=15, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
                 sleep(delay_needed)
         cache.save('force' if self.fixartists else True)
 
@@ -690,6 +693,7 @@ class DAGRDeviationProcessor():
             'dagr.findlink', 'debuglocation')
         self.__content_type = None
         self.__mature_error = None
+        self.__page_content = None
 
     def get_response(self):
         if isinstance(self.__response, Response):
@@ -810,7 +814,8 @@ class DAGRDeviationProcessor():
         self.__logger.log(level=15, msg='Verifying {}'.format(self.page_link))
         _flink, ltype = self.find_link()
         if not ltype in best_res:
-            self.__logger.log(level=15, msg=f"Not a full image, found type is {ltype}")
+            self.__logger.log(
+                level=15, msg=f"Not a full image, found type is {ltype}")
             return False
         if self.get_fext() == '.htm':
             self.__logger.log(level=15, msg='Skipping htm file')
@@ -818,7 +823,8 @@ class DAGRDeviationProcessor():
         dest = self.get_dest()
         response = self.get_response()
         if compare_size(dest, response.content):
-            self.__logger.log(level=15, msg=f"Sizes match, found type is {ltype}"),
+            self.__logger.log(
+                level=15, msg=f"Sizes match, found type is {ltype}"),
             return False
         if self.__verify_debug_loc:
             debug = self.base_dir.joinpath(
@@ -871,10 +877,12 @@ class DAGRDeviationProcessor():
                     if tries[except_name] < 3:
                         sleep(self.ripper.retry_sleep_duration())
                         continue
-                    raise DagrException(f'Failed to save content: {except_name}')
+                    raise DagrException(
+                        f'Failed to save content: {except_name}')
                 else:
                     # self.__logger.error('Exception name {}'.format(except_name))
-                    raise DagrException(f'Failed to save content: {except_name}')
+                    raise DagrException(
+                        f'Failed to save content: {except_name}')
         if response.headers.get('last-modified'):
             # Set file dates to last modified time
             mod_time = mktime(parsedate(response.headers.get('last-modified')))
@@ -892,20 +900,26 @@ class DAGRDeviationProcessor():
             raise DagrException('missing content-type')
         return self.__content_type
 
+    def get_page_content(self):
+        if not self.__page_content is None:
+            return self.__page_content
+        self.__page_content = self.browser.open(self.page_link)
+        if not self.__page_content.status_code == req_codes.ok:
+            if self.__page_content.status_code == req_codes.forbidden:
+                raise Dagr403Exception()
+            if self.__page_content.status_code == req_codes.not_found:
+                raise Dagr404Exception()
+            raise DagrException(
+                'incorrect status code - {}'.format(self.__page_content.status_code))
+        return self.__page_content
+
     def find_link(self):
         if self.__file_link:
             return self.__file_link, self.__found_type
         self.__logger.log(level=4, msg='find_link no file_link')
         filelink = None
         soup_config = self.config.get('dagr.bs4.config')
-        resp = self.browser.open(self.page_link)
-        if not resp.status_code == req_codes.ok:
-            if resp.status_code == req_codes.forbidden:
-                raise Dagr403Exception()
-            if resp.status_code == req_codes.not_found:
-                raise Dagr404Exception()
-            raise DagrException(
-                'incorrect status code - {}'.format(resp.status_code))
+        resp = self.get_page_content()
         current_page = self.browser.get_current_page()
         # Full image link (via download link)
         link_text = re.compile('Download( (Image|File))?')
@@ -936,7 +950,7 @@ class DAGRDeviationProcessor():
                 self.__file_link, self.__found_type = img_tag.get(
                     'src'), 'art_stage'
                 return self.__file_link, self.__found_type
-            pdf_object = stage.find('object', {'type':'application/pdf'})
+            pdf_object = stage.find('object', {'type': 'application/pdf'})
             if pdf_object:
                 self.__file_link, self.__found_type = pdf_object.get(
                     'data'), 'pdf_object'
@@ -1030,12 +1044,6 @@ class DAGRDeviationProcessor():
                                     'unable to find downloadable deviation')
         if self.__findlink_debug_loc:
             debug_folder = self.base_dir.joinpath(
-                self.__findlink_debug_loc).expanduser().resolve()
-            if not debug_folder.exists():
-                debug_folder.mkdir(parents=True)
-            debug_output = (debug_folder
-                            .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(self.page_link)))
-                            .with_suffix('.html'))
-            self.__logger.info('Dumping html to {}'.format(debug_output))
-            debug_output.write_bytes(resp.content)
+                self.__findlink_debug_loc).expanduser()
+            dump_html(debug_folder, self.page_link, resp.content)
         raise DagrException('all attemps to find a link failed')
