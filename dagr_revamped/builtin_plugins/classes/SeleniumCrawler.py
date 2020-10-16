@@ -11,6 +11,8 @@ class SeleniumCrawler():
         self.__config = config
         self.__browser = browser
         self.__cache = cache
+        self.__oom_max_pages = self.__config.get('oom_max_pages', 13000)
+        self.__logger.log(level=15, msg=f"OOM max pages set to {self.__oom_max_pages}")
 
     def collect_pages(self):
         collect_st = time()
@@ -72,7 +74,7 @@ class SeleniumCrawler():
                     sleep(1)
                 self.__logger.log(
                     level=15, msg=f"Crawl took {'{:.4f}'.format(time() - crawl_st)} seconds")
-            if len(pages) > self.__config.get('oom_max_pages', 13000): break # Prevent chrome from crashing with 'Out of Memory'
+            if len(pages) > self.__oom_max_pages: break # Prevent chrome from crashing with 'Out of Memory'
         self.__cache.flush(slug)
         return pages
 
