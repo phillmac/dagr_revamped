@@ -7,6 +7,7 @@ from selenium.webdriver import ActionChains
 
 from dagr_revamped.plugin import DagrImportError
 from dagr_revamped.utils import create_browser as utils_create_browser
+from dagr_revamped.exceptions import DagrException
 
 from .Response import Response
 
@@ -54,7 +55,7 @@ class SeleniumBrowser():
         self.__app_config = app_config
         self.__config = config
         self.__mature = mature
-        self.__disable_login = self.__config.get('disable_login')
+        self.__login_policy = self.__config.get('login_policy')
         self.__login_url = self.__config.get(
             'login_url', [
                 'https://deviantart.com/users/login',
@@ -95,7 +96,7 @@ class SeleniumBrowser():
             staleness_of(element), message=message)
 
     def do_login(self):
-        if self.__disable_login:
+        if self.__login_policy == 'disable':
             logger.warning('Ignoring login request')
             return
         if not self.__driver.current_url in self.__login_url:
@@ -143,6 +144,8 @@ class SeleniumBrowser():
         self.wait_ready()
         if self.__driver.current_url in self.__login_url:
             logger.info('Detected login required')
+            if self.__login_policy == 'disable':
+                raise LoginDisabledError('Login disabled by config')
             self.do_login()
             if self.__driver.current_url != url:
                 self.__driver.get(url)
@@ -150,12 +153,18 @@ class SeleniumBrowser():
     def open_do_login(self, url):
         self.__open(url)
         if self.get_current_page().find('a', {'href': self.__login_url}):
+            logger.info('Detected login required')
+            if self.__login_policy == 'disable':
+                raise LoginDisabledError('Login disabled by config')
             self.do_login()
         if self.__driver.current_url != url:
                 self.__driver.get(url)
 
     def open(self, url):
-        self.__open(url)
+        if self.__login_policy == 'force':
+            self.open_do_login(url)
+        else:
+            self.__open(url)
         page_title = self.title
         page_source = self.__driver.page_source
 
@@ -207,3 +216,6 @@ class SeleniumBrowser():
 
     def quit(self):
         self.__driver.quit()
+
+class LoginDisabledError(DagrException):
+    pass

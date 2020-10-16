@@ -13,7 +13,10 @@ class DagrPremiumUnavailable(DagrException):
         super().__init__(
             'Premium content unavailable')
 
-class Dagr404Exception(DagrException):
+class DagrHTTPException(DagrException):
+    pass
+
+class Dagr404Exception(DagrHTTPException):
     def __init__(self):
         super().__init__(
             'HTTP 404 error')
@@ -22,7 +25,7 @@ class Dagr404Exception(DagrException):
         return 404
 
 
-class Dagr403Exception(DagrException):
+class Dagr403Exception(DagrHTTPException):
     def __init__(self):
         super().__init__(
             'HTTP 403 error')

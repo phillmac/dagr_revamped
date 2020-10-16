@@ -18,13 +18,12 @@ import deviantart
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 from dateutil.parser import parse as date_parse
-from requests import Response
 from requests import codes as req_codes
 
 from .config import DAGRConfig
 from .DAGRCache import DAGRCache, DagrCacheLockException
 from .exceptions import (Dagr403Exception, Dagr404Exception, DagrException,
-                         DagrPremiumUnavailable)
+                         DagrHTTPException, DagrPremiumUnavailable)
 from .plugin import PluginManager
 from .utils import (StatefulBrowser, compare_size, convert_queue,
                     create_browser, dump_html, filter_deviants, get_base_dir,
@@ -696,7 +695,7 @@ class DAGRDeviationProcessor():
         self.__page_content = None
 
     def get_response(self):
-        if isinstance(self.__response, Response):
+        if self.__response:
             return self.__response
         self.__logger.log(level=4, msg='get_response no resonse')
         flink, _ltype = self.find_link()
@@ -717,6 +716,8 @@ class DAGRDeviationProcessor():
             if not self.__file_ext:
                 raise DagrException(
                     'unknown content-type - {}'.format(content_type))
+        except DagrHTTPException:
+            raise
         except:
             ctdp = self.get_rheaders().get('Content-Disposition')
             if ctdp:
@@ -779,7 +780,7 @@ class DAGRDeviationProcessor():
         except DagrPremiumUnavailable as ex:
             self.cache.add_premium(self.page_link)
             self.ripper.handle_download_error(self.page_link, ex)
-        except (Dagr403Exception, Dagr404Exception) as ex:
+        except DagrHTTPException as ex:
             self.cache.add_httperror(self.page_link, ex)
             self.ripper.handle_download_error(self.page_link, ex)
         except DagrException as ex:
@@ -901,7 +902,7 @@ class DAGRDeviationProcessor():
         return self.__content_type
 
     def get_page_content(self):
-        if not self.__page_content is None:
+        if self.__page_content:
             return self.__page_content
         self.__page_content = self.browser.open(self.page_link)
         if not self.__page_content.status_code == req_codes.ok:
