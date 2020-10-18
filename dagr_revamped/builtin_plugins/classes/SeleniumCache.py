@@ -1,3 +1,4 @@
+from dagr_revamped.utils import load_json, save_json
 import logging
 from pathlib import Path
 
@@ -6,7 +7,6 @@ import pybreaker
 # Used in database integration points
 remote_breaker = pybreaker.CircuitBreaker(fail_max=1, reset_timeout=1200)
 
-from dagr_revamped.utils import load_json, save_json
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +79,11 @@ class SlugCache():
             self.__load()
         if force_overwrite or self.local_stale:
             self.__flush_local(force_overwrite=force_overwrite)
-        if force_overwrite or self.remote_stale:
-            self.__flush_remote(force_overwrite=force_overwrite)
+        try:
+            if force_overwrite or self.remote_stale:
+                self.__flush_remote(force_overwrite=force_overwrite)
+        except pybreaker.CircuitBreakerError:
+            logger.warning('Unable to flush remote: CircuitBreakerError')
 
     def query(self):
         result = set()
