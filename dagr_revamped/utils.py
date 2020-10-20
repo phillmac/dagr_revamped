@@ -234,11 +234,8 @@ def backup_cache_file(fpath):
         fpath = Path(fpath)
     fpath = fpath.resolve()
     backup = fpath.with_suffix('.bak')
-    fpath.replace(backup)
-    # if fpath.exists():
-    #     if backup.exists():
-    #         backup.unlink()
-    #     fpath.rename(backup)
+    if fpath.exists():
+        fpath.replace(backup)
 
 
 def unlink_lockfile(lockfile):
