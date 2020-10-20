@@ -175,15 +175,14 @@ def update_bulk_list(config, mode, deviant=None, mval=None):
     if updated:
         save_json(config.get('dagr.bulk.filenames', 'save'), bulk)
 
-
 def filter_deviants(dfilter, queue):
     if dfilter is None or not dfilter:
         return queue
-    logger.info('Deviant filter: {}'.format(pformat(dfilter)))
-    results = dict((k, queue.get(k)) for k in queue.keys() if k in dfilter)
-    logger.log(level=5, msg='Filter results: {}'.format(pformat(results)))
-    return dict((k, queue.get(k)) for k in queue.keys() if k in dfilter)
-
+    dfilter_lower = [ df.lower() for df in dfilter ]
+    logger.info('Deviant filter: {}'.format(pformat(dfilter_lower)))
+    results = dict((k, queue.get(k)) for k in queue.keys() if (k).lower() in dfilter)
+    logger.log(level=15, msg='Filter results: {}'.format(pformat(results)))
+    return results
 
 def compare_size(dest, content):
     if not isinstance(dest, Path):
