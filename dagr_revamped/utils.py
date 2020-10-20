@@ -180,7 +180,7 @@ def filter_deviants(dfilter, queue):
         return queue
     dfilter_lower = [ df.lower() for df in dfilter ]
     logger.info('Deviant filter: {}'.format(pformat(dfilter_lower)))
-    results = dict((k, queue.get(k)) for k in queue.keys() if (k).lower() in dfilter)
+    results = dict((k, queue.get(k)) for k in queue.keys() if str(k).lower() in dfilter)
     logger.log(level=15, msg='Filter results: {}'.format(pformat(results)))
     return results
 
