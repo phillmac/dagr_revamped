@@ -133,56 +133,97 @@ def load_bulk_files(files):
 
 def get_bulk_files_contents(config):
     output_dir = config.output_dir
-    filenames = config.get('dagr.bulk.filenames', 'load')
-    files_list = (fp for fp in (output_dir.joinpath(fn)
-                                for fn in filenames) if fp.exists())
+    filenames = config.get('dagr.bulk.filenames', 'load').split(',')
+    filepaths = (output_dir.joinpath(fn)
+                 for fn in filenames)
+    files_list = (fp for fp in filepaths if fp.exists())
     return load_bulk_files(files_list)
 
 
-def update_bulk_list(config, mode, deviant=None, mval=None):
-    bulk = convert_queue(config,
-                         get_bulk_files_contents(config))
+# def __update_bulk_list_entry(bulk, mode, deviant=None, mval=None):
+#     updated = False
+#     if deviant is None:
+#         entry = bulk.get(mode)
+#         if entry is None:
+#             entry = []
+#             bulk[mode] = entry
 
-    updated = False
+#         if not mval in entry:
+#             entry.append(mval)
+#             updated = True
 
-    if deviant is None:
-        entry = bulk.get(mode)
-        if entry is None:
-            entry = []
-            bulk[mode] = entry
+#     else:
+#         bulk_deviants = bulk.get('deviants', {})
+#         entry = bulk_deviants.get(
+#             deviant, bulk_deviants.get(deviant.lower(), {}))
 
-        if not mval in entry:
-            entry.append(mval)
-            updated = True
+#         if not deviant.lower() in [d.lower() for d in bulk_deviants]:
+#             bulk_deviants[deviant] = entry
+#             updated = True
 
-    else:
-        bulk_deviants = bulk.get('deviants', {})
-        entry = bulk_deviants.get(
-            deviant, bulk_deviants.get(deviant.lower(), {}))
+#         if not mode in entry:
+#             entry[mode] = []
+#             updated = True
 
-        if not deviant.lower() in [d.lower() for d in bulk_deviants]:
-            bulk_deviants[deviant] = entry
-            updated = True
+#         if not mval is None and not mval in entry[mode]:
+#             entry[mode].append(mval)
+#             updated = True
 
-        if not mode in entry:
-            entry[mode] = []
-            updated - True
+#     return updated
 
-        if not mval is None and not mval in entry[mode]:
-            entry[mode].append(mval)
-            updated = True
 
-    if updated:
-        save_json(config.get('dagr.bulk.filenames', 'save'), bulk)
+def save_bulk(config, bulk):
+    save_json(config.get('dagr.bulk.filenames', 'save'), bulk)
+
+
+def update_bulk_list(config, entries):
+    # bulk = convert_queue(config,
+    #                      get_bulk_files_contents(config))
+
+    bulk = get_bulk_files_contents(config)
+    blen = len(bulk['gallery']) + len(bulk['favs'])
+    lowercase_deviants = {
+        'gallery': [d.lower() for d in bulk.get('gallery', [])],
+        'favs': [d.lower() for d in bulk.get('favs', [])]
+    }
+
+    for e in entries:
+        mode = e.get('mode')
+        if mode in ['gallery', 'favs']:
+            deviant = e.get('deviant')
+            if not (deviant.lower() in lowercase_deviants.get(mode)):
+                bulk[mode].append(deviant)
+                logger.log(level=15, msg="Added {}".format(e))
+    delta = len(bulk['gallery']) + len(bulk['favs']) - blen
+    # updated = False
+    #     if __update_bulk_list_entry(bulk, **e):
+    #         updated =  True
+    #         logger.log(level=15, msg="Added {}".format(e))
+
+    if delta > 0:
+        save_bulk(config, bulk)
+        logger.info(f"Added {delta} deviants to bulk gallery list")
+
+
+# def update_bulk_list(config, mode, deviant=None, mval=None):
+#     bulk = convert_queue(config,
+#                          get_bulk_files_contents(config))
+
+#     updated = __update_bulk_list_entry(bulk, mode, deviant, mval)
+
+#     if updated:
+#         save_bulk(config, bulk)
 
 def filter_deviants(dfilter, queue):
     if dfilter is None or not dfilter:
         return queue
-    dfilter_lower = [ df.lower() for df in dfilter ]
+    dfilter_lower = [df.lower() for df in dfilter]
     logger.info('Deviant filter: {}'.format(pformat(dfilter_lower)))
-    results = dict((k, queue.get(k)) for k in queue.keys() if str(k).lower() in dfilter)
+    results = dict((k, queue.get(k))
+                   for k in queue.keys() if str(k).lower() in dfilter)
     logger.log(level=15, msg='Filter results: {}'.format(pformat(results)))
     return results
+
 
 def compare_size(dest, content):
     if not isinstance(dest, Path):
@@ -316,7 +357,7 @@ def dump_html(fpath, page, content):
     if not fpath.exists():
         fpath.mkdir(parents=True)
     fname = (fpath
-                .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)))
-                .with_suffix('.html'))
+             .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)))
+             .with_suffix('.html'))
     logger.info('Dumping html to {}'.format(fname))
     fname.write_bytes(content)
