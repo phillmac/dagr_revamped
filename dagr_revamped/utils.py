@@ -114,10 +114,10 @@ def convert_queue(config, queue):
         data = queue.get(mode)
         if isinstance(data, Mapping):
             for k, v in data.items():
-                update_d(converted, {k: {mode: v}})
+                update_d(converted, {k.lower(): {mode: v}})
         elif isinstance(data, Iterable):
             for v in data:
-                update_d(converted, {v: {mode: None}})
+                update_d(converted, {v.lower(): {mode: None}})
         else:
             logger.debug('Mode {} not present'.format(mode))
     return converted
