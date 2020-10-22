@@ -304,7 +304,7 @@ class DAGR():
                 return
         self.__logger.log(
             level=5, msg='Ripping {} : {}'.format(deviant or '', modes))
-        directory = Path(self.outdir()).expanduser().resolve()
+        directory = self.outdir()
         if deviant:
             try:
                 make_dirs(directory.joinpath(deviant))
@@ -750,7 +750,7 @@ class DAGRDeviationProcessor():
         if self.__dest:
             return self.__dest
         fname = self.get_fname()
-        self.__dest = self.base_dir.joinpath(fname).expanduser().resolve()
+        self.__dest = self.base_dir.joinpath(fname)
         return self.__dest
 
     def process_deviation(self):
@@ -829,7 +829,7 @@ class DAGRDeviationProcessor():
             return False
         if self.__verify_debug_loc:
             debug = self.base_dir.joinpath(
-                self.__verify_debug_loc).expanduser().resolve()
+                self.__verify_debug_loc)
             make_dirs(debug)
             debug_file = debug.joinpath(dest.name)
             debug_file.write_bytes(dest.read_bytes())

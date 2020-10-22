@@ -36,7 +36,7 @@ def get_base_dir(config, mode, deviant=None, mval=None):
     if deviant:
         base_dir = directory.joinpath(deviant, mode)
     else:
-        base_dir = Path(directory, mode)
+        base_dir = directory.joinpath(mode)
     if mval:
         mval = Path(mval)
         use_old = config.get('dagr.subdirs', 'useoldformat')
@@ -67,7 +67,7 @@ def get_base_dir(config, mode, deviant=None, mval=None):
                 logger.debug('Move subdirs not enabled')
         else:
             base_dir = new_path
-    base_dir = base_dir.resolve()
+    base_dir = base_dir.expanduser().resolve()
     logger.debug('Base dir: {}'.format(base_dir))
     try:
         make_dirs(base_dir)
@@ -175,8 +175,17 @@ def get_bulk_files_contents(config):
 def save_bulk(config, bulk):
     save_json(config.get('dagr.bulk.filenames', 'save'), bulk)
 
+def prune_dict_duplicates(d):
+    for k, v in d.items():
+        if isinstance(v,  Mapping):
+            d[k] = prune_dict_duplicates(v)
+        elif isinstance(v, Iterable):
+            d[k] = list(set(v))
+        else:
+            d[k] = v
+    return d
 
-def update_bulk_list(config, entries):
+def update_bulk_list(config, entries, force_save=False):
     # bulk = convert_queue(config,
     #                      get_bulk_files_contents(config))
 
@@ -194,13 +203,14 @@ def update_bulk_list(config, entries):
             if not (deviant.lower() in lowercase_deviants.get(mode)):
                 bulk[mode].append(deviant)
                 logger.log(level=15, msg="Added {}".format(e))
+    prune_dict_duplicates(bulk)
     delta = len(bulk['gallery']) + len(bulk['favs']) - blen
     # updated = False
     #     if __update_bulk_list_entry(bulk, **e):
     #         updated =  True
     #         logger.log(level=15, msg="Added {}".format(e))
 
-    if delta > 0:
+    if force_save or delta > 0:
         save_bulk(config, bulk)
         logger.info(f"Added {delta} deviants to bulk gallery list")
 

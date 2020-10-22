@@ -18,20 +18,31 @@ class DAGRCache():
     @staticmethod
     def with_queue_only(config, mode, deviant, mval=None, warn_not_found=None):
         base_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, queue_only=True, warn_not_found=warn_not_found)
+        return DAGRCache(config, base_dir, load_files=['existing_pages', 'no_link', 'queue', 'premium', 'httperrors'], warn_not_found=warn_not_found)
+
+    @staticmethod
+    def with_filenames_only(config, mode, deviant, mval=None, warn_not_found=None):
+        base_dir = get_base_dir(config, mode, deviant, mval)
+        return DAGRCache(config, base_dir, load_files=['files_list'], warn_not_found=warn_not_found)
+
+    @staticmethod
+    def with_nolink_only(config, mode, deviant, mval=None, warn_not_found=None):
+        base_dir = get_base_dir(config, mode, deviant, mval)
+        return DAGRCache(config, base_dir, load_files=['no_link'], warn_not_found=warn_not_found)
 
     @staticmethod
     def get_cache(config, mode, deviant, mval=None, warn_not_found=None):
         base_dir = get_base_dir(config, mode, deviant, mval)
         return DAGRCache(config, base_dir, warn_not_found=warn_not_found)
 
-    def __init__(self, dagr_config, base_dir, queue_only=False, warn_not_found=None):
+    def __init__(self, dagr_config, base_dir, load_files=None, warn_not_found=None):
         if not isinstance(base_dir, Path):
             base_dir = Path(base_dir)
         self.base_dir = base_dir
         self.dagr_config = dagr_config
         self.__lock = None
         self.__lock_path = None
+        self.__warn_not_found = warn_not_found
         self.settings_name = self.dagr_config.get(
             'dagr.cache', 'settings') or '.settings'
         self.settings = next(self.__load_cache(
@@ -45,22 +56,20 @@ class DAGRCache():
         self.queue_name = self.settings.get('queue', '.queue')
         self.premium_name = self.settings.get('premium', '.premium')
         self.httperrors_name = self.settings.get('httperrors', '.httperrors')
-        self.existing_pages = next(
-            self.__load_cache(
-                existing_pages=self.ep_name,
-                warn_not_found=True if warn_not_found is None else warn_not_found))
-        self.__no_link = next(self.__load_cache(
-            no_link=self.nolink_name,
-            warn_not_found=False if warn_not_found is None else warn_not_found))
-        self.__queue = next(self.__load_cache(
-            queue=self.queue_name,
-            warn_not_found=False if warn_not_found is None else warn_not_found))
-        self.__premium = next(self.__load_cache(
-            premium=self.premium_name,
-            warn_not_found=False if warn_not_found is None else warn_not_found))
-        self.__httperrors = next(self.__load_cache(
-            httperrors=self.httperrors_name,
-            warn_not_found=False if warn_not_found is None else warn_not_found))
+
+        if load_files is None:
+            load_files = [
+                'existing_pages', 'no_link', 'queue', 'premium', 'httperrors', 'files_list', 'artists', 'last_crawled'
+            ]
+
+        self.__existing_pages = None if not 'existing_pages' in load_files else self.__load_ep()
+        self.__no_link = None if not 'no_link' in load_files else self.__load_nolink()
+        self.__queue = None if not 'queue' in load_files else self.__load_queue()
+        self.__premium = None if not 'premium' in load_files else self.__load_premium()
+        self.__httperrors = None if not 'httperrors' in load_files else self.__load_httperrors()
+        self.__files_list = None if not 'files_list' in load_files else self.__load_fileslist()
+        self.__artists = None if not 'artists' in load_files else self.__load_artists()
+        self.__last_crawled = None if not 'last_crawled' in load_files else self.__load_lastcrawled()
 
         self.__excluded_fnames = [
             '.lock',
@@ -82,23 +91,8 @@ class DAGRCache():
         self.__nolink_stale = False
         self.__httperrors_stale = False
 
-        if queue_only:
-            self.__files_list = None
-            self.artists = None
-            self.last_crawled = None
-        else:
-            self.__files_list = next(self.__load_cache(
-                filenames=self.fn_name,
-                warn_not_found=True if warn_not_found is None else warn_not_found))
-            self.artists = next(self.__load_cache(
-                artists=self.artists_name,
-                warn_not_found=False if warn_not_found is None else warn_not_found))
-            self.last_crawled = next(self.__load_cache(
-                last_crawled=self.crawled_name,
-                warn_not_found=False if warn_not_found is None else warn_not_found))
-
-            if not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
-                self.__convert_urls()
+        if not self.__existing_pages is None and not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
+            self.__convert_urls()
 
     def __enter__(self):
         try:
@@ -119,7 +113,27 @@ class DAGRCache():
 
     @property
     def files_list(self):
+        if self.__files_list is None:
+            self.__files_list = self.__load_fileslist()
         return [f for f in self.__files_list if not f in self.__excluded_fnames]
+
+    @property
+    def existing_pages(self):
+        if self.__existing_pages is None:
+            self.__existing_pages = self.__load_ep()
+        return self.__existing_pages
+
+    @property
+    def artists(self):
+        if self.__artists is None:
+            self.__artists = self.__load_artists()
+        return self.__artists
+
+    @property
+    def last_crawled(self):
+        if self.__last_crawled is None:
+            self.__last_crawled = self.__load_lastcrawled()
+        return self.__last_crawled
 
     def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
         full_path = self.base_dir.joinpath(cache_file)
@@ -152,6 +166,55 @@ class DAGRCache():
                         'Unkown cache type: {}'.format(cache_type))
                 yield cache_defaults[cache_type]()
         logger.log(level=5, msg=pformat(locals()))
+
+    def __load_ep(self):
+        logger.log(level=4, msg='Loading existing pages')
+        return next(
+            self.__load_cache(
+                existing_pages=self.ep_name,
+                warn_not_found=True if self.__warn_not_found is None else self.__warn_not_found))
+
+    def __load_nolink(self):
+        logger.log(level=4, msg='Loading nolink')
+        return next(self.__load_cache(
+            no_link=self.nolink_name,
+            warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
+
+    def __load_queue(self):
+        logger.log(level=4, msg='Loading queue')
+        return next(self.__load_cache(
+            queue=self.queue_name,
+            warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
+
+    def __load_premium(self):
+        logger.log(level=4, msg='Loading premium')
+        return next(self.__load_cache(
+            premium=self.premium_name,
+            warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
+
+    def __load_fileslist(self):
+        logger.log(level=4, msg='Loading files list')
+        return next(self.__load_cache(
+            filenames=self.fn_name,
+            warn_not_found=True if self.__warn_not_found is None else self.__warn_not_found))
+
+    def __load_artists(self):
+        logger.log(level=4, msg='Loading artists')
+        return next(self.__load_cache(
+            artists=self.artists_name,
+            warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
+
+    def __load_httperrors(self):
+        logger.log(level=4, msg='Loading http errors')
+        return next(self.__load_cache(
+            httperrors=self.httperrors_name,
+            warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
+
+    def __load_lastcrawled(self):
+        logger.log(level=4, msg='Loading last crawled')
+        return next(self.__load_cache(
+            last_crawled=self.crawled_name,
+            warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
 
     def __ep_exists(self):
         return self.base_dir.joinpath(self.ep_name).exists()
@@ -221,16 +284,16 @@ class DAGRCache():
         ep_missing = not self.__ep_exists()
         artists_missing = not self.__artists_exists()
         settings_missing = not self.__settings_exists()
-        fix_fn = fn_missing and bool(self.files_list)
-        fix_ep = ep_missing and bool(self.existing_pages)
+        fix_fn = fn_missing and bool(self.__files_list)
+        fix_ep = ep_missing and bool(self.__existing_pages)
         fix_artists = artists_missing and bool(
-            self.files_list) and bool(self.existing_pages)
+            self.__files_list) and bool(self.__existing_pages)
         if settings_missing:
             self.__update_cache(self.settings_name, self.settings, False)
         if self.downloaded_pages or fix_fn:
-            self.__update_cache(self.fn_name, self.files_list)
+            self.__update_cache(self.fn_name, self.__files_list)
         if self.downloaded_pages or fix_ep:
-            self.__update_cache(self.ep_name, self.existing_pages)
+            self.__update_cache(self.ep_name, self.__existing_pages)
         if save_artists:
             if self.downloaded_pages or fix_artists or save_artists == 'force':
                 self.update_artists(save_artists == 'force')
@@ -276,6 +339,8 @@ class DAGRCache():
         self.__update_cache(self.crawled_name, self.last_crawled)
 
     def add_premium(self, page):
+        if self.__premium is None:
+            self.__premium = self.__load_premium()
         if page in self.__premium:
             return
         self.remove_page_extras(page, 'premium')
@@ -283,9 +348,13 @@ class DAGRCache():
         self.__premium_stale = True
 
     def get_premium(self):
+        if self.__premium is None:
+            self.__premium = self.__load_premium()
         return copy(self.__premium)
 
     def get_httperrors(self):
+        if self.__httperrors is None:
+            self.__httperrors = self.__load_httperrors()
         return copy(self.__httperrors)
 
     @property
@@ -293,6 +362,8 @@ class DAGRCache():
         return set([*self.downloaded_pages, *self.existing_pages])
 
     def add_httperror(self, page, page_error):
+        if self.__httperrors is None:
+            self.__httperrors = self.__load_httperrors()
         if not page in self.httperrors_exclude:
             self.__httperrors_stale = True
             if not page in self.__httperrors:
@@ -305,9 +376,17 @@ class DAGRCache():
 
     @property
     def nl_exclude(self):
+        if self.__no_link is None:
+            self.__no_link = self.__load_nolink()
         return set([*self.downloaded_pages, *self.existing_pages, *self.__no_link, *self.__premium, *self.__httperrors])
 
     def add_nolink(self, page):
+        if self.__no_link is None:
+            self.__no_link = self.__load_nolink()
+        if self.__premium is None:
+            self.__premium = self.__load_premium()
+        if self.__httperrors is None:
+            self.__httperrors = self.__load_httperrors()
         if page in self.nl_exclude:
             return
         self.__nolink_stale = True
@@ -315,6 +394,8 @@ class DAGRCache():
         self.__no_link.append(page)
 
     def remove_nolink(self, pages):
+        if self.__no_link is None:
+            self.__no_link = self.__load_nolink()
         remove = set([p for p in (pages if isinstance(pages, list)
                                   else list(pages)) if p in self.__no_link])
         rcount = len(remove)
@@ -324,6 +405,8 @@ class DAGRCache():
         return rcount
 
     def prune_nolink(self):
+        if self.__no_link is None:
+            self.__no_link = self.__load_nolink()
         nlcount = len(self.__no_link)
         keep = set(self.__no_link) - self.nl_exclude
         kcount = len(keep)
@@ -334,22 +417,36 @@ class DAGRCache():
         return delta
 
     def get_nolink(self):
+        if self.__no_link is None:
+            self.__no_link = self.__load_nolink()
         return copy(self.__no_link)
 
     def get_queue(self):
+        if self.__queue is None:
+            self.__queue = self.__load_queue()
         return copy(self.__queue)
 
     @property
     def q_exclude(self):
+        if self.__queue is None:
+            self.__queue = self.__load_queue()
+        if self.__premium is None:
+            self.__premium = self.__load_premium()
+        if self.__httperrors is None:
+            self.__httperrors = self.__load_httperrors()
         return set([*self.downloaded_pages, *self.existing_pages, *self.__queue, *self.__premium, *self.__httperrors])
 
     def add_queue(self, page):
+        if self.__queue is None:
+            self.__queue = self.__load_queue()
         if page in self.q_exclude:
             return
         self.__queue_stale = True
         self.__queue.append(page)
 
     def update_queue(self, pages):
+        if self.__queue is None:
+            self.__queue = self.__load_queue()
         exclude = self.q_exclude
         enqueue = [p for p in pages if not p in exclude]
         if enqueue:
@@ -359,6 +456,8 @@ class DAGRCache():
         return len(enqueue)
 
     def prune_queue(self):
+        if self.__queue is None:
+            self.__queue = self.__load_queue()
         qcount = len(self.__queue)
         keep = set(self.__queue) - self.q_exclude
         kcount = len(keep)
@@ -369,6 +468,14 @@ class DAGRCache():
         return delta
 
     def remove_page_extras(self, page, reason):
+        if self.__no_link is None:
+            self.__no_link = self.__load_nolink()
+        if self.__queue is None:
+            self.__queue = self.__load_queue()
+        if self.__premium is None:
+            self.__premium = self.__load_premium()
+        if self.__httperrors is None:
+            self.__httperrors = self.__load_httperrors()
         if page in self.__queue:
             self.__queue.remove(page)
             self.__queue_stale = True
@@ -411,6 +518,8 @@ class DAGRCache():
         return [l for l in links if not self.check_link(l)]
 
     def add_filename(self, fn):
+        if self.__files_list is None:
+            self.__files_list = self.__load_fileslist()
         if fn in self.__files_list:
             logger.log(
                 level=5, msg='{} allready in filenames cache'.format(fn))
@@ -418,7 +527,9 @@ class DAGRCache():
             self.__files_list.append(fn)
 
     def real_filename(self, shortname):
-        return next(fn for fn in self.files_list if shortname.lower() in fn.lower())
+        if self.__files_list is None:
+            self.__files_list = self.__load_fileslist()
+        return next(fn for fn in self.__files_list if shortname.lower() in fn.lower())
 
 
 class DagrCacheLockException(Exception):
