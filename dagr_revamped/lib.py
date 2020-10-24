@@ -762,7 +762,7 @@ class DAGRDeviationProcessor():
             #self.__logger.debug('File link: {}'.format(flink))
             if self.download_needed():
                 self.download_link()
-            return not self.__page_content is None
+            return not (self.__page_content is None)
         except KeyboardInterrupt:
             try:
                 inp = input('Do you want to quit? : ').lower()
