@@ -247,7 +247,8 @@ class DAGRConfig(DAGRBaseConf):
             'Queue': '.queue',
             'Premium': '.premium',
             'HTTPErrors': '.httperrors',
-            'ShortUrls': False
+            'ShortUrls': False,
+            'UpdateFilesList': True
         },
         'Dagr.BS4.Config': {
             'Features': 'lxml'
