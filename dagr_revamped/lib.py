@@ -762,7 +762,6 @@ class DAGRDeviationProcessor():
             #self.__logger.debug('File link: {}'.format(flink))
             if self.download_needed():
                 self.download_link()
-            return not (self.__page_content is None)
         except KeyboardInterrupt:
             try:
                 inp = input('Do you want to quit? : ').lower()
@@ -788,6 +787,7 @@ class DAGRDeviationProcessor():
             self.ripper.handle_download_error(self.page_link, ex)
         else:
             self.cache.add_link(self.page_link)
+        return not (self.__page_content is None)
 
     def download_link(self):
         fname = self.get_fname()
