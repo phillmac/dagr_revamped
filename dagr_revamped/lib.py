@@ -443,11 +443,11 @@ class DAGR():
             self.__logger.info(
                 'Processing deviation {} of {} ( {} )'.format(count, len(pages), link))
             dp = self.deviantion_pocessor(self, cache, link)
-            dp.process_deviation()
+            downloaded = dp.process_deviation()
             if callback:
                 callback(link, dp.get_page_content().content)
             delay_needed = dl_delay - (time() - pstart)
-            if delay_needed > 0:
+            if downloaded and delay_needed > 0:
                 self.__logger.log(
                     level=15, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
                 sleep(delay_needed)
@@ -762,6 +762,7 @@ class DAGRDeviationProcessor():
             #self.__logger.debug('File link: {}'.format(flink))
             if self.download_needed():
                 self.download_link()
+            return not self.__page_content is None
         except KeyboardInterrupt:
             try:
                 inp = input('Do you want to quit? : ').lower()
@@ -771,7 +772,7 @@ class DAGRDeviationProcessor():
                 elif inp.startswith('q'):
                     sys.exit()
                 else:
-                    self.process_deviation()
+                    return self.process_deviation()
             except EOFError:
                 sys.exit()
         except SystemExit:
