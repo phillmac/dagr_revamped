@@ -527,7 +527,7 @@ class DAGRCache():
     def add_filename(self, fn):
         if self.__files_list is None:
             self.__files_list = self.__load_fileslist()
-        if self.__files_list.has(fn):
+        if fn in self.__files_list:
             logger.log(
                 level=15, msg='{} already in filenames cache'.format(fn))
         else:
