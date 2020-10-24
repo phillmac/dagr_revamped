@@ -438,14 +438,14 @@ class DAGR():
             pstart = time()
             if not self.verifybest and progress > 0 and count % progress == 0:
                 cache.save()
+            if not self.keep_running(check_stop=count % progress == 0):
+                return
             self.__logger.info(
                 'Processing deviation {} of {} ( {} )'.format(count, len(pages), link))
             dp = self.deviantion_pocessor(self, cache, link)
             dp.process_deviation()
             if callback:
                 callback(link, dp.get_page_content().content)
-            if not self.keep_running(check_stop=count % progress == 0):
-                return
             delay_needed = dl_delay - (time() - pstart)
             if delay_needed > 0:
                 self.__logger.log(
