@@ -306,7 +306,8 @@ class DAGRConfig(DAGRBaseConf):
         'Logging.Files.Names.Prefixes': get_os_options('Logging.Files.Names.Prefixes', ['Local', 'Remote']),
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
-            'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Login_Policy', 'OOM_Max_Pages'
+            'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Login_Policy', 'OOM_Max_Pages',
+            'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout'
         ]),
         'DeviantArt': get_os_options('DeviantArt', ['Username', 'Password'])
     })
@@ -466,6 +467,7 @@ class DAGRConfig(DAGRBaseConf):
     def set_config(self):
         if not self.__arguments['section']:
             print('--section is required')
+
 
 def dict_merge(dict_1, dict_2):
     """Merge two dictionaries.

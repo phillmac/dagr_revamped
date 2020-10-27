@@ -4,10 +4,6 @@ from pathlib import Path
 
 import pybreaker
 
-# Used in database integration points
-remote_breaker = pybreaker.CircuitBreaker(fail_max=1, reset_timeout=1200)
-
-
 logger = logging.getLogger(__name__)
 
 
@@ -18,10 +14,11 @@ def deep_tuple(x):
 
 
 class SlugCache():
-    def __init__(self, slug, local, remote):
+    def __init__(self, slug, local, remote, remote_breaker):
         self.__slug = slug
         self.__local_values = set()
         self.__remote_values = set()
+        self.__remote_breaker = remote_breaker
         self.__values = {
             'remote_values': self.__remote_values,
             'local_values': self.__local_values
@@ -67,11 +64,23 @@ class SlugCache():
             self.__local_values.update(self.__remote_values)
         save_json(self.__caches.get('local primary'), self.__local_values)
 
-    @remote_breaker
-    def __flush_remote(self, force_overwrite=False):
-        if not force_overwrite:
-            self.__remote_values.update(self.__local_values)
-        save_json(self.__caches.get('remote primary'), self.__remote_values)
+    def __flush_remote(self, force_overwrite=False, ignore_breaker=False):
+        def do_flush_remote(remote_values, local_values, caches, force_overwrite):
+            if not force_overwrite:
+                remote_values.update(local_values)
+            save_json(caches.get('remote primary'), remote_values)
+
+        @self.__remote_breaker
+        def do_flush_remote_breaker(remote_values, local_values, caches, force_overwrite):
+            do_flush_remote(remote_values, local_values,
+                            caches, force_overwrite)
+
+        if ignore_breaker:
+            do_flush_remote(self.__remote_values,
+                            self.__local_values, self.__caches, force_overwrite)
+        else:
+            do_flush_remote_breaker(
+                self.__remote_values, self.__local_values, self.__caches, force_overwrite)
 
     def flush(self, force_overwrite=False):
         logger.log(level=15, msg=f"Flushing {self.__slug}")
@@ -129,6 +138,13 @@ class SeleniumCache():
             'local_cache_path', '~/.config/.dagr/seleniumcache')).expanduser().resolve()
         self.__remote_cache = output_dir.joinpath(
             config.get('remote_cache_path', '.selenium')).expanduser().resolve()
+        fail_max = config.get('remote_breaker_fail_max', 1)
+        reset_timeout = config.get('remote_breaker_reset_timeout', 10)
+        self.__remote_breaker = pybreaker.CircuitBreaker(
+            fail_max=fail_max, reset_timeout=reset_timeout)
+        logger.log(
+            level=15, msg=f"Remote cache cb - fail_max: {fail_max} reset_timeout: {reset_timeout}")
+
         self.__caches = {}
         self.__flushed = {}
 
@@ -152,19 +168,19 @@ class SeleniumCache():
     def query(self, slug):
         if not slug in self.__caches.keys():
             self.__caches[slug] = SlugCache(
-                slug, self.__local_cache, self.__remote_cache)
+                slug, self.__local_cache, self.__remote_cache, self.__remote_breaker)
         return self.__caches.get(slug).query()
 
     def update(self, slug, values):
         if not slug in self.__caches.keys():
             self.__caches[slug] = SlugCache(
-                slug, self.__local_cache, self.__remote_cache)
+                slug, self.__local_cache, self.__remote_cache, self.__remote_breaker)
         self.__caches.get(slug).update(values)
         self.__flushed[slug] = False
 
     def remove(self, slug, values):
         if not slug in self.__caches.keys():
             self.__caches[slug] = SlugCache(
-                slug, self.__local_cache, self.__remote_cache)
+                slug, self.__local_cache, self.__remote_cache,  self.__remote_breaker)
         self.__caches.get(slug).remove(values)
         self.__flushed[slug] = False
