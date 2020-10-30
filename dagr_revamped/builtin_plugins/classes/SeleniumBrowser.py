@@ -56,6 +56,7 @@ class SeleniumBrowser():
         self.__config = config
         self.__mature = mature
         self.__login_policy = self.__config.get('login_policy')
+        logger.log(level=15, msg=f"Login policy: {self.__login_policy}")
         self.__login_url = self.__config.get(
             'login_url', [
                 'https://deviantart.com/users/login',
