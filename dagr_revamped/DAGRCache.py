@@ -1,4 +1,5 @@
 import logging
+import re
 from copy import copy
 from pathlib import Path, PurePosixPath
 from platform import node as get_hostname
@@ -75,6 +76,9 @@ class DAGRCache():
             self.httperrors_name
         ]
 
+        self.__excluded_fnames_regex = list(map(re.compile, map(re.escape, self.__excluded_fnames)))
+        self.__excluded_fnames_regex.append(re.compile(r'.*\.tmp'))
+
         self.__existing_pages = None if not 'existing_pages' in load_files else self.__load_ep()
         self.__no_link = None if not 'no_link' in load_files else self.__load_nolink()
         self.__queue = None if not 'queue' in load_files else self.__load_queue()
@@ -117,7 +121,7 @@ class DAGRCache():
     def files_list(self):
         if self.__files_list is None:
             self.__files_list = self.__load_fileslist()
-        return [f for f in self.__files_list if not f in self.__excluded_fnames]
+        return [f for f in self.__files_list if not any(r.match(f) for r in self.__excluded_fnames_regex)]
 
     @property
     def existing_pages(self):
@@ -536,7 +540,7 @@ class DAGRCache():
     def real_filename(self, shortname):
         if self.__files_list is None:
             self.__files_list = self.__load_fileslist()
-        return next(fn for fn in self.__files_list if shortname.lower() in fn.lower())
+        return next(fn for fn in self.files_list if shortname.lower() in fn.lower())
 
     def prune_filename(self, fname):
         self.__files_list.discard(fname)
