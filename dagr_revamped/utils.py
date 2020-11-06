@@ -84,7 +84,9 @@ def buffered_file_write(json_content, fname):
     buffer = StringIO()
     json.dump(json_content, buffer, indent=4, sort_keys=True)
     buffer.seek(0)
-    fname.write_text(buffer.read())
+    temp = fname.with_suffix('.tmp')
+    temp.write_text(buffer.read())
+    temp.rename(fname)
 
 
 def update_d(d, u):
@@ -286,7 +288,9 @@ def backup_cache_file(fpath):
     fpath = fpath.resolve()
     backup = fpath.with_suffix('.bak')
     if fpath.exists():
-        fpath.replace(backup)
+        if backup.exists():
+            backup.unlink()
+        fpath.rename(backup)
 
 
 def unlink_lockfile(lockfile):
