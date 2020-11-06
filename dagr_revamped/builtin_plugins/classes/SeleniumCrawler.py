@@ -66,18 +66,45 @@ collect_links(arguments[0])
             level=15, msg=f"Collect pages took {'{:.4f}'.format(time() - collect_st)} seconds")
         return pages
 
-    def crawl_action(self, slug, mval_id=None, pages=None, history=None):
-        pcount = None
-        sleep_time = 0
-        if pages is None:
-            pages = set()
-        if isinstance(pages, list):
-            pages = set(pages)
-        if history is None:
-            history = set()
+    def update_history(self, slug, pages, history):
+        new_pages = pages - history
+        if len(new_pages) > 0:
+            hlen = len(history)
+            history.update(pages)
+            save_st = time()
+            if len(history) > hlen:
+                self.__cache.update(slug, history)
+            else:
+                self.__logger.info('History unchanged')
+            self.__logger.log(
+                level=15, msg=f"Save took {'{:.4f}'.format(time() - save_st)} seconds")
+
+    def load_more(self, slug, pages, history, mval_id=None):
         body = self.__browser.find_element_by_tag_name('body')
-        while (pcount is None) or (pcount < len(pages)):
-            pcount = len(pages)
+        next_page = body.find_element_by_link_text('Next')
+
+        if next_page:
+            crawl_st = time()
+            self.__logger.log(level=15, msg="Found next page element")
+            self.__browser.click_element(next_page)
+            collected = self.collect_pages_mval_id(
+                mval_id) if mval_id else self.collect_pages()
+
+            pages.update(collected)
+
+            self.__logger.info(f"URL count {len(pages)}")
+
+            self.update_history(slug, pages, history)
+            sleep_time = self.__config.get('page_sleep_time', 7)
+            delay_needed = sleep_time - (time() - crawl_st)
+            if delay_needed > 0:
+                self.__logger.log(
+                    level=15, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
+                sleep(delay_needed)
+            return True
+
+        else:
+            sleep_time = 0
             for _pd in range(self.__config.get('page_down_count', 7)):
                 crawl_st = time()
                 collected = self.collect_pages_mval_id(
@@ -96,22 +123,28 @@ collect_links(arguments[0])
                         'Error while sending page down keypress')
                 self.__logger.log(
                     level=15, msg=f"Sending page down keypress took {'{:.4f}'.format(time() - pd_st)} seconds")
-                new_pages = pages - history
-                if len(new_pages) > 0:
-                    hlen = len(history)
-                    history.update(pages)
-                    save_st = time()
-                    if len(history) > hlen:
-                        self.__cache.update(slug, history)
-                    else:
-                        self.__logger.info('History unchanged')
-                    self.__logger.log(
-                        level=15, msg=f"Save took {'{:.4f}'.format(time() - save_st)} seconds")
+
+                self.update_history(slug, pages, history)
+
                 while time() - crawl_st < sleep_time:
                     sleep(1)
                 self.__logger.log(
                     level=15, msg=f"Crawl took {'{:.4f}'.format(time() - crawl_st)} seconds")
-            if len(pages) > self.__oom_max_pages:
+        return False
+
+    def crawl_action(self, slug, mval_id=None, pages=None, history=None):
+        pcount = None
+        if pages is None:
+            pages = set()
+        if isinstance(pages, list):
+            pages = set(pages)
+        if history is None:
+            history = set()
+        while (pcount is None) or (pcount < len(pages)):
+            pcount = len(pages)
+            is_paginated = self.load_more(
+                slug, pages, history, mval_id=mval_id)
+            if not is_paginated and len(pages) > self.__oom_max_pages:
                 break  # Prevent chrome from crashing with 'Out of Memory'
         self.__cache.flush(slug)
         return pages
