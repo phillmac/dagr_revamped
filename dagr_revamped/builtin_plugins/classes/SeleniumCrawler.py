@@ -5,6 +5,7 @@ from pathlib import PurePosixPath
 from time import sleep, time
 
 from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
 
 
 class SeleniumCrawler():
@@ -81,7 +82,11 @@ collect_links(arguments[0])
 
     def load_more(self, slug, pages, history, mval_id=None):
         body = self.__browser.find_element_by_tag_name('body')
-        next_page = body.find_element_by_link_text('Next')
+        next_page = None
+        try:
+            next_page = body.find_element_by_link_text('Next')
+        except NoSuchElementException:
+            pass
 
         if next_page:
             crawl_st = time()
