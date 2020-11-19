@@ -14,21 +14,24 @@ class DagrPremiumUnavailable(DagrException):
             'Premium content unavailable')
 
 class DagrHTTPException(DagrException):
-    pass
-
-class Dagr404Exception(DagrHTTPException):
-    def __init__(self):
+    def __init__(self, http_code):
         super().__init__(
-            'HTTP 404 error')
-    @property
-    def httpcode(self):
-        return 404
+            f"HTTP {http_code} error")
+        self.http_code = http_code
+
+# class Dagr404Exception(DagrHTTPException):
+#     def __init__(self):
+#         super().__init__(
+#             'HTTP 404 error')
+#     @property
+#     def httpcode(self):
+#         return 404
 
 
-class Dagr403Exception(DagrHTTPException):
-    def __init__(self):
-        super().__init__(
-            'HTTP 403 error')
-    @property
-    def httpcode(self):
-        return 403
+# class Dagr403Exception(DagrHTTPException):
+#     def __init__(self):
+#         super().__init__(
+#             'HTTP 403 error')
+#     @property
+#     def httpcode(self):
+#         return 403

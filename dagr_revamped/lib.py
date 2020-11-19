@@ -22,8 +22,8 @@ from requests import codes as req_codes
 
 from .config import DAGRConfig
 from .DAGRCache import DAGRCache, DagrCacheLockException
-from .exceptions import (Dagr403Exception, Dagr404Exception, DagrException,
-                         DagrHTTPException, DagrPremiumUnavailable)
+from .exceptions import (DagrException, DagrHTTPException,
+                         DagrPremiumUnavailable)
 from .plugin import PluginManager
 from .utils import (StatefulBrowser, compare_size, convert_queue,
                     create_browser, dump_html, filter_deviants, get_base_dir,
@@ -34,7 +34,7 @@ class DAGR():
     def __init__(self, **kwargs):
         self.__logger = logging.getLogger(__name__)
         self.__work_queue = {}
-        self.errors_count = {}
+        self.error_report = []
         self.kwargs = kwargs
         self.config = kwargs.get('config') or DAGRConfig(kwargs)
         self.deviants = kwargs.get('deviants')
@@ -454,13 +454,9 @@ class DAGR():
         cache.save('force' if self.fixartists else True)
 
     def handle_download_error(self, link, link_error):
-        error_string = str(link_error)
         self.__logger.warning(
-            "Download error ({}) : {}".format(link, error_string))
-        if error_string in self.errors_count:
-            self.errors_count[error_string] += 1
-        else:
-            self.errors_count[error_string] = 1
+            "Download error ({}) : {}".format(link, str(link_error)))
+        self.error_report.append(link_error)
 
     def get(self, url):
         tries = {}
@@ -500,14 +496,32 @@ class DAGR():
         self.__logger.info(f"Download total: {self.total_dl_count}")
 
     def print_errors(self):
-        if self.errors_count:
+        errors_formatted = {}
+        if self.error_report:
+            for err in self.error_report:
+                error_string = str(err)
+                if error_string in errors_formatted:
+                    errors_formatted[error_string] += 1
+                else:
+                    errors_formatted[error_string] = 1
             self.__logger.warning("Download errors:")
-            for error in self.errors_count:
+            for error in self.error_report:
                 self.__logger.warning(
-                    '* {} : {}'.format(error, self.errors_count[error]))
+                    '* {} : {}'.format(error, self.error_report[error]))
+
+    def report_http_errors(self):
+        count = {}
+        def err_filter(err): return isinstance(err, DagrHTTPException)
+        for err in filter(self.error_report,
+                          err_filter):
+            if err.http_code in count:
+                count[count] += 1
+            else:
+                count[err.http_code] = 1
+        return count
 
     def reset_stats(self):
-        self.errors_count = {}
+        self.error_report = []
         self.total_dl_count = 0
 
 
@@ -907,12 +921,13 @@ class DAGRDeviationProcessor():
             return self.__page_content
         self.__page_content = self.browser.open(self.page_link)
         if not self.__page_content.status_code == req_codes.ok:
-            if self.__page_content.status_code == req_codes.forbidden:
-                raise Dagr403Exception()
-            if self.__page_content.status_code == req_codes.not_found:
-                raise Dagr404Exception()
-            raise DagrException(
-                'incorrect status code - {}'.format(self.__page_content.status_code))
+            raise DagrHTTPException(self.__page_content.status_code)
+            # if self.__page_content.status_code == req_codes.forbidden:
+            #     raise Dagr403Exception()
+            # if self.__page_content.status_code == req_codes.not_found:
+            #     raise Dagr404Exception()
+            # raise DagrException(
+            #     'incorrect status code - {}'.format(self.__page_content.status_code))
         return self.__page_content
 
     def find_link(self):

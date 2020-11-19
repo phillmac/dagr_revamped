@@ -22,6 +22,12 @@ class DAGRCache():
         return DAGRCache(config, base_dir, load_files=['existing_pages', 'no_link', 'queue', 'premium', 'httperrors'], warn_not_found=warn_not_found)
 
     @staticmethod
+    def with_artists_only(config, mode, deviant, mval=None, warn_not_found=None):
+        base_dir = get_base_dir(config, mode, deviant, mval)
+        return DAGRCache(config, base_dir, load_files=['artists'], warn_not_found=warn_not_found)
+
+
+    @staticmethod
     def with_filenames_only(config, mode, deviant, mval=None, warn_not_found=None):
         base_dir = get_base_dir(config, mode, deviant, mval)
         return DAGRCache(config, base_dir, load_files=['files_list'], warn_not_found=warn_not_found)
@@ -382,7 +388,7 @@ class DAGRCache():
             self.__httperrors[page].append({
                 'host': get_hostname(),
                 'time': time(),
-                'error_code': page_error.httpcode
+                'error_code': page_error.http_code
             })
 
     @property
