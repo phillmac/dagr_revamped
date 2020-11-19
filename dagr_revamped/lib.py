@@ -512,8 +512,7 @@ class DAGR():
     def report_http_errors(self):
         count = {}
         def err_filter(err): return isinstance(err, DagrHTTPException)
-        for err in filter(self.error_report,
-                          err_filter):
+        for err in filter(err_filter, self.error_report):
             if err.http_code in count:
                 count[count] += 1
             else:
