@@ -505,9 +505,9 @@ class DAGR():
                 else:
                     errors_formatted[error_string] = 1
             self.__logger.warning("Download errors:")
-            for error in self.error_report:
+            for error_text, error_count in errors_formatted.items():
                 self.__logger.warning(
-                    '* {} : {}'.format(error, self.error_report[error]))
+                    f"* {error_text} : {error_count}")
 
     def report_http_errors(self):
         count = {}
