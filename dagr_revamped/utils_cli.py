@@ -30,8 +30,12 @@ dagr-utils.py finddupes [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py updatedirscache [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py findnolinks [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py fixnolinks [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
+dagr-utils.py fixartists [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
+dagr-utils.py processqueue [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py extractdeviant [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] DEVIANT FILENAMES
 dagr-utils.py updatebulk [--forcesave] [-v|-vv|--debug=DEBUGLVL]
+
+
 
 
 
@@ -63,6 +67,8 @@ Options:
             'updatedirscache': arguments.get('updatedirscache'),
             'findnolinks': arguments.get('findnolinks'),
             'fixnolinks': arguments.get('fixnolinks'),
+            'fixartists': arguments.get('fixartists'),
+            'processqueue': arguments.get('processqueue'),
             'extractdeviant': arguments.get('extractdeviant'),
             'updatebulk': arguments.get('updatebulk'),
             'deviant': arguments.get('DEVIANT'),
@@ -84,6 +90,8 @@ class DAGRUtils():
             'updatedirscache': self.update_dirs_cache,
             'findnolinks': self.find_nolinks,
             'fixnolinks': self.fix_nolinks,
+            'fixartists': self.fix_artists,
+            'processqueue': self.process_queue,
             'extractdeviant': self.extract_deviant,
             'updatebulk': self.update_bulk
         }
@@ -176,7 +184,7 @@ class DAGRUtils():
 
         try:
             with self.__deviant_gallery_cache:
-                with self.__cache.get_cache(self.__config, mode, deviant, mval, warn_not_found=False) as cache:
+                with self.__cache.with_artists_only(self.__config, mode, deviant, mval, warn_not_found=False) as cache:
                     print('Scanning {}'.format(cache.base_dir))
                     artists = cache.artists
 
@@ -233,7 +241,7 @@ class DAGRUtils():
             return renamed
 
     def fix_nolinks(self):
-        with self.__manager.get_dagr():
+        with self.__manager.get_dagr() as ripper:
             self.__manager.get_browser().do_login()
             self.walk_queue(self._fix_nolinks, True)
 
@@ -253,6 +261,39 @@ class DAGRUtils():
                     cache.save_extras(None)
                     dagr.print_errors()
                     dagr.print_dl_total()
+        except DagrCacheLockException:
+            pass
+
+    def process_queue(self):
+        with self.__manager.get_dagr() as ripper:
+            self.walk_queue(self._process_queue, True)
+
+    def _process_queue(self, mode, deviant, mval=None):
+        dagr = self.__manager.get_dagr()
+        try:
+            with self.__cache.get_cache(self.__config, mode, deviant, mval, warn_not_found=False) as cache:
+                before = len(cache.get_queue())
+                cache.prune_queue()
+                pages = cache.get_queue()
+                logger.info(f"{cache.base_dir} Page count {len(pages)}")
+                if pages:
+                    dagr.process_deviations(cache, pages)
+                if before != len(pages):
+                    cache.save(True)
+                    cache.save_extras(None)
+                    cache.save_queue()
+                    dagr.print_errors()
+                    dagr.print_dl_total()
+        except DagrCacheLockException:
+            pass
+
+    def fix_artists(self):
+        self.walk_queue(self._fix_artists, True)
+
+    def _fix_artists(self, mode, deviant, mval=None):
+        try:
+            with self.__cache.get_cache(self.__config, mode, deviant, mval, warn_not_found=False) as cache:
+                cache.save('force')
         except DagrCacheLockException:
             pass
 

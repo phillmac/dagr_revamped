@@ -433,6 +433,19 @@ class DAGR():
         page_count = len(pages)
         self.__logger.log(
             level=15, msg='Total deviations to download: {}'.format(page_count))
+        fileslist_preload_threshold = self.config.get(
+            'dagr.cache', 'fileslist_preload_threshold')
+        self.__logger.log(
+            level=15, msg=f"fileslist preload threshold: {fileslist_preload_threshold}")
+        if isinstance(fileslist_preload_threshold, int) and fileslist_preload_threshold > 0:
+            if page_count < fileslist_preload_threshold:
+                cache.preload_fileslist_policy = 'disable'
+                self.__logger.log(
+                    level=15, msg='Deviations count below fileslist preload threshold')
+            else:
+                self.__logger.log(
+                    level=15, msg='Deviations count meets fileslist preload threshold')
+                cache.preload_fileslist_policy = 'enable'
         progress = self.progress()
         for count, link in enumerate(pages, start=1):
             pstart = time()

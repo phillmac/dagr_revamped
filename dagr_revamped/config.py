@@ -304,6 +304,7 @@ class DAGRConfig(DAGRBaseConf):
         'Logging.Files.Locations': get_os_options('Logging.Files.Locations', ['Local', 'Remote']),
         'Logging.Files.Names': get_os_options('Logging.Files.Names', ['Local', 'Remote']),
         'Logging.Files.Names.Prefixes': get_os_options('Logging.Files.Names.Prefixes', ['Local', 'Remote']),
+        'Dagr.Cache': get_os_options('Dagr.Cache', ['Fileslist_Preload_Threshold']),
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Login_Policy', 'OOM_Max_Pages',
