@@ -396,9 +396,9 @@ class DAGRConfig(DAGRBaseConf):
         if self.get('dagr', 'verbose') and self.__arguments.get('log_level') < 1:
             return 1
         arg_level = self.__arguments.get('log_level')
-        if not arg_level is None return arg_level
+        if not arg_level is None: return arg_level
         conf_level =  self.get('dagr.logging' 'level')
-        if not conf_level is None return conf_level
+        if not conf_level is None: return conf_level
         return 0
 
     def map_log_level(self):
