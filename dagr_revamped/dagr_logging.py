@@ -45,8 +45,9 @@ def get_logging_paths(config):
 
 def init_logging(config):
     frmt = config.get('logging', 'format')
+    log_level = config.map_log_level() or logging.WARN
     logging.basicConfig(format=frmt,
-                        stream=sys.stdout, level=config.map_log_level() or logging.WARN)
+                        stream=sys.stdout, level=log_level)
     for fp in get_logging_paths(config):
         log(lname=__name__, level=logging.INFO,
             msg=f"Creating logging file handler {fp}")
@@ -62,6 +63,7 @@ def init_logging(config):
     for k, v in config.get('logging.extra').items():
         logging.addLevelName(int(k), v)
     __logging_ready.set()
+    logging.log(level=15, msg=f"Log level set to {log_level}")
     flush_buffer()
 
 
