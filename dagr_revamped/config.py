@@ -271,7 +271,7 @@ class DAGRConfig(DAGRBaseConf):
         },
         'Dagr.Logging': {
             'Level': 0
-        }
+        },
         'Dagr.Plugins': {
             'Disabled': ''
         },
