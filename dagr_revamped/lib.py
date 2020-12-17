@@ -421,8 +421,11 @@ class DAGR():
         resolver = self.deviant_resolver(self)
         return resolver.resolve(deviant)
 
-    def process_deviations(self, cache, pages, disable_filter=False, verify_exists=None, callback=None):
+    def process_deviations(self, cache, pages, **kwargs):
         dl_delay = self.download_delay()
+        disable_filter = kwargs.get('disable_filter', False),
+        verify_exists = kwargs.get('verify_exists', None)
+        callback = kwargs.get('callback', None)
         if self.nocrawl:
             pages = cache.existing_pages
             if not self.reverse():
@@ -455,7 +458,8 @@ class DAGR():
                 return
             self.__logger.info(
                 'Processing deviation {} of {} ( {} )'.format(count, len(pages), link))
-            dp = self.deviantion_pocessor(self, cache, link, verify_exists=verify_exists)
+            dp = self.deviantion_pocessor(
+                self, cache, link, verify_exists=verify_exists)
             downloaded = dp.process_deviation()
             if callback:
                 callback(link, dp.get_page_content().content)
@@ -710,7 +714,7 @@ class DAGRDeviationProcessor():
 
         # if dest and not isinstance(dest, Path):
         #     dest = Path(dest)
-        
+
         self.__dest = dest
         force_verify_exists = kwargs.get('verify_exists', None)
         self.__force_verify_exists = self.ripper.verifyexists if force_verify_exists is None else force_verify_exists
