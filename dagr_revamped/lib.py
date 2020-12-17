@@ -422,7 +422,7 @@ class DAGR():
         return resolver.resolve(deviant)
 
     def process_deviations(self, cache, pages, **kwargs):
-        self.__logger.log(level=4, msg=pformat(kwargs)
+        self.__logger.log(level=4, msg=pformat(kwargs))
         dl_delay = self.download_delay()
         disable_filter = kwargs.get('disable_filter', False),
         verify_exists = kwargs.get('verify_exists', None)
