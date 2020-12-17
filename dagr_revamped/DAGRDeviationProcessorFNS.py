@@ -1,5 +1,8 @@
-from dagr_revamped.lib import DAGRDeviationProcessor
+import logging
+
 import requests
+
+from dagr_revamped.lib import DAGRDeviationProcessor
 
 
 class DAGRDeviationProcessorFNS(DAGRDeviationProcessor):
