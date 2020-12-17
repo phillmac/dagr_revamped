@@ -89,7 +89,7 @@ class DAGRBaseConf():
             key = str(key).lower()
             return convert_val(self.__settings.get(section).get(key))
         if key_errors:
-            raise ValueError('Section {} does not exist'.format(section))
+            raise KeyError('Section {} does not exist'.format(section))
         return None
 
     def set_key(self, section, key, value):
@@ -305,6 +305,7 @@ class DAGRConfig(DAGRBaseConf):
         'Logging.Files.Names': get_os_options('Logging.Files.Names', ['Local', 'Remote']),
         'Logging.Files.Names.Prefixes': get_os_options('Logging.Files.Names.Prefixes', ['Local', 'Remote']),
         'Dagr.Cache': get_os_options('Dagr.Cache', ['Fileslist_Preload_Threshold']),
+        'Dagr.DeviationProcessor': get_os_options('Dagr.DeviationProcessor', ['Fileslist_Preload_Threshold']),
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Login_Policy', 'OOM_Max_Pages',

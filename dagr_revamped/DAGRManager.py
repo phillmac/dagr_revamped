@@ -35,11 +35,11 @@ class DAGRManager():
     def get_crawler(self):
         return self.get_dagr().create_crawler()
 
-    def get_dagr(self) -> DAGR:
+    def get_dagr(self, **kwargs) -> DAGR:
         if self.__dagr is None:
             self.__dagr = DAGR(
                 config=self.__config,
-                stop_check=self.__stop_check)
+                stop_check=self.__stop_check, **kwargs)
         return self.__dagr
 
     def get_cache(self):
