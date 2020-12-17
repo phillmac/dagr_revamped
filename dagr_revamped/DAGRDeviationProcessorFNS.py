@@ -10,6 +10,7 @@ class DAGRDeviationProcessorFNS(DAGRDeviationProcessor):
             'dagr.deviationprocessor', 'fns_address')
         if self.fns_address is None or self.fns_address == '':
             raise Exception('FNS address cannot be empty')
+        self.__logger.log(level=15, msg=f"FNS address: {self.fns_address}")
 
     def verify_exists(self, warn_on_existing=True):
         fname = self.get_fname()
