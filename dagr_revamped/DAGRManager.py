@@ -1,6 +1,8 @@
 import logging
 from platform import node as get_hostname
 
+from dagr_revamped.config import DAGRConfig
+
 from .dagr_logging import init_logging
 from .lib import DAGR
 
@@ -8,7 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class DAGRManager():
-    def __init__(self, config):
+    def __init__(self, config=None):
+        if config is None:
+            config = DAGRConfig()
         self.__config = config
         self.__dagr = None
         self.__cache = None
@@ -21,7 +25,7 @@ class DAGRManager():
         return self.__mode
 
     def init_logging(self):
-        self.__config.set_args({'log_level': 2})
+        self.__config.set_args({'log_level': })
         self.__config.set_section('logging.files.names.prefixes', {
             "remote": f"{self.get_host_mode()}.",
             "local": f"{self.__mode}."
