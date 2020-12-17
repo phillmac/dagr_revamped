@@ -421,7 +421,7 @@ class DAGR():
         resolver = self.deviant_resolver(self)
         return resolver.resolve(deviant)
 
-    def process_deviations(self, cache, pages, disable_filter=False, callback=None):
+    def process_deviations(self, cache, pages, disable_filter=False, verify_exists=None, callback=None):
         dl_delay = self.download_delay()
         if self.nocrawl:
             pages = cache.existing_pages
@@ -455,7 +455,7 @@ class DAGR():
                 return
             self.__logger.info(
                 'Processing deviation {} of {} ( {} )'.format(count, len(pages), link))
-            dp = self.deviantion_pocessor(self, cache, link)
+            dp = self.deviantion_pocessor(self, cache, link, verify_exists=verify_exists)
             downloaded = dp.process_deviation()
             if callback:
                 callback(link, dp.get_page_content().content)
@@ -707,9 +707,13 @@ class DAGRDeviationProcessor():
         self.__filename = kwargs.get('filename')
         self.__found_type = kwargs.get('found_type')
         dest = kwargs.get('dest')
-        if dest and not isinstance(dest, Path):
-            dest = Path(dest)
+
+        # if dest and not isinstance(dest, Path):
+        #     dest = Path(dest)
+        
         self.__dest = dest
+        force_verify_exists = kwargs.get('verify_exists', None)
+        self.__force_verify_exists = self.ripper.verifyexists if force_verify_exists is None else force_verify_exists
         self.__response = kwargs.get('response')
         self.__file_ext = kwargs.get('file_ext')
         self.__verify_debug_loc = self.config.get(
@@ -829,7 +833,7 @@ class DAGRDeviationProcessor():
         return False
 
     def checks_fail(self):
-        if self.verify_exists(warn_on_existing=not self.ripper.verifybest):
+        if self.g(warn_on_existing=not self.ripper.verifybest):
             return True
         if self.ripper.verifybest and self.verify_best():
             self.__logger.log(level=15, msg="Verify best fail")
@@ -865,14 +869,14 @@ class DAGRDeviationProcessor():
 
     def verify_exists(self, warn_on_existing=True):
         fname = self.get_fname()
-        if not self.ripper.verifyexists:
+        if not self.__force_verify_exists:
             if fname in self.cache.files_list:
                 if warn_on_existing:
                     self.__logger.warning(
                         "Cache entry {} exists - skipping".format(fname))
                 return False
         dest = self.get_dest()
-        if self.ripper.verifyexists:
+        if self.__force_verify_exists:
             self.__logger.log(
                 level=5, msg='Verifying {} really exists'.format(dest.name))
         if dest.exists():
