@@ -6,6 +6,7 @@ class DAGRDeviationProcessorFNS(DAGRDeviationProcessor):
 
     def __init__(self, ripper, cache, page_link, **kwargs):
         super().__init__(ripper, cache, page_link, **kwargs)
+        self.__logger = logging.getLogger(__name__)
         self.fns_address = self.config.get(
             'dagr.deviationprocessor', 'fns_address')
         if self.fns_address is None or self.fns_address == '':
