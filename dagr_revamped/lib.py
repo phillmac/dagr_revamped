@@ -833,7 +833,7 @@ class DAGRDeviationProcessor():
         return False
 
     def checks_fail(self):
-        if self.g(warn_on_existing=not self.ripper.verifybest):
+        if self.verify_exists(warn_on_existing=not self.ripper.verifybest):
             return True
         if self.ripper.verifybest and self.verify_best():
             self.__logger.log(level=15, msg="Verify best fail")
