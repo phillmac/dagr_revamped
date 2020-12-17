@@ -401,7 +401,7 @@ class DAGRConfig(DAGRBaseConf):
         if not self.__arguments is None:
             arg_level = self.__arguments.get('log_level')
             if not arg_level is None: return arg_level
-        conf_level =  self.get('dagr.logging' 'level')
+        conf_level =  self.get('dagr.logging', 'level')
         if not conf_level is None: return conf_level
 
     def map_log_level(self):
