@@ -14,17 +14,17 @@ class DAGRDeviationProcessorFNS(DAGRDeviationProcessor):
             'dagr.deviationprocessor', 'fns_address'))
         if self.fns_address is None or self.fns_address == '':
             raise Exception('FNS address cannot be empty')
-        self.__logger.log(level=15, msg=f"FNS address: {self.fns_address}")
+        self.__logger.log(level=5, msg=f"FNS address: {self.fns_address}")
 
     def verify_exists(self, warn_on_existing=True):
         fname = self.get_fname()
-        if not self.ripper.verifyexists:
+        if not self.force_verify_exists:
             if fname in self.cache.files_list:
                 if warn_on_existing:
                     self.__logger.warning(
                         "Cache entry {} exists - skipping".format(fname))
                 return False
-        if self.ripper.verifyexists:
+        if self.force_verify_exists:
             self.__logger.log(
                 level=15, msg='Verifying {} really exists'.format(self.get_dest().name))
         if self.fns_dest_exists():

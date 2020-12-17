@@ -724,6 +724,10 @@ class DAGRDeviationProcessor():
         self.__mature_error = None
         self.__page_content = None
 
+    @property
+    def force_verify_exists(self):
+        return self.__force_verify_exists
+
     def get_response(self):
         if self.__response:
             return self.__response
@@ -869,14 +873,14 @@ class DAGRDeviationProcessor():
 
     def verify_exists(self, warn_on_existing=True):
         fname = self.get_fname()
-        if not self.__force_verify_exists:
+        if not self.force_verify_exists:
             if fname in self.cache.files_list:
                 if warn_on_existing:
                     self.__logger.warning(
                         "Cache entry {} exists - skipping".format(fname))
                 return False
         dest = self.get_dest()
-        if self.__force_verify_exists:
+        if self.force_verify_exists:
             self.__logger.log(
                 level=5, msg='Verifying {} really exists'.format(dest.name))
         if dest.exists():
