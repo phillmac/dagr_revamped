@@ -269,6 +269,9 @@ class DAGRConfig(DAGRBaseConf):
             'image/x-ms-bmp': '.bmp',
             'application/x-shockwave-flash': '.swf'
         },
+        'Dagr.Logging': {
+            'Level': 0
+        }
         'Dagr.Plugins': {
             'Disabled': ''
         },
