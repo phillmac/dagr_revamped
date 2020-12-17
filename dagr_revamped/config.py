@@ -309,6 +309,7 @@ class DAGRConfig(DAGRBaseConf):
         'Logging.Files.Names.Prefixes': get_os_options('Logging.Files.Names.Prefixes', ['Local', 'Remote']),
         'Dagr.Cache': get_os_options('Dagr.Cache', ['Fileslist_Preload_Threshold']),
         'Dagr.DeviationProcessor': get_os_options('Dagr.DeviationProcessor', ['FNS_Address']),
+        'Dagr.Logging':  get_os_options('Dagr.Logging', ['Level']),
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Login_Policy', 'OOM_Max_Pages',
@@ -394,7 +395,11 @@ class DAGRConfig(DAGRBaseConf):
             return 3
         if self.get('dagr', 'verbose') and self.__arguments.get('log_level') < 1:
             return 1
-        return self.__arguments.get('log_level')
+        arg_level = self.__arguments.get('log_level')
+        if not arg_level is None return arg_level
+        conf_level =  self.get('dagr.logging' 'level')
+        if not conf_level is None return conf_level
+        return 0
 
     def map_log_level(self):
         return self.get('logging.map', self.get_log_level())
