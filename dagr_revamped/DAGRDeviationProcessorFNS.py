@@ -1,4 +1,5 @@
 import logging
+from pathlib import PurePosixPath
 
 import requests
 
@@ -36,12 +37,13 @@ class DAGRDeviationProcessorFNS(DAGRDeviationProcessor):
 
     def fns_dest_exists(self):
         outdir = self.config.output_dir
+        base_dir = self.cache.base_dir
         dest = self.get_dest()
-        dest_rel = dest.relative_to(outdir)
+        dest_rel = str(PurePosixPath(base_dir.relative_to(outdir)))
         filename = self.get_fname()
         resp = requests.get(self.fns_address, json={
-                         'path': str(dest_rel).strip('/'), 'filename': filename})
+            'path': dest_rel.strip('/'), 'filename': filename})
         resp.raise_for_status()
         result = resp.json()
-        self.__logger.log(level=15, msg=f"{resp} {result}")
+        self.__logger.log(level=5, msg=f"{resp} {result}")
         return result['exists']
