@@ -430,9 +430,19 @@ class DAGR():
             pages = cache.existing_pages
             if not self.reverse():
                 pages.reverse()
-        if not (self.overwrite() or self.fixmissing or self.verifybest or disable_filter):
+        overwrite = self.overwrite()
+
+        if not (overwrite or self.fixmissing or self.verifybest or disable_filter):
             self.__logger.log(level=5, msg='Filtering links')
             pages = cache.filter_links(pages)
+        else:
+            self.__logger.log(level=5, msg=pformat({
+                'overwrite': overwrite,
+                'fixmissing': self.fixmissing,
+                'verifybest': self.verifybest,
+                'disable_filter': disable_filter
+            }))
+
         page_count = len(pages)
         self.__logger.log(
             level=15, msg='Total deviations to download: {}'.format(page_count))
