@@ -39,7 +39,9 @@ class DAGRDeviationProcessorFNS(DAGRDeviationProcessor):
         dest = self.get_dest()
         dest_rel = dest.relative_to(outdir)
         filename = self.get_fname()
-        r = requests.get(self.fns_address, json={
+        resp = requests.get(self.fns_address, json={
                          'path': str(dest_rel), 'filename': filename})
-        r.raise_for_status()
-        return r.json()['exists']
+        resp.raise_for_status()
+        result = resp.json()
+        self.__logger.log(level=15, msg=f"{resp} {result}")
+        return result['exists']
