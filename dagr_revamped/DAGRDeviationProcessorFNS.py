@@ -1,12 +1,14 @@
 from dagr_revamped.lib import DAGRDeviationProcessor
 import requests
 
+
 class DAGRDeviationProcessorFNS(DAGRDeviationProcessor):
 
     def __init__(self, ripper, cache, page_link, **kwargs):
         super().__init__(self, ripper, cache, page_link, **kwargs)
-        self.fns_address = self.config.get('dagr.deviationprocessor', 'fns_address')
-        if self.fns_address is None or self.fns_address=='':
+        self.fns_address = self.config.get(
+            'dagr.deviationprocessor', 'fns_address')
+        if self.fns_address is None or self.fns_address == '':
             raise Exception('FNS address cannot be empty')
 
     def verify_exists(self, warn_on_existing=True):
@@ -31,6 +33,8 @@ class DAGRDeviationProcessorFNS(DAGRDeviationProcessor):
         outdir = self.config.output_dir
         dest = self.get_dest()
         dest_rel = dest.relative_to(outdir)
-        r = requests.get(self.fns_address, json={"path":str(dest_rel)})
+        filename = self.get_fname()
+        r = requests.get(self.fns_address, json={
+                         'path': str(dest_rel), 'filename': filename})
         r.raise_for_status()
         return not r.json().get('exists')
