@@ -400,9 +400,11 @@ class DAGRConfig(DAGRBaseConf):
             return 1
         if not self.__arguments is None:
             arg_level = self.__arguments.get('log_level')
-            if not arg_level is None: return arg_level
-        conf_level =  self.get('dagr.logging', 'level')
-        if not conf_level is None: return conf_level
+            if not arg_level is None:
+                return arg_level
+        conf_level = self.get('dagr.logging', 'level')
+        if not conf_level is None:
+            return conf_level
 
     def map_log_level(self):
         return self.get('logging.map', self.get_log_level())
@@ -420,6 +422,7 @@ class DAGRConfig(DAGRBaseConf):
             'getini': lambda: self.show_loaded('ini'),
             'getjson': lambda: self.show_loaded('json'),
             'getoutputdir': lambda: print(self.output_dir) or True,
+            'getloglevel': lambda: print('Log level:', self.map_log_level()) or True,
             'set': self.set_config
         }
         cmd = self.__arguments.get('conf_cmd')
