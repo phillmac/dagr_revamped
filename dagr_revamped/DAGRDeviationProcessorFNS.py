@@ -36,10 +36,7 @@ class DAGRDeviationProcessorFNS(DAGRDeviationProcessor):
         return True
 
     def fns_dest_exists(self):
-        outdir = self.config.output_dir
-        base_dir = self.cache.base_dir
-        dest = self.get_dest()
-        dest_rel = str(PurePosixPath(base_dir.relative_to(outdir)))
+        dest_rel = str(PurePosixPath(self.cache.rel_dir))
         filename = self.get_fname()
         resp = requests.get(self.fns_address, json={
             'path': dest_rel.strip('/'), 'filename': filename})

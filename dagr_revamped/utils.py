@@ -32,7 +32,7 @@ def strip_topdirs(config, directory):
 
 
 def get_base_dir(config, mode, deviant=None, mval=None):
-    directory = config.output_dir
+    directory = config.output_dir.expanduser().resolve()
     if deviant:
         base_dir = directory.joinpath(deviant, mode)
     else:
@@ -67,7 +67,7 @@ def get_base_dir(config, mode, deviant=None, mval=None):
                 logger.debug('Move subdirs not enabled')
         else:
             base_dir = new_path
-    base_dir = base_dir.expanduser().resolve()
+    base_dir = base_dir
     logger.debug('Base dir: {}'.format(base_dir))
     try:
         make_dirs(base_dir)
@@ -75,7 +75,7 @@ def get_base_dir(config, mode, deviant=None, mval=None):
         logger.error('Unable to create base_dir', exc_info=True)
         return
     logger.log(level=5, msg=pformat(locals()))
-    return base_dir
+    return base_dir, base_dir.relative_to(directory)
 
 
 def buffered_file_write(json_content, fname):

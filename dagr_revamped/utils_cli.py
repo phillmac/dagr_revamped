@@ -344,7 +344,7 @@ class DAGRUtils():
         buffered_file_write(self.__global_dirs_mapping, of)
 
     def _update_dirs_cache(self, mode, deviant, mval=None):
-        base_dir = get_base_dir(self.__config, mode, deviant, mval)
+        base_dir, _rel_dir = get_base_dir(self.__config, mode, deviant, mval)
         rel_path = str(strip_topdirs(self.__config, base_dir))
         print(f'Scanning {rel_path}')
         dir_lower = rel_path.lower()

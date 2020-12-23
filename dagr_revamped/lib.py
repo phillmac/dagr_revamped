@@ -228,7 +228,7 @@ class DAGR():
         return {}
 
     def check_lastcrawl(self, seconds, mode, deviant=None, mval=None):
-        base_dir = get_base_dir(self.config, mode, deviant, mval)
+        base_dir, _rel_dir = get_base_dir(self.config, mode, deviant, mval)
         crawl_mode = 'full' if self.maxpages is None else 'short'
         if base_dir.exists():
             cache = self.cache(self.config, base_dir)

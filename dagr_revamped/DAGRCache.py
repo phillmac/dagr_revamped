@@ -18,33 +18,34 @@ class DAGRCache():
 
     @staticmethod
     def with_queue_only(config, mode, deviant, mval=None, warn_not_found=None, preload_fileslist_policy=None):
-        base_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, load_files=['existing_pages', 'no_link', 'queue', 'premium', 'httperrors'], warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
+        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
+        return DAGRCache(config, base_dir, rel_dir, load_files=['existing_pages', 'no_link', 'queue', 'premium', 'httperrors'], warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
     def with_artists_only(config, mode, deviant, mval=None, warn_not_found=None):
-        base_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, load_files=['artists'], warn_not_found=warn_not_found)
+        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
+        return DAGRCache(config, base_dir, rel_dir, load_files=['artists'], warn_not_found=warn_not_found)
 
     @staticmethod
     def with_filenames_only(config, mode, deviant, mval=None, warn_not_found=None, preload_fileslist_policy=None):
-        base_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, load_files=['files_list'], warn_not_found=warn_not_found)
+        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
+        return DAGRCache(config, base_dir, rel_dir, load_files=['files_list'], warn_not_found=warn_not_found)
 
     @staticmethod
     def with_nolink_only(config, mode, deviant, mval=None, warn_not_found=None, preload_fileslist_policy=None):
-        base_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, load_files=['no_link'], warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
+        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
+        return DAGRCache(config, base_dir, rel_dir, load_files=['no_link'], warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
     def get_cache(config, mode, deviant, mval=None, warn_not_found=None):
-        base_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, warn_not_found=warn_not_found)
+        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
+        return DAGRCache(config, base_dir, rel_dir, warn_not_found=warn_not_found)
 
-    def __init__(self, dagr_config, base_dir, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
-        if not isinstance(base_dir, Path):
-            base_dir = Path(base_dir)
+    def __init__(self, dagr_config, base_dir, rel_dir, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
+        # if not isinstance(base_dir, Path):
+        #     base_dir = Path(base_dir)
         self.base_dir = base_dir
+        self.rel_dir = rel_dir
         self.dagr_config = dagr_config
         self.__lock = None
         self.__lock_path = None
