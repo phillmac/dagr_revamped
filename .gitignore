@@ -97,6 +97,10 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
+# Editor settings
+.theia/
+.vscode/
+
 # mkdocs documentation
 /site
 
