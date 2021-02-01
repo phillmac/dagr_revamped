@@ -340,7 +340,7 @@ def ensure_path(fpath):
 
 def load_primary_or_backup(fpath, use_backup=True, warn_not_found=True):
     if not isinstance(fpath, Path):
-        fpath = Path(fpath)
+        raise Exception('Path required')
     backup = fpath.with_suffix('.bak')
     try:
         if fpath.exists():

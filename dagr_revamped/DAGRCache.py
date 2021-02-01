@@ -42,8 +42,8 @@ class DAGRCache():
         return DAGRCache(config, base_dir, rel_dir, warn_not_found=warn_not_found)
 
     def __init__(self, dagr_config, base_dir, rel_dir, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
-        # if not isinstance(base_dir, Path):
-        #     base_dir = Path(base_dir)
+        if not isinstance(base_dir, Path):
+            raise Exception('Path required')
         self.base_dir = base_dir
         self.rel_dir = rel_dir
         self.dagr_config = dagr_config
