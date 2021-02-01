@@ -7,6 +7,7 @@ from pprint import pformat
 from time import time
 
 import portalocker
+import requests
 
 from .utils import (artist_from_url, get_base_dir, load_primary_or_backup,
                     save_json, shorten_url, unlink_lockfile)
@@ -57,7 +58,7 @@ class DAGRCache():
             self.preload_fileslist_policy = 'disabled'
         else:
             self.preload_fileslist_policy = preload_fileslist_policy if not preload_fileslist_policy is None else config_preload_fileslist_policy
-
+            self.preload_http_endpoint = self.dagr_config.get('dagr.cache', 'preload_http_endpoint')
         self.settings_name = self.dagr_config.get(
             'dagr.cache', 'settings') or '.settings'
         self.settings = next(self.__load_cache(
@@ -158,7 +159,7 @@ class DAGRCache():
         full_path = self.base_dir.joinpath(cache_file)
         return load_primary_or_backup(full_path, use_backup=use_backup, warn_not_found=warn_not_found)
 
-    def __load_cache(self, use_backup=True, warn_not_found=True, **kwargs):
+    def __load_cache(self, use_backup=True, warn_not_found=True, default=None **kwargs):
         def filenames():
             logger.log(level=15, msg='Building filenames cache')
             files_list_raw = self.base_dir.glob('*')
@@ -180,10 +181,13 @@ class DAGRCache():
             if cache_contents:
                 yield cache_contents
             else:
-                if not cache_type in cache_defaults:
-                    raise ValueError(
-                        'Unkown cache type: {}'.format(cache_type))
-                yield cache_defaults[cache_type]()
+                if not default is None:
+                    yield default
+                else:
+                    if not cache_type in cache_defaults:
+                        raise ValueError(
+                            'Unkown cache type: {}'.format(cache_type))
+                    yield cache_defaults[cache_type]()
         logger.log(level=5, msg=pformat(locals()))
 
     def __load_ep(self):
@@ -214,14 +218,26 @@ class DAGRCache():
     def __load_fileslist(self):
         logger.log(level=15, msg='Populating files list cache')
         files_in_dir = set()
+        filenames_default = None
         if self.preload_fileslist_policy == 'enable':
-            logger.log(level=15, msg='Preloading fileslist cache')
-            files_in_dir.update(fp.name for fp in self.base_dir.glob(
-                '*.*') if not fp.name in self.__excluded_fnames)
+            if self.preload_http_endpoint:
+                try:
+                    resp = requests.get(self.preload_http_endpoint, json={'path': self.rel_dir})
+                    resp.raise_for_status()
+                    filenames_default.update(resp.json())
+                    filenames_default = []
+                except:
+                    logger.warn('Unable to fetch filenames preload list', exc_info=True)
+            else:
+                logger.log(level=15, msg='Preloading fileslist cache')
+                files_in_dir.update(fp.name for fp in self.base_dir.glob(
+                    '*.*') if not fp.name in self.__excluded_fnames)
 
         files_in_dir.update(next(self.__load_cache(
             filenames=self.fn_name,
-            warn_not_found=True if self.__warn_not_found is None else self.__warn_not_found)))
+            warn_not_found=True if self.__warn_not_found is None else self.__warn_not_found,
+            default = filenames_default
+            )))
         return files_in_dir
 
     def __load_artists(self):
