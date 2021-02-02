@@ -42,12 +42,14 @@ done([...pages])
         collect_st = time()
         pages = set()
         try:
-            pages.update(self.__browser.execute_async_script(
+            result = (self.__browser.execute_async_script(
                 """
 const collect_links = async (mvalID) => {
   if (mvalID) {
     const mvalDiv = document.getElementById(mvalID)
-    if (!mvalDiv) { throw new Error(`Element with id ${mvalID} not found.`) }
+    if (!mvalDiv) {
+        done({ iserror: true, message: `Element with id ${mvalID} not found.` })
+    }
     const done = arguments[arguments.length - 1]
     const links = mvalDiv.querySelectorAll("a[data-hook=deviation_link]")
     const pages = new Set()
@@ -56,11 +58,15 @@ const collect_links = async (mvalID) => {
     }
     done([...pages])
   } else {
-    throw new Error('Missing required mvalID param')
+    done({ iserror: true, message: 'Missing required mvalID param' })
   }
 }
 collect_links(arguments[0])
         """, mval_id))
+            if(isinstance(result, dict) and result.get('iserror', False)):
+                self.__logger.error(f"Error while collecting pages: {result.get('message')}")
+            else:
+                pages.update(result)
         except:
             self.__logger.exception('Error while collecting pages')
         self.__logger.log(
