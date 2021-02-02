@@ -15,7 +15,7 @@ class SeleniumCrawler():
         self.__browser = browser
         self.__cache = cache
         self.__oom_max_pages = self.__config.get('oom_max_pages', 13000)
-        self.__collect_mval_id = self.__config('collect_mval_id', True)
+        self.__collect_mval_id = self.__config.get('collect_mval_id', True)
         self.__logger.log(
             level=15, msg=f"OOM max pages set to {self.__oom_max_pages}")
         self.__logger.log(
