@@ -79,6 +79,10 @@ class SeleniumBrowser():
                 'Secure': False
             })
 
+        self.__script_timeout = self.__config.get('script_timeout', 45)
+        self.driver.set_script_timeout(self.__script_timeout)
+        logger.info(f"Async script timeout: {self.__script_timeout}")
+
         self.__browser = utils_create_browser(
             mature=self.__mature,
             user_agent=self.__driver.execute_script(
