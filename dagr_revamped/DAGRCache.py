@@ -226,6 +226,7 @@ class DAGRCache():
                     resp.raise_for_status()
                     files_in_dir.update(resp.json())
                     filenames_default = []
+                    logger.debug(f"Added {len(files_in_dir)} entrys to preload list")
                 except:
                     logger.warn('Unable to fetch filenames preload list', exc_info=True)
             else:
