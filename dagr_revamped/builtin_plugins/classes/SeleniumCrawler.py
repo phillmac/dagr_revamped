@@ -15,8 +15,11 @@ class SeleniumCrawler():
         self.__browser = browser
         self.__cache = cache
         self.__oom_max_pages = self.__config.get('oom_max_pages', 13000)
+        self.__collect_mval_id = self.__config('collect_mval_id', True)
         self.__logger.log(
             level=15, msg=f"OOM max pages set to {self.__oom_max_pages}")
+        self.__logger.log(
+            level=15, msg=f"Collect using mvalid elem set to {self.__collect_mval_id}")
 
     def collect_pages(self):
         collect_st = time()
@@ -99,7 +102,7 @@ collect_links(arguments[0])
             self.__logger.log(level=15, msg="Found next page element")
             self.__browser.click_element(next_page)
             collected = self.collect_pages_mval_id(
-                mval_id) if mval_id else self.collect_pages()
+                mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
 
             pages.update(collected)
 
