@@ -45,12 +45,12 @@ done([...pages])
             result = (self.__browser.execute_async_script(
                 """
 const collect_links = async (mvalID) => {
+  const done = arguments[arguments.length - 1]
   if (mvalID) {
     const mvalDiv = document.getElementById(mvalID)
     if (!mvalDiv) {
         done({ iserror: true, message: `Element with id ${mvalID} not found.` })
     }
-    const done = arguments[arguments.length - 1]
     const links = mvalDiv.querySelectorAll("a[data-hook=deviation_link]")
     const pages = new Set()
     for (const l of links) {
