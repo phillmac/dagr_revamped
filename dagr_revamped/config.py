@@ -53,7 +53,7 @@ class DAGRBaseConf():
 
     def find_configs(self, ext):
         usr_dir = Path('~/.config/dagr').expanduser()
-        locations = [Path.cwd(), usr_dir] + self.__include
+        locations = [Path.cwd()] + self.__include + [usr_dir]
         dagr_log(__name__, 5, 'Looking for configs in {}'.format(locations))
         return [cnf for cnf in
                 (search.joinpath(self.__conf_name or 'dagr_settings').with_suffix(
