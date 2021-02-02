@@ -222,7 +222,7 @@ class DAGRCache():
         if self.preload_fileslist_policy == 'enable':
             if self.preload_http_endpoint:
                 try:
-                    resp = requests.get(self.preload_http_endpoint, json={'path': self.rel_dir})
+                    resp = requests.get(self.preload_http_endpoint, json={'path': str(PurePosixPath(self.rel_dir))})
                     resp.raise_for_status()
                     filenames_default.update(resp.json())
                     filenames_default = []
