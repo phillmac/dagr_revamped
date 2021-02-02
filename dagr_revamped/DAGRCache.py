@@ -224,7 +224,7 @@ class DAGRCache():
                 try:
                     resp = requests.get(self.preload_http_endpoint, json={'path': str(PurePosixPath(self.rel_dir))})
                     resp.raise_for_status()
-                    filenames_default.update(resp.json())
+                    files_in_dir.update(resp.json())
                     filenames_default = []
                 except:
                     logger.warn('Unable to fetch filenames preload list', exc_info=True)
