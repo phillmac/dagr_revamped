@@ -21,7 +21,6 @@ def convert_val(val):
         if val.lower() in true_vals:
             return True
         if val.lower() in false_vals:
-            dagr_log(__name__, 20, f"{val} is falsey")
             return False
         try:
             return int(val)
@@ -497,7 +496,6 @@ def coalesce(v1, v2):
 
 def dict_merge(dict_1, dict_2):
     """Merge two dictionaries.
-    Values that evaluate to true take priority over falsy values.
     `dict_1` takes priority over `dict_2`.
     """
     dict_1 = normalize_dict(dict_1)
