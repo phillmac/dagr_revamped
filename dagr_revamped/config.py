@@ -16,8 +16,8 @@ from .version import version
 
 def convert_val(val):
     if isinstance(val, str):
-        true_vals = ['true', 'yes', 'on', '1']
-        false_vals = ['false', 'no', 'off', '0']
+        true_vals = ['true', 'yes', 'on']
+        false_vals = ['false', 'no', 'off']
         if val.lower() in true_vals:
             return True
         if val.lower() in false_vals:
