@@ -913,7 +913,7 @@ class DAGRDeviationProcessor():
             try:
                 response = self.get_response()
                 tmp.write_bytes(self.__response.content)
-                tmp.replace(dest)
+                tmp.rename(dest)
                 self.__logger.log(
                     level=4, msg='Wrote devation to {}'.format(dest))
                 break
