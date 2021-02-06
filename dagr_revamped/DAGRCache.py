@@ -278,7 +278,7 @@ class DAGRCache():
             save_json(full_path, cache_contents, do_backup)
         else:
             resp = requests.post(self.json_http_endpoint,
-                json = {'path': self.rel_dir, 'filename': cache_file, 'contents': cache_contents}) 
+                json = {'path': str(PurePosixPath(self.rel_dir)), 'filename': cache_file, 'contents': cache_contents})
             resp.raise_for_status()
     def __convert_urls(self):
         logger.warning(
