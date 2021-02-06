@@ -277,6 +277,8 @@ class DAGRCache():
             full_path = self.base_dir.joinpath(cache_file)
             save_json(full_path, cache_contents, do_backup)
         else:
+            if isinstance(cache_contents, set):
+                cache_contents = list(cache_contents)
             resp = requests.post(self.json_http_endpoint,
                 json = {'path': str(PurePosixPath(self.rel_dir)), 'filename': cache_file, 'content': cache_contents})
             resp.raise_for_status()
