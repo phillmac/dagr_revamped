@@ -59,6 +59,7 @@ class DAGRCache():
         else:
             self.preload_fileslist_policy = preload_fileslist_policy if not preload_fileslist_policy is None else config_preload_fileslist_policy
             self.preload_http_endpoint = self.dagr_config.get('dagr.cache', 'preload_http_endpoint')
+        self.json_http_endpoint = self.dagr_config.get('dagr.cache', 'json_http_endpoint')
         self.settings_name = self.dagr_config.get(
             'dagr.cache', 'settings') or '.settings'
         self.settings = next(self.__load_cache(
@@ -154,7 +155,7 @@ class DAGRCache():
         if self.__last_crawled is None:
             self.__last_crawled = self.__load_lastcrawled()
         return self.__last_crawled
-
+    
     def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
         full_path = self.base_dir.joinpath(cache_file)
         return load_primary_or_backup(full_path, use_backup=use_backup, warn_not_found=warn_not_found)
@@ -272,9 +273,13 @@ class DAGRCache():
         return self.base_dir.joinpath(self.settings_name).exists()
 
     def __update_cache(self, cache_file, cache_contents, do_backup=True):
-        full_path = self.base_dir.joinpath(cache_file)
-        save_json(full_path, cache_contents, do_backup)
-
+        if not self.json_http_endpoint:
+            full_path = self.base_dir.joinpath(cache_file)
+            save_json(full_path, cache_contents, do_backup)
+        else:
+            resp = requests.post(self.json_http_endpoint,
+                json = {'path': self.rel_dir, 'filename': cache_file, 'contents': cache_contents}) 
+            resp.raise_for_status()
     def __convert_urls(self):
         logger.warning(
             'Converting cache {} url format'.format(self.base_dir))
