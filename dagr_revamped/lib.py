@@ -434,7 +434,7 @@ class DAGR():
         overwrite = self.overwrite()
 
         if not (overwrite or self.fixmissing or self.verifybest or disable_filter):
-            self.__logger.log(level=5, msg='Filtering links')
+            self.__logger.log(level=15, msg='Filtering links')
             pages = cache.filter_links(pages)
         else:
             self.__logger.log(level=5, msg=pformat({
