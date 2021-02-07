@@ -912,10 +912,14 @@ class DAGRDeviationProcessor():
         while True:
             try:
                 response = self.get_response()
+                self.__logger.log(
+                    level=5, msg=f"Writing deviation to {dest}"
                 tmp.write_bytes(self.__response.content)
+                self.__logger.log(
+                    level=4, msg='Renaming temp file')
                 tmp.rename(dest)
                 self.__logger.log(
-                    level=4, msg='Wrote devation to {}'.format(dest))
+                    level=4, msg='Finished writing')
                 break
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
