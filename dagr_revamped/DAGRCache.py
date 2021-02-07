@@ -64,6 +64,7 @@ class DAGRCache():
             'dagr.cache', 'settings') or '.settings'
         self.settings = next(self.__load_cache(
             use_backup=False, settings=self.settings_name))
+        self.__use_short_urls = self.settings.get('shorturls')
         self.fn_name = self.settings.get('filenames', '.filenames')
         self.ep_name = self.settings.get(
             'downloadedpages', '.dagr_downloaded_pages')
@@ -96,6 +97,8 @@ class DAGRCache():
             map(re.compile, map(re.escape, self.__excluded_fnames)))
         self.__excluded_fnames_regex.append(re.compile(r'.*\.tmp'))
 
+        self.__existing_pages_lower = None
+
         self.__existing_pages = None if not 'existing_pages' in load_files else self.__load_ep()
         self.__no_link = None if not 'no_link' in load_files else self.__load_nolink()
         self.__queue = None if not 'queue' in load_files else self.__load_queue()
@@ -112,7 +115,7 @@ class DAGRCache():
         self.__nolink_stale = False
         self.__httperrors_stale = False
 
-        if not self.__existing_pages is None and not self.settings.get('shorturls') == self.dagr_config.get('dagr.cache', 'shorturls'):
+        if not self.__existing_pages is None and not self.__use_short_urls == self.dagr_config.get('dagr.cache', 'shorturls'):
             self.__convert_urls()
 
     def __enter__(self):
@@ -143,6 +146,12 @@ class DAGRCache():
         if self.__existing_pages is None:
             self.__existing_pages = self.__load_ep()
         return self.__existing_pages
+
+    @ property
+    def existing_pages_lower(self):
+        if self.__existing_pages_lower is None:
+            self.__existing_pages_lower = [l.lower() for l in self.existing_pages]
+        return self.__existing_pages_lower
 
     @ property
     def artists(self):
@@ -545,7 +554,7 @@ class DAGRCache():
 
     def add_link(self, page):
         self.remove_page_extras(page, 'found')
-        if self.settings.get('shorturls'):
+        if self.__use_short_urls:
             page = shorten_url(page)
         if page not in self.existing_pages:
             self.downloaded_pages.append(page)
@@ -556,13 +565,13 @@ class DAGRCache():
             self.downloaded_pages.append(page)
 
     def check_link(self, page):
-        if self.settings.get('shorturls'):
+        if self.__use_short_urls:
             page = shorten_url(page)
         if page in self.existing_pages:
             return True
-        logger.log(
-            level=5, msg='Checking for lowercase link {}'.format(page))
-        return page.lower() in (l.lower() for l in self.existing_pages)
+        # logger.log(
+        #     level=5, msg='Checking for lowercase link {}'.format(page))
+        return page.lower() in self.existing_pages_lower
 
     def filter_links(self, links):
         return [l for l in links if not self.check_link(l)]
