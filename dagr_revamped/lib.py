@@ -913,7 +913,7 @@ class DAGRDeviationProcessor():
             try:
                 response = self.get_response()
                 self.__logger.log(
-                    level=5, msg=f"Writing deviation to {dest}"
+                    level=5, msg=f"Writing deviation to {dest}")
                 tmp.write_bytes(self.__response.content)
                 self.__logger.log(
                     level=4, msg='Renaming temp file')
