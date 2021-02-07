@@ -612,7 +612,7 @@ class DAGRCache():
                 if lfn == sname:
                     yield rfn
 
-        return next(fn_search, self.files_gen(), self.__files_list_lower)
+        return next(fn_search(sn_lower, self.files_gen(), self.__files_list_lower))
 
     def prune_filename(self, fname):
         self.__files_list.discard(fname)
