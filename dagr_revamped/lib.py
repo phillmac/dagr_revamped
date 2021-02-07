@@ -786,7 +786,8 @@ class DAGRDeviationProcessor():
         shortname = PurePosixPath(self.page_link).name
         try:
             self.__filename = self.cache.real_filename(shortname)
-            return self.__filename
+            if not self.__filename is None:
+                return self.__filename
         except StopIteration:
             pass
         self.__logger.log(

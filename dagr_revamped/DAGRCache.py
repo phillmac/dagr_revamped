@@ -601,18 +601,17 @@ class DAGRCache():
         if not entry is None:
             return entry
 
-        def fn_search(sname, files_gen, files_list_lower):
-            fll_values = files_list_lower.values()
+        fll_values = self.__files_list_lower.values()
 
-            lower_gen = ((fn.lower(), fn)
-                        for fn in files_gen if not fn in fll_values)
+        lower_gen = ((fn.lower(), fn)
+                    for fn in self.files_gen() if not fn in fll_values)
 
-            for rfn, lfn in lower_gen:
-                files_list_lower[lfn] = rfn
-                if lfn == sname:
-                    yield rfn
+        for rfn, lfn in lower_gen:
+            self.__files_list_lower[lfn] = rfn
+            if lfn == sn_lower:
+                return rfn
+        return None
 
-        return next(fn_search(sn_lower, self.files_gen(), self.__files_list_lower))
 
     def prune_filename(self, fname):
         self.__files_list.discard(fname)
