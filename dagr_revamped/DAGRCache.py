@@ -1,16 +1,15 @@
-import logging
-import re
-from copy import copy
-from pathlib import Path, PurePosixPath
-from platform import node as get_hostname
-from pprint import pformat
-from time import time
-
-import portalocker
-import requests
-
 from .utils import (artist_from_url, get_base_dir, load_primary_or_backup,
                     save_json, shorten_url, unlink_lockfile)
+import requests
+import portalocker
+from time import time
+from pprint import pformat
+from platform import node as get_hostname
+from pathlib import Path, PurePosixPath
+from copy import copy
+import re
+import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +57,10 @@ class DAGRCache():
             self.preload_fileslist_policy = 'disabled'
         else:
             self.preload_fileslist_policy = preload_fileslist_policy if not preload_fileslist_policy is None else config_preload_fileslist_policy
-            self.preload_http_endpoint = self.dagr_config.get('dagr.cache', 'preload_http_endpoint')
-        self.json_http_endpoint = self.dagr_config.get('dagr.cache', 'json_http_endpoint')
+            self.preload_http_endpoint = self.dagr_config.get(
+                'dagr.cache', 'preload_http_endpoint')
+        self.json_http_endpoint = self.dagr_config.get(
+            'dagr.cache', 'json_http_endpoint')
         self.settings_name = self.dagr_config.get(
             'dagr.cache', 'settings') or '.settings'
         self.settings = next(self.__load_cache(
@@ -108,6 +109,7 @@ class DAGRCache():
         self.__artists = None if not 'artists' in load_files else self.__load_artists()
         self.__last_crawled = None if not 'last_crawled' in load_files else self.__load_lastcrawled()
 
+        self.__files_list_lower = {}
         self.downloaded_pages = []
 
         self.__queue_stale = False
@@ -135,11 +137,14 @@ class DAGRCache():
         if self.__lock._acquire_count == 0:
             unlink_lockfile(self.__lock_path)
 
-    @ property
-    def files_list(self):
+    def files_gen(self):
         if self.__files_list is None:
             self.__files_list = self.__load_fileslist()
-        return [f for f in self.__files_list if not any(r.match(f) for r in self.__excluded_fnames_regex)]
+        return (f for f in self.__files_list if not any(r.match(f) for r in self.__excluded_fnames_regex))
+
+    @ property
+    def files_list(self):
+        return list(self.files_gen())
 
     @ property
     def existing_pages(self):
@@ -150,7 +155,8 @@ class DAGRCache():
     @ property
     def existing_pages_lower(self):
         if self.__existing_pages_lower is None:
-            self.__existing_pages_lower = [l.lower() for l in self.existing_pages]
+            self.__existing_pages_lower = [
+                l.lower() for l in self.existing_pages]
         return self.__existing_pages_lower
 
     @ property
@@ -164,7 +170,7 @@ class DAGRCache():
         if self.__last_crawled is None:
             self.__last_crawled = self.__load_lastcrawled()
         return self.__last_crawled
-    
+
     def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
         full_path = self.base_dir.joinpath(cache_file)
         return load_primary_or_backup(full_path, use_backup=use_backup, warn_not_found=warn_not_found)
@@ -232,13 +238,16 @@ class DAGRCache():
         if self.preload_fileslist_policy == 'enable':
             if self.preload_http_endpoint:
                 try:
-                    resp = requests.get(self.preload_http_endpoint, json={'path': str(PurePosixPath(self.rel_dir))})
+                    resp = requests.get(self.preload_http_endpoint, json={
+                                        'path': str(PurePosixPath(self.rel_dir))})
                     resp.raise_for_status()
                     files_in_dir.update(resp.json())
                     filenames_default = []
-                    logger.log(level=15, msg=f"Added {len(files_in_dir)} entrys to preload list")
+                    logger.log(
+                        level=15, msg=f"Added {len(files_in_dir)} entrys to preload list")
                 except:
-                    logger.warn('Unable to fetch filenames preload list', exc_info=True)
+                    logger.warn(
+                        'Unable to fetch filenames preload list', exc_info=True)
             else:
                 logger.log(level=15, msg='Preloading fileslist cache')
                 files_in_dir.update(fp.name for fp in self.base_dir.glob(
@@ -247,8 +256,8 @@ class DAGRCache():
         files_in_dir.update(next(self.__load_cache(
             filenames=self.fn_name,
             warn_not_found=True if self.__warn_not_found is None else self.__warn_not_found,
-            default = filenames_default
-            )))
+            default=filenames_default
+        )))
         return files_in_dir
 
     def __load_artists(self):
@@ -289,8 +298,9 @@ class DAGRCache():
             if isinstance(cache_contents, set):
                 cache_contents = list(cache_contents)
             resp = requests.post(self.json_http_endpoint,
-                json = {'path': str(PurePosixPath(self.rel_dir)), 'filename': cache_file, 'content': cache_contents})
+                                 json={'path': str(PurePosixPath(self.rel_dir)), 'filename': cache_file, 'content': cache_contents})
             resp.raise_for_status()
+
     def __convert_urls(self):
         logger.warning(
             'Converting cache {} url format'.format(self.base_dir))
@@ -311,7 +321,7 @@ class DAGRCache():
         logger.log(
             15, 'Sorting {} artist pages'.format(len(updated_pages)))
         for page in updated_pages:
-            artist_url_p, artist_name, shortname=artist_from_url(page)
+            artist_url_p, artist_name, shortname = artist_from_url(page)
             try:
                 rfn = self.real_filename(shortname)
             except StopIteration:
@@ -586,9 +596,23 @@ class DAGRCache():
             self.__files_list.add(fn)
 
     def real_filename(self, shortname):
-        if self.__files_list is None:
-            self.__files_list = self.__load_fileslist()
-        return next(fn for fn in self.files_list if shortname.lower() in fn.lower())
+        sn_lower = shortname.lower()
+        entry = self.__files_list_lower.get(sn_lower, None)
+        if not entry is None:
+            return entry
+
+        def fn_search(sname, files_gen, files_list_lower):
+            fll_values = files_list_lower.values()
+
+            lower_gen = ((fn.lower(), fn)
+                        for fn in files_gen if not fn in fll_values)
+
+            for rfn, lfn in lower_gen:
+                files_list_lower[lfn] = rfn
+                if lfn == sname:
+                    yield rfn
+
+        return next(fn_search, self.files_gen(), self.__files_list_lower)
 
     def prune_filename(self, fname):
         self.__files_list.discard(fname)
