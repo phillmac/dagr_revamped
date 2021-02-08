@@ -67,7 +67,8 @@ const collect_links = async (mvalID) => {
 collect_links(arguments[0])
         """, mval_id))
             if(isinstance(result, dict) and result.get('iserror', False)):
-                self.__logger.error(f"Error while collecting pages: {result.get('message')}")
+                self.__logger.error(
+                    f"Error while collecting pages: {result.get('message')}")
             else:
                 pages.update(result)
         except:
@@ -163,13 +164,13 @@ collect_links(arguments[0])
         self.__cache.flush(slug)
         return pages
 
-    def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False):
+    def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False, crawl_offset=None):
         full_crawl = full_crawl or self.__config.get(
             'full_crawl', '').lower() == 'force'
         slug = None
         mval_id = None
         deviant_lower = deviant.lower()
-        url = {
+        url = crawl_offset if isinstance(crawl_offset, str) else {
             'gallery': f"https://www.deviantart.com/{deviant_lower}/gallery/all",
             'favs': f"https://www.deviantart.com/{deviant_lower}/favourites/all",
             'album': f"https://www.deviantart.com/{deviant_lower}/gallery/{mval}",
