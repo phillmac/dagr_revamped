@@ -599,6 +599,7 @@ class DAGRCache():
         sn_lower = shortname.lower()
         entry = self.__files_list_lower.get(sn_lower, None)
         if not entry is None:
+            logger.log(level=15, msg=f"Got lcfn cache hit {entry} for {sn_lower}")
             return entry
 
         fll_values = self.__files_list_lower.values()
@@ -609,6 +610,7 @@ class DAGRCache():
         for rfn, lfn in lower_gen:
             self.__files_list_lower[lfn] = rfn
             if lfn == sn_lower:
+                logger.log(level=15, msg=f"Got lcfn gen hit {rfn} for {sn_lower}")
                 return rfn
         return None
 
