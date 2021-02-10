@@ -31,7 +31,7 @@ class DAGRHTTPIo(DAGRIo):
 
         session = Session()
 
-        if not self.__exists_ep is none:
+        if not self.__exists_ep is None:
             self.exists = lambda _self, fname: http_exists(
                 session, self.__exists_ep, self.rel_dir_name, fname=fname)
 
