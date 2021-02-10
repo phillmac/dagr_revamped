@@ -36,7 +36,7 @@ class DAGRHTTPIo(DAGRIo):
                 session, self.__exists_ep, self.rel_dir_name, fname=fname)
 
         if not self.__list_dir_ep is None:
-            self.list_dir = lambda _self: http_list_dir(
+            self.list_dir = lambda: http_list_dir(
                 session, self.__list_dir_ep, self.rel_dir_name)
 
         if not self.__load_json_ep is None:
