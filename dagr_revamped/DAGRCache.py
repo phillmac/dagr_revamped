@@ -316,11 +316,15 @@ class DAGRCache():
             15, 'Sorting {} artist pages'.format(len(updated_pages)))
         for page in updated_pages:
             artist_url_p, artist_name, shortname = artist_from_url(page)
-            rfn = self.real_filename(shortname)
-            if rfn is None:
-                err =  f"Cache entry not found {self.base_dir} : {page} : {shortname}"
-                logger.error(err)
-                raise Exception(err)
+            err =  f"Cache entry not found {self.base_dir} : {page} : {shortname}"
+            try:
+                rfn = self.real_filename(shortname)
+                if rfn is None:
+                    logger.error(err)
+                    raise Exception(err)
+            except StopIteration:
+                logger.error(err, exc_info=True)
+                raise
             if not artist_name in self.artists:
                 self.artists[artist_name] = {
                     'Home Page': '{}/{}'.format(base_url, artist_url_p), 'Artworks': {}}
@@ -592,18 +596,19 @@ class DAGRCache():
 
     def real_filename(self, shortname):
         sn_lower = shortname.lower()
+        return next(fn for fn in self.files_list if sn_lower in fn.lower())
 
-        if self.__files_list_lower is None:
-            logger.log(level=15, msg='Generating lowercase fn cache')
-            lower_gen = ((fn.lower(), fn)
-                    for fn in self.files_gen())
-            self.__files_list_lower = dict(lower_gen)
-            logger.log(level=15, msg=f"Generated {len(self.__files_list_lower)} lowercase fn cache items")
+        # if self.__files_list_lower is None:
+        #     logger.log(level=15, msg='Generating lowercase fn cache')
+        #     lower_gen = ((fn.lower(), fn)
+        #             for fn in self.files_gen())
+        #     self.__files_list_lower = dict(lower_gen)
+        #     logger.log(level=15, msg=f"Generated {len(self.__files_list_lower)} lowercase fn cache items")
 
-        entry = self.__files_list_lower.get(sn_lower, None)
-        if not entry is None:
-            logger.log(level=15, msg=f"Got lowercase fn cache hit {entry} for {sn_lower}")
-            return entry
+        # entry = self.__files_list_lower.get(sn_lower, None)
+        # if not entry is None:
+        #     logger.log(level=15, msg=f"Got lowercase fn cache hit {entry} for {sn_lower}")
+        #     return entry
 
         # fll_values = self.__files_list_lower.values()
 
