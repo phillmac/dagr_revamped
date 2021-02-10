@@ -46,7 +46,7 @@ class DAGRCache():
 
     @staticmethod
     def get_cache(config, mode, deviant, mval=None, dagr_io=None,
-    warn_not_found=None, preload_fileslist_policy=None):
+    load_files=None, warn_not_found=None, preload_fileslist_policy=None):
         base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
         cache_io = (dagr_io if dagr_io is not None else DAGRIo)(base_dir, rel_dir, config)
         return DAGRCache(config, cache_io, load_files=load_files, warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
