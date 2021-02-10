@@ -1,15 +1,14 @@
-from .utils import (artist_from_url, get_base_dir, load_primary_or_backup,
-                    save_json, shorten_url, unlink_lockfile)
-import requests
-import portalocker
-from time import time
-from pprint import pformat
-from platform import node as get_hostname
-from pathlib import Path, PurePosixPath
-from copy import copy
-import re
 import logging
+import re
+from copy import copy
+from pathlib import Path, PurePosixPath
+from pprint import pformat
+from time import time
 
+import portalocker
+
+from .utils import artist_from_url, get_base_dir, shorten_url, unlink_lockfile
+from .DAGRIo import DAGRIo
 
 logger = logging.getLogger(__name__)
 
@@ -17,36 +16,48 @@ logger = logging.getLogger(__name__)
 class DAGRCache():
 
     @staticmethod
-    def with_queue_only(config, mode, deviant, mval=None, warn_not_found=None, preload_fileslist_policy=None):
-        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, rel_dir, load_files=['existing_pages', 'no_link', 'queue', 'premium', 'httperrors'], warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
+    def with_queue_only(config, mode, deviant, mval=None, dagr_io=None,
+    warn_not_found=None, preload_fileslist_policy=None):
+        return DAGRCache.get_cache(
+            config, mode, deviant, mval=mval, dagr_io=dagr_io,
+            load_files=['existing_pages', 'no_link', 'queue', 'premium', 'httperrors'],
+            warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
-    def with_artists_only(config, mode, deviant, mval=None, warn_not_found=None):
-        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, rel_dir, load_files=['artists'], warn_not_found=warn_not_found)
+    def with_artists_only(config, mode, deviant, mval=None, dagr_io=None,
+    warn_not_found=None, preload_fileslist_policy=None):
+        return DAGRCache.get_cache(
+            config, mode, deviant, mval=mval, dagr_io=dagr_io, load_files=['artists'],
+            warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
-    def with_filenames_only(config, mode, deviant, mval=None, warn_not_found=None, preload_fileslist_policy=None):
-        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, rel_dir, load_files=['files_list'], warn_not_found=warn_not_found)
+    def with_filenames_only(config, mode, deviant, mval=None, dagr_io=None,
+    warn_not_found=None, preload_fileslist_policy=None):
+            return DAGRCache.get_cache(
+            config, mode, deviant, mval=mval, dagr_io=dagr_io, load_files=['files_list'],
+            warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
-    def with_nolink_only(config, mode, deviant, mval=None, warn_not_found=None, preload_fileslist_policy=None):
-        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, rel_dir, load_files=['no_link'], warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
+    def with_nolink_only(config, mode, deviant, mval=None, dagr_io=None,
+    warn_not_found=None, preload_fileslist_policy=None):
+        return DAGRCache.get_cache(
+            config, mode, deviant, mval=mval, dagr_io=dagr_io, load_files=['no_link'],
+            warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
-    def get_cache(config, mode, deviant, mval=None, warn_not_found=None):
+    def get_cache(config, mode, deviant, mval=None, dagr_io=None,
+    warn_not_found=None, preload_fileslist_policy=None):
         base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
-        return DAGRCache(config, base_dir, rel_dir, warn_not_found=warn_not_found)
+        cache_io = (dagr_io if dagr_io is not None else DAGRIo)(base_dir, rel_dir, config)
+        return DAGRCache(config, cache_io, load_files=load_files, warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
-    def __init__(self, dagr_config, base_dir, rel_dir, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
+    def __init__(self, dagr_config, cache_io, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
         if not isinstance(base_dir, Path):
             raise Exception('Path required')
-        self.base_dir = base_dir
-        self.rel_dir = rel_dir
         self.dagr_config = dagr_config
+        self.base_dir = cache_io.base_dir
+        self.rel_dir = cache_io.rel_dir
+        self.__cache_io = cache_io
         self.__lock = None
         self.__lock_path = None
         self.__warn_not_found = warn_not_found
@@ -173,8 +184,7 @@ class DAGRCache():
         return self.__last_crawled
 
     def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
-        full_path = self.base_dir.joinpath(cache_file)
-        return load_primary_or_backup(full_path, use_backup=use_backup, warn_not_found=warn_not_found)
+        return self.__cache_io.load_primary_or_backup(cache_file, use_backup=use_backup, warn_not_found=warn_not_found)
 
     def __load_cache(self, use_backup=True, warn_not_found=True, default=None, **kwargs):
         def filenames():
@@ -239,20 +249,13 @@ class DAGRCache():
         if self.preload_fileslist_policy == 'enable':
             if self.preload_http_endpoint:
                 try:
-                    resp = requests.get(self.preload_http_endpoint, json={
-                                        'path': str(PurePosixPath(self.rel_dir))})
-                    resp.raise_for_status()
-                    files_in_dir.update(resp.json())
+                    files_in_dir.update(fn for fn in self.__cache_io.load_files() if not fn.name in self.__excluded_fnames)
                     filenames_default = []
                     logger.log(
                         level=15, msg=f"Added {len(files_in_dir)} entrys to preload list")
                 except:
                     logger.warn(
                         'Unable to fetch filenames preload list', exc_info=True)
-            else:
-                logger.log(level=15, msg='Preloading fileslist cache')
-                files_in_dir.update(fp.name for fp in self.base_dir.glob(
-                    '*.*') if not fp.name in self.__excluded_fnames)
 
         files_in_dir.update(next(self.__load_cache(
             filenames=self.fn_name,
@@ -280,27 +283,19 @@ class DAGRCache():
             warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
 
     def __ep_exists(self):
-        return self.base_dir.joinpath(self.ep_name).exists()
+        return self.__cache_io.exists(self.ep_name)
 
     def __fn_exists(self):
-        return self.base_dir.joinpath(self.fn_name).exists()
+        return self.__cache_io.exists(self.fn_name)
 
     def __artists_exists(self):
-        return self.base_dir.joinpath(self.artists_name).exists()
+        return self.__cache_io.exists(self.artists_name)
 
     def __settings_exists(self):
-        return self.base_dir.joinpath(self.settings_name).exists()
+        return self.__cache_io.exists(self.settings_name)
 
     def __update_cache(self, cache_file, cache_contents, do_backup=True):
-        if not self.json_http_endpoint:
-            full_path = self.base_dir.joinpath(cache_file)
-            save_json(full_path, cache_contents, do_backup)
-        else:
-            if isinstance(cache_contents, set):
-                cache_contents = list(cache_contents)
-            resp = requests.post(self.json_http_endpoint,
-                                 json={'path': str(PurePosixPath(self.rel_dir)), 'filename': cache_file, 'content': cache_contents})
-            resp.raise_for_status()
+            self.__cache_io.save_json(cache_file, cache_contents, do_backup)
 
     def __convert_urls(self):
         logger.warning(
@@ -621,7 +616,6 @@ class DAGRCache():
         #         return rfn
 
         return None
-
 
     def prune_filename(self, fname):
         self.__files_list.discard(fname)

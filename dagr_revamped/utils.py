@@ -1,13 +1,16 @@
+import base64
+import gzip
 import json
 import logging
 import re
 from collections.abc import Iterable, Mapping
-from io import StringIO
+from io import BytesIO, StringIO, TextIOWrapper
 from pathlib import Path, PurePosixPath
 from pprint import pformat, pprint
 from random import choice
 
 from mechanicalsoup import StatefulBrowser
+from requests import Request
 from requests import adapters as req_adapters
 from requests import session as req_session
 
@@ -177,6 +180,7 @@ def get_bulk_files_contents(config):
 def save_bulk(config, bulk):
     save_json(config.get('dagr.bulk.filenames', 'save'), bulk)
 
+
 def prune_dict_duplicates(d):
     for k, v in d.items():
         if isinstance(v,  Mapping):
@@ -186,6 +190,7 @@ def prune_dict_duplicates(d):
         else:
             d[k] = v
     return d
+
 
 def update_bulk_list(config, entries, force_save=False):
     # bulk = convert_queue(config,
@@ -334,37 +339,41 @@ def load_json(fpath):
     return json.load(buffer)
 
 
-def ensure_path(fpath):
+def ensure_path(fpath, resolve=True):
     return (fpath if isinstance(fpath, Path) else Path(fpath)).resolve()
 
 
-def load_primary_or_backup(fpath, use_backup=True, warn_not_found=True):
-    if not isinstance(fpath, Path):
-        raise Exception('Path required')
-    backup = fpath.with_suffix('.bak')
-    try:
-        if fpath.exists():
-            return load_json(fpath)
-        elif warn_not_found:
-            logger.log(
-                level=15, msg='Primary {} cache not found'.format(fpath.name))
-    except json.JSONDecodeError:
-        logger.warning(
-            'Unable to decode primary {} cache:'.format(fpath.name), exc_info=True)
-        fpath.replace(fpath.with_suffix('.bad'))
-    except:
-        logger.warning(
-            'Unable to load primary {} cache:'.format(fpath.name), exc_info=True)
-    try:
-        if use_backup:
-            if backup.exists():
-                return load_json(backup)
-        elif warn_not_found:
-            logger.log(
-                level=15, msg='Backup {} cache not found'.format(backup.name))
-    except:
-        logger.warning(
-            'Unable to load backup {} cache:'.format(backup.name), exc_info=True)
+def http_fetch_json(session, endpoint, dir_path, fname=None):
+    resp = session.get(
+        endpoint, json={'path': dir_path, 'filename': fname})
+    resp.raise_for_status()
+    return resp.json()
+
+
+def http_post_json(session, endpoint, dir_path, fname, content, do_backup=True):
+    buffer = BytesIO()
+    compressor = gzip.GzipFile(fileobj=buffer, mode="w")
+    json.dump(content, TextIOWrapper(compressor))
+    b85data = base64.b64encode(buffer.getvalue()).decode('ascii')
+    resp = session.post(endpoint, json={'path': dir_path, 'filename': fname,
+                                         'content_gz': b85data, 'do_backup': do_backup})
+    resp.raise_for_status()
+    return resp.json() == 'ok'
+
+
+def http_exists(session, endpoint, rel_dir_name, fname):
+    return http_fetch_json(session, endpoint, dir_path, fname=fname)['exists']
+
+
+def http_list_dir(session, endpoint, dir_path):
+    return http_fetch_json(session, endpoint, dir_path)
+
+
+def http_replace(session, endpoint, dir_path, fname, new_fname):
+    resp = session.post(
+        endpoint, json={'path': dir_path, 'filename': fname, 'new_filename': new_fname})
+    resp.raise_for_status()
+    return resp.json() == 'ok'
 
 
 def dump_html(fpath, page, content):
