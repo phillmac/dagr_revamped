@@ -598,6 +598,7 @@ class DAGRCache():
             lower_gen = ((fn.lower(), fn)
                     for fn in self.files_gen())
             self.__files_list_lower = dict(lower_gen)
+            logger.log(level=15, msg=f"Generated {len(self.__files_list_lower)} lowercase fn cache items")
 
         entry = self.__files_list_lower.get(sn_lower, None)
         if not entry is None:
