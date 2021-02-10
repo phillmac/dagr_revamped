@@ -109,7 +109,7 @@ class DAGRCache():
         self.__artists = None if not 'artists' in load_files else self.__load_artists()
         self.__last_crawled = None if not 'last_crawled' in load_files else self.__load_lastcrawled()
 
-        self.__files_list_lower = {}
+        self.__files_list_lower = None
         self.downloaded_pages = []
 
         self.__queue_stale = False
@@ -155,6 +155,7 @@ class DAGRCache():
     @ property
     def existing_pages_lower(self):
         if self.__existing_pages_lower is None:
+            logger.log(level=15, msg='Generating lowercase existing pages cache')
             self.__existing_pages_lower = [
                 l.lower() for l in self.existing_pages]
         return self.__existing_pages_lower
@@ -594,24 +595,31 @@ class DAGRCache():
                 level=15, msg='{} already in filenames cache'.format(fn))
         else:
             self.__files_list.add(fn)
+            if not self.__files_list_lower is None:
+                self.__files_list_lower[fn.lower()] = fn
 
     def real_filename(self, shortname):
         sn_lower = shortname.lower()
+
+        if self.__files_list_lower is None:
+            logger.log(level=15, msg='Generating lowercase fn cache')
+            lower_gen = ((fn.lower(), fn)
+                    for fn in self.files_gen() if not fn in fll_values)
+            self.__files_list_lower = dict(lower_gen)
+
         entry = self.__files_list_lower.get(sn_lower, None)
         if not entry is None:
-            logger.log(level=15, msg=f"Got lcfn cache hit {entry} for {sn_lower}")
+            logger.log(level=15, msg=f"Got lowercase fn cache hit {entry} for {sn_lower}")
             return entry
 
-        fll_values = self.__files_list_lower.values()
+        # fll_values = self.__files_list_lower.values()
 
-        lower_gen = ((fn.lower(), fn)
-                    for fn in self.files_gen() if not fn in fll_values)
+        # for rfn, lfn in lower_gen:
+        #     self.__files_list_lower[lfn] = rfn
+        #     if lfn == sn_lower:
+        #         logger.log(level=15, msg=f"Got lcfn gen hit {rfn} for {sn_lower}")
+        #         return rfn
 
-        for rfn, lfn in lower_gen:
-            self.__files_list_lower[lfn] = rfn
-            if lfn == sn_lower:
-                logger.log(level=15, msg=f"Got lcfn gen hit {rfn} for {sn_lower}")
-                return rfn
         return None
 
 
