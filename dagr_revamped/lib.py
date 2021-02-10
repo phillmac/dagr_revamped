@@ -898,8 +898,8 @@ class DAGRDeviationProcessor():
         dest = self.get_dest()
         if self.force_verify_exists:
             self.__logger.log(
-                level=5, msg='Verifying {} really exists'.format(dest.name))
-        if dest.exists():
+                level=5, msg='Verifying {} really exists'.format(fname))
+        if self.cache.cache_io.exists(fname):
             self.cache.add_filename(fname)
             self.__logger.warning(
                 "FS entry {} exists - skipping".format(fname))

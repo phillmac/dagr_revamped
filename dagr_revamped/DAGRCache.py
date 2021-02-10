@@ -187,6 +187,10 @@ class DAGRCache():
             self.__last_crawled = self.__load_lastcrawled()
         return self.__last_crawled
 
+    @ property
+    def cache_io(self):
+        return self.__cache_io
+
     def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
         return self.__cache_io.load_primary_or_backup(cache_file, use_backup=use_backup, warn_not_found=warn_not_found)
 
