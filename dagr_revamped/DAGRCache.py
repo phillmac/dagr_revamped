@@ -316,12 +316,11 @@ class DAGRCache():
             15, 'Sorting {} artist pages'.format(len(updated_pages)))
         for page in updated_pages:
             artist_url_p, artist_name, shortname = artist_from_url(page)
-            try:
-                rfn = self.real_filename(shortname)
-            except StopIteration:
-                logger.error('Cache entry not found {} : {} : {}'.format(
-                    self.base_dir, page, shortname), exc_info=True)
-                raise
+            rfn = self.real_filename(shortname)
+            if rfn is None:
+                err =  f"Cache entry not found {self.base_dir} : {page} : {shortname}"
+                logger.error(err)
+                raise Exception(err)
             if not artist_name in self.artists:
                 self.artists[artist_name] = {
                     'Home Page': '{}/{}'.format(base_url, artist_url_p), 'Artworks': {}}
