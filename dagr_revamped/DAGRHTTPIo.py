@@ -14,7 +14,7 @@ class DAGRHTTPIo(DAGRIo):
     @staticmethod
     def create(base_dir, rel_dir, config):
         endpoints = congig.get('dagr.io.http.endpoints')
-        return DAGRIo(base_dir, rel_dir, endpoints)
+        return DAGRHTTPIo(base_dir, rel_dir, endpoints)
 
     def __init__(self, base_dir, rel_dir, endpoints):
         super().__init__(base_dir, rel_dir)
