@@ -48,7 +48,7 @@ class DAGRIo():
         if not isinstance(fname, str):
             raise Exception('fname arg must be an instance of str')
 
-        fpath = PurePath(fname)
+        fpath = PurePosixPath(fname)
         backup = fpath.with_suffix('.bak').name
 
         try:
