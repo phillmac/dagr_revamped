@@ -66,8 +66,8 @@ class DAGRIo():
                 f"Unable to load primary {fname} cache:", exc_info=True)
         try:
             if use_backup:
-                if backup.exists():
-                    return load_json(backup)
+                if self.exists(backup):
+                    return self.load_json(backup)
             elif warn_not_found:
                 logger.log(
                     level=15, msg="Backup {backup} cache not found")
