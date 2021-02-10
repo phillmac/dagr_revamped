@@ -17,38 +17,43 @@ class DAGRCache():
 
     @staticmethod
     def with_queue_only(config, mode, deviant, mval=None, dagr_io=None,
-    warn_not_found=None, preload_fileslist_policy=None):
+                        warn_not_found=None, preload_fileslist_policy=None):
         return DAGRCache.get_cache(
             config, mode, deviant, mval=mval, dagr_io=dagr_io,
-            load_files=['existing_pages', 'no_link', 'queue', 'premium', 'httperrors'],
+            load_files=['existing_pages', 'no_link',
+                        'queue', 'premium', 'httperrors'],
             warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
     def with_artists_only(config, mode, deviant, mval=None, dagr_io=None,
-    warn_not_found=None, preload_fileslist_policy=None):
+                          warn_not_found=None, preload_fileslist_policy=None):
         return DAGRCache.get_cache(
-            config, mode, deviant, mval=mval, dagr_io=dagr_io, load_files=['artists'],
+            config, mode, deviant, mval=mval, dagr_io=dagr_io, load_files=[
+                'artists'],
             warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
     def with_filenames_only(config, mode, deviant, mval=None, dagr_io=None,
-    warn_not_found=None, preload_fileslist_policy=None):
-            return DAGRCache.get_cache(
-            config, mode, deviant, mval=mval, dagr_io=dagr_io, load_files=['files_list'],
+                            warn_not_found=None, preload_fileslist_policy=None):
+        return DAGRCache.get_cache(
+            config, mode, deviant, mval=mval, dagr_io=dagr_io, load_files=[
+                'files_list'],
             warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
     def with_nolink_only(config, mode, deviant, mval=None, dagr_io=None,
-    warn_not_found=None, preload_fileslist_policy=None):
+                         warn_not_found=None, preload_fileslist_policy=None):
         return DAGRCache.get_cache(
-            config, mode, deviant, mval=mval, dagr_io=dagr_io, load_files=['no_link'],
+            config, mode, deviant, mval=mval, dagr_io=dagr_io, load_files=[
+                'no_link'],
             warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     @staticmethod
     def get_cache(config, mode, deviant, mval=None, dagr_io=None,
-    load_files=None, warn_not_found=None, preload_fileslist_policy=None):
+                  load_files=None, warn_not_found=None, preload_fileslist_policy=None):
         base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
-        cache_io = (dagr_io if dagr_io is not None else DAGRHTTPIo).create(base_dir, rel_dir, config)
+        cache_io = (dagr_io if dagr_io is not None else DAGRHTTPIo).create(
+            base_dir, rel_dir, config)
         return DAGRCache(config, cache_io, load_files=load_files, warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     def __init__(self, dagr_config, cache_io, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
@@ -164,7 +169,8 @@ class DAGRCache():
     @ property
     def existing_pages_lower(self):
         if self.__existing_pages_lower is None:
-            logger.log(level=15, msg='Generating lowercase existing pages cache')
+            logger.log(
+                level=15, msg='Generating lowercase existing pages cache')
             self.__existing_pages_lower = [
                 l.lower() for l in self.existing_pages]
         return self.__existing_pages_lower
@@ -247,7 +253,8 @@ class DAGRCache():
         if self.preload_fileslist_policy == 'enable':
             if self.preload_http_endpoint:
                 try:
-                    files_in_dir.update(fn for fn in self.__cache_io.list_dir() if not fn in self.__excluded_fnames)
+                    files_in_dir.update(
+                        fn for fn in self.__cache_io.list_dir() if not fn in self.__excluded_fnames)
                     filenames_default = []
                     logger.log(
                         level=15, msg=f"Added {len(files_in_dir)} entrys to preload list")
@@ -293,7 +300,9 @@ class DAGRCache():
         return self.__cache_io.exists(self.settings_name)
 
     def __update_cache(self, cache_file, cache_contents, do_backup=True):
-            self.__cache_io.save_json(cache_file, cache_contents, do_backup)
+        if isinstance(cache_contents, set):
+            cache_contents = list(cache_contents)
+        self.__cache_io.save_json(cache_file, cache_contents, do_backup)
 
     def __convert_urls(self):
         logger.warning(
@@ -316,7 +325,7 @@ class DAGRCache():
             15, 'Sorting {} artist pages'.format(len(updated_pages)))
         for page in updated_pages:
             artist_url_p, artist_name, shortname = artist_from_url(page)
-            err =  f"Cache entry not found {self.base_dir} : {page} : {shortname}"
+            err = f"Cache entry not found {self.base_dir} : {page} : {shortname}"
             try:
                 rfn = self.real_filename(shortname)
                 if rfn is None:
