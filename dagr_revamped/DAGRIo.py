@@ -30,7 +30,7 @@ class DAGRIo():
         return self.__rel_dir_name
 
     def list_dir(self):
-        return (i.name for i in os.scandir(self.__base_dir))
+        return (i.name for i in scandir(self.__base_dir))
 
     def load_json(self, fname):
         return load_json(self.__base_dir.joinpath(fname))
