@@ -2,10 +2,12 @@ import logging
 from os import scandir
 from pathlib import Path, PurePosixPath
 from pprint import pformat
+
 from requests import Session
 
 from .DAGRIo import DAGRIo
-from .utils import http_exists, http_fetch_json, http_list_dir, http_post_json, http_replace
+from .utils import (http_exists, http_fetch_json, http_list_dir,
+                    http_post_json, http_replace)
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +15,7 @@ logger = logging.getLogger(__name__)
 class DAGRHTTPIo(DAGRIo):
     @staticmethod
     def create(base_dir, rel_dir, config):
-        endpoints = config.get('dagr.io.http.endpoints')
+        endpoints = config.get('dagr.io.http.endpoints', key_errors=False) or {}
         return DAGRHTTPIo(base_dir, rel_dir, endpoints)
 
     def __init__(self, base_dir, rel_dir, endpoints):
