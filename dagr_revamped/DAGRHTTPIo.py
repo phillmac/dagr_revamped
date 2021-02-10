@@ -32,7 +32,7 @@ class DAGRHTTPIo(DAGRIo):
         session = Session()
 
         if not self.__exists_ep is None:
-            self.exists = lambda _self, fname: http_exists(
+            self.exists = lambda fname: http_exists(
                 session, self.__exists_ep, self.rel_dir_name, fname=fname)
 
         if not self.__list_dir_ep is None:
@@ -40,13 +40,13 @@ class DAGRHTTPIo(DAGRIo):
                 session, self.__list_dir_ep, self.rel_dir_name)
 
         if not self.__load_json_ep is None:
-            self.load_json = lambda _self, fname: http_fetch_json(
+            self.load_json = lambda fname: http_fetch_json(
                 session, self.__load_json_ep,  self.rel_dir_name, fname=fname)
 
         if not self.__save_json_ep is None:
-            self.save_json = lambda _self, fname, content, do_backup=True: http_post_json(
+            self.save_json = lambda fname, content, do_backup=True: http_post_json(
                 session, self.__load_json_ep, self.rel_dir_name, fname, content, do_backup)
 
         if not self.__replace_ep is None:
-            self.replace = lambda _self, fname, new_fname: http_replace(
+            self.replace = lambda fname, new_fname: http_replace(
                 session, self.__replace_ep, self.rel_dir_name, fname, new_fname)
