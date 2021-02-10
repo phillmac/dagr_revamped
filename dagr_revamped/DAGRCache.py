@@ -247,7 +247,7 @@ class DAGRCache():
         if self.preload_fileslist_policy == 'enable':
             if self.preload_http_endpoint:
                 try:
-                    files_in_dir.update(fn for fn in self.__cache_io.list_dir() if not fn.name in self.__excluded_fnames)
+                    files_in_dir.update(fn for fn in self.__cache_io.list_dir() if not fn in self.__excluded_fnames)
                     filenames_default = []
                     logger.log(
                         level=15, msg=f"Added {len(files_in_dir)} entrys to preload list")
