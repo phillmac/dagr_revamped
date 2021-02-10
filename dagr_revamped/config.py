@@ -250,6 +250,7 @@ class DAGRConfig(DAGRBaseConf):
             'ShortUrls': False,
             'UpdateFilesList': True
         },
+        "Dagr.Io.HTTP.Endpoints": {},
         'Dagr.DeviationProcessor': {
             'FNS_Address': ''
         },
