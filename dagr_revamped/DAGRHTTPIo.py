@@ -45,7 +45,7 @@ class DAGRHTTPIo(DAGRIo):
 
         if not self.__save_json_ep is None:
             self.save_json = lambda fname, content, do_backup=True: http_post_json(
-                session, self.__load_json_ep, self.rel_dir_name, fname, content, do_backup)
+                session, self.__save_json_ep, self.rel_dir_name, fname, content, do_backup)
 
         if not self.__replace_ep is None:
             self.replace = lambda fname, new_fname: http_replace(
