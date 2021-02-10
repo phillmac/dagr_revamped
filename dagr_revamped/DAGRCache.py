@@ -52,8 +52,6 @@ class DAGRCache():
         return DAGRCache(config, cache_io, load_files=load_files, warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     def __init__(self, dagr_config, cache_io, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
-        if not isinstance(base_dir, Path):
-            raise Exception('Path required')
         self.dagr_config = dagr_config
         self.base_dir = cache_io.base_dir
         self.rel_dir = cache_io.rel_dir
