@@ -247,7 +247,7 @@ class DAGRCache():
         if self.preload_fileslist_policy == 'enable':
             if self.preload_http_endpoint:
                 try:
-                    files_in_dir.update(fn for fn in self.__cache_io.load_files() if not fn.name in self.__excluded_fnames)
+                    files_in_dir.update(fn for fn in self.__cache_io.list_dir() if not fn.name in self.__excluded_fnames)
                     filenames_default = []
                     logger.log(
                         level=15, msg=f"Added {len(files_in_dir)} entrys to preload list")
@@ -597,7 +597,7 @@ class DAGRCache():
         if self.__files_list_lower is None:
             logger.log(level=15, msg='Generating lowercase fn cache')
             lower_gen = ((fn.lower(), fn)
-                    for fn in self.files_gen() if not fn in fll_values)
+                    for fn in self.files_gen())
             self.__files_list_lower = dict(lower_gen)
 
         entry = self.__files_list_lower.get(sn_lower, None)
