@@ -361,7 +361,7 @@ def http_post_json(session, endpoint, dir_path, fname, content, do_backup=True):
     return resp.json() == 'ok'
 
 
-def http_exists(session, endpoint, rel_dir_name, fname):
+def http_exists(session, endpoint, dir_path, fname):
     return http_fetch_json(session, endpoint, dir_path, fname=fname)['exists']
 
 
