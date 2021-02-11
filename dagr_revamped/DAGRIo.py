@@ -2,6 +2,8 @@ import logging
 from os import scandir
 from pathlib import Path, PurePosixPath
 
+from json import JSONDecodeError
+
 from .utils import load_json, save_json
 
 logger = logging.getLogger(__name__)
@@ -57,7 +59,7 @@ class DAGRIo():
             elif warn_not_found:
                 logger.log(
                     level=15, msg=f"Primary {fname} cache not found")
-        except json.JSONDecodeError:
+        except JSONDecodeError:
             logger.warning(
                 f"Unable to decode primary {fname} cache:", exc_info=True)
             self.replace(fname, fpath.with_suffix('.bak')).name
