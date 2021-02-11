@@ -53,19 +53,19 @@ class DAGRIo():
         fpath = PurePosixPath(fname)
         backup = fpath.with_suffix('.bak').name
 
-        try:
-            if self.exists(fname):
+        if self.exists(fname):
+            try:
                 return self.load_json(fname)
-            elif warn_not_found:
-                logger.log(
-                    level=15, msg=f"Primary {fname} cache not found")
-        except JSONDecodeError:
-            logger.warning(
-                f"Unable to decode primary {fname} cache:", exc_info=True)
-            self.replace(fname, fpath.with_suffix('.bak')).name
-        except:
-            logger.warning(
-                f"Unable to load primary {fname} cache:", exc_info=True)
+            except JSONDecodeError:
+                logger.warning(
+                    f"Unable to decode primary {fname} cache:", exc_info=True)
+                self.replace(fname, fpath.with_suffix('.bak')).name
+            except:
+                logger.warning(
+                    f"Unable to load primary {fname} cache:", exc_info=True)
+        elif warn_not_found:
+            logger.log(
+                level=15, msg=f"Primary {fname} cache not found")
         try:
             if use_backup:
                 if self.exists(backup):
