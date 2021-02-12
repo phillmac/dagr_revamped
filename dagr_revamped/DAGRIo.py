@@ -72,7 +72,7 @@ class DAGRIo():
                     return self.load_json(backup)
             elif warn_not_found:
                 logger.log(
-                    level=15, msg="Backup {backup} cache not found")
+                    level=15, msg=f"Backup {backup} cache not found")
         except:
             logger.warning(
                 f"Unable to load backup {backup} cache:", exc_info=True)
