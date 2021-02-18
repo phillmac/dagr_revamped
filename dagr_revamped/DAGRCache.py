@@ -4,6 +4,7 @@ from copy import copy
 from pathlib import Path, PurePosixPath
 from pprint import pformat
 from time import time
+from platform import node as get_hostname
 
 import portalocker
 
