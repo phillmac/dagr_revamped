@@ -407,8 +407,8 @@ class DAGRConfig(DAGRBaseConf):
         if not conf_level is None:
             return conf_level
 
-    def map_log_level(self):
-        return self.get('logging.map', self.get_log_level())
+    def map_log_level(self, level=None):
+        return self.get('logging.map', level if not level is None else self.get_log_level())
 
     @property
     def output_dir(self):
