@@ -26,13 +26,13 @@ class DAGRManager():
 
     def get_config(self):
         return self.__config
-    
-    def init_logging(self):
+
+    def init_logging(self, level=None):
         self.__config.set_section('logging.files.names.prefixes', {
             "remote": f"{self.get_host_mode()}.",
             "local": f"{self.__mode}."
         })
-        init_logging(self.__config)
+        init_logging(self.__config, level=level)
         logger.info(f"Host Mode: {self.get_host_mode()}")
 
     def get_browser(self):

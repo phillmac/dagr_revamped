@@ -43,9 +43,9 @@ def get_logging_paths(config):
     return set([determine_path(config, k, v) for k, v in config.get('logging.files.locations').items()])
 
 
-def init_logging(config):
+def init_logging(config, level=None):
     frmt = config.get('logging', 'format')
-    log_level = config.map_log_level() or logging.WARN
+    log_level = level or config.map_log_level() or logging.WARN
     logging.basicConfig(format=frmt,
                         stream=sys.stdout, level=log_level)
     for fp in get_logging_paths(config):
