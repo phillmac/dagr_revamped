@@ -605,8 +605,9 @@ class DAGRCache():
                 level=15, msg='{} already in filenames cache'.format(fn))
         else:
             self.__files_list.add(fn)
-            if not self.__files_list_lower is None:
-                self.__files_list_lower[fn.lower()] = fn
+            self.__cache_io.update_fn_cache(fn)
+            # if not self.__files_list_lower is None:
+                # self.__files_list_lower[fn.lower()] = fn
 
     def real_filename(self, shortname):
         sn_lower = shortname.lower()

@@ -76,3 +76,6 @@ class DAGRIo():
         except:
             logger.warning(
                 f"Unable to load backup {backup} cache:", exc_info=True)
+
+    def update_fn_cache(self, fname):
+        pass
