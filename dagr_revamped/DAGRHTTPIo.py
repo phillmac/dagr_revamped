@@ -29,6 +29,7 @@ class DAGRHTTPIo(DAGRIo):
         self.__load_json_ep = endpoints.get('load_json', None)
         self.__save_json_ep = endpoints.get('save_json', None)
         self.__replace_ep = endpoints.get('replace', None)
+        self.__update_fn_cache_ep=endpoints.get('update_fn_cache', None)
 
         session = Session()
 
