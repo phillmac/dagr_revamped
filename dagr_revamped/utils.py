@@ -352,8 +352,9 @@ def http_fetch_json(session, endpoint, dir_path, fname=None, **kwargs):
         endpoint, json={'path': dir_path, 'filename': fname, **kwargs})
     resp.raise_for_status()
     return resp.json()
-    
-def http_post_json_raw(session, endpoint, json)
+
+
+def http_post_json_raw(session, endpoint, json):
     resp = session.post(endpoint, json=json)
     resp.raise_for_status()
     return resp.json() == 'ok'
@@ -365,9 +366,7 @@ def http_post_json(session, endpoint, dir_path, fname, content, do_backup=True):
     json.dump(content, TextIOWrapper(compressor))
     b85data = base64.b64encode(buffer.getvalue()).decode('ascii')
     return http_post_json_raw(session, endpoint, json={'path': dir_path, 'filename': fname,
-                                        'content_gz': b85data, 'do_backup': do_backup})
-
-    
+                                                       'content_gz': b85data, 'do_backup': do_backup})
 
 
 def http_exists(session, endpoint, dir_path, fname, update_cache=None):

@@ -52,4 +52,5 @@ class DAGRHTTPIo(DAGRIo):
             self.replace = lambda fname, new_fname: http_replace(
                 session, self.__replace_ep, self.rel_dir_name, fname, new_fname)
         if not self.__update_fn_cache_ep is None:
-            self.update_fn_cache = lambda fname: http_post_json_raw(session, self.__update_fn_cache_ep, json={'filenames':[fname]})
+            self.update_fn_cache = lambda fname: http_post_json_raw(
+                session, self.__update_fn_cache_ep, json={'filenames': [fname]})
