@@ -293,16 +293,16 @@ class DAGRCache():
             warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
 
     def __ep_exists(self):
-        return self.__cache_io.exists(self.ep_name)
+        return self.__cache_io.exists(self.ep_name, update_cache=False)
 
     def __fn_exists(self):
-        return self.__cache_io.exists(self.fn_name)
+        return self.__cache_io.exists(self.fn_name, update_cache=False)
 
     def __artists_exists(self):
-        return self.__cache_io.exists(self.artists_name)
+        return self.__cache_io.exists(self.artists_name, update_cache=False)
 
     def __settings_exists(self):
-        return self.__cache_io.exists(self.settings_name)
+        return self.__cache_io.exists(self.settings_name, update_cache=False)
 
     def __update_cache(self, cache_file, cache_contents, do_backup=True):
         if isinstance(cache_contents, set):

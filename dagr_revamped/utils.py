@@ -317,7 +317,7 @@ def shorten_url(url):
 
 def artist_from_url(url, mode=None):
     artist_url_p = None
-    if mode=='album' or mode == 'collection':
+    if mode == 'album' or mode == 'collection':
         artist_url_p = PurePosixPath(url).parent.parent.parent
     else:
         artist_url_p = PurePosixPath(url).parent.parent
@@ -347,9 +347,9 @@ def ensure_path(fpath, resolve=True):
     return (fpath if isinstance(fpath, Path) else Path(fpath)).resolve()
 
 
-def http_fetch_json(session, endpoint, dir_path, fname=None):
+def http_fetch_json(session, endpoint, dir_path, fname=None, **kwargs):
     resp = session.get(
-        endpoint, json={'path': dir_path, 'filename': fname})
+        endpoint, json={'path': dir_path, 'filename': fname, **kwargs})
     resp.raise_for_status()
     return resp.json()
 
@@ -360,13 +360,13 @@ def http_post_json(session, endpoint, dir_path, fname, content, do_backup=True):
     json.dump(content, TextIOWrapper(compressor))
     b85data = base64.b64encode(buffer.getvalue()).decode('ascii')
     resp = session.post(endpoint, json={'path': dir_path, 'filename': fname,
-                                         'content_gz': b85data, 'do_backup': do_backup})
+                                        'content_gz': b85data, 'do_backup': do_backup})
     resp.raise_for_status()
     return resp.json() == 'ok'
 
 
-def http_exists(session, endpoint, dir_path, fname):
-    return http_fetch_json(session, endpoint, dir_path, fname=fname)['exists']
+def http_exists(session, endpoint, dir_path, fname, update_cache=None):
+    return http_fetch_json(session, endpoint, dir_path, fname=fname, update_cache=update_cache)['exists']
 
 
 def http_list_dir(session, endpoint, dir_path):

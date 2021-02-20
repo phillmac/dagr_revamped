@@ -40,7 +40,7 @@ class DAGRIo():
     def save_json(self, fname, content, do_backup=True):
         return save_json(self.__base_dir.joinpath(fname), content)
 
-    def exists(self, fname):
+    def exists(self, fname, update_cache=None):
         return self.__base_dir.joinpath(fname).exists()
 
     def replace(self, fname, new_fname):
@@ -53,7 +53,7 @@ class DAGRIo():
         fpath = PurePosixPath(fname)
         backup = fpath.with_suffix('.bak').name
 
-        if self.exists(fname):
+        if self.exists(fname, update_cache=False):
             try:
                 return self.load_json(fname)
             except JSONDecodeError:
@@ -68,7 +68,7 @@ class DAGRIo():
                 level=15, msg=f"Primary {fname} cache not found")
         try:
             if use_backup:
-                if self.exists(backup):
+                if self.exists(backup, update_cache=False):
                     return self.load_json(backup)
             elif warn_not_found:
                 logger.log(

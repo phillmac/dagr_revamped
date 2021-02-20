@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 class DAGRHTTPIo(DAGRIo):
     @staticmethod
     def create(base_dir, rel_dir, config):
-        endpoints = config.get('dagr.io.http.endpoints', key_errors=False) or {}
+        endpoints = config.get('dagr.io.http.endpoints',
+                               key_errors=False) or {}
         return DAGRHTTPIo(base_dir, rel_dir, endpoints)
 
     def __init__(self, base_dir, rel_dir, endpoints):
@@ -32,8 +33,8 @@ class DAGRHTTPIo(DAGRIo):
         session = Session()
 
         if not self.__exists_ep is None:
-            self.exists = lambda fname: http_exists(
-                session, self.__exists_ep, self.rel_dir_name, fname=fname)
+            self.exists = lambda fname, update_cache=None: http_exists(
+                session, self.__exists_ep, self.rel_dir_name, fname=fname, update_cache=update_cache)
 
         if not self.__list_dir_ep is None:
             self.list_dir = lambda: http_list_dir(
