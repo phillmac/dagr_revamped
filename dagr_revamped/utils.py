@@ -1,4 +1,3 @@
-import base64
 import gzip
 import json
 import logging
@@ -363,10 +362,11 @@ def http_post_json_raw(session, endpoint, json):
 def http_post_json(session, endpoint, dir_path, fname, content, do_backup=True):
     buffer = BytesIO()
     compressor = gzip.GzipFile(fileobj=buffer, mode="w")
-    json.dump(content, TextIOWrapper(compressor))
-    b85data = base64.b64encode(buffer.getvalue()).decode('ascii')
-    return http_post_json_raw(session, endpoint, json={'path': dir_path, 'filename': fname,
-                                                       'content_gz': b85data, 'do_backup': do_backup})
+    json.dump({'path': dir_path, 'filename': fname,
+               'content': content, 'do_backup': do_backup}, TextIOWrapper(compressor))
+    buffer.seek(0)
+    headers = {'Content-Type': 'application/gzip'}
+    return http_post_json_raw(session, endpoint, headers=headers, data=buffer)
 
 
 def http_exists(session, endpoint, dir_path, fname, update_cache=None):
