@@ -174,7 +174,9 @@ collect_links(arguments[0])
             'gallery': f"https://www.deviantart.com/{deviant_lower}/gallery/all",
             'favs': f"https://www.deviantart.com/{deviant_lower}/favourites/all",
             'album': f"https://www.deviantart.com/{deviant_lower}/gallery/{mval}",
-            'collection': f"https://www.deviantart.com/{deviant_lower}/favourites/{mval}"
+            'collection': f"https://www.deviantart.com/{deviant_lower}/favourites/{mval}",
+            'favs_featured': f"https://www.deviantart.com/{deviant_lower}/favourites",
+            'gallery_featured': f"https://www.deviantart.com/{deviant_lower}/gallery"
         }.get(mode)
 
         if mval:
