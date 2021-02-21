@@ -123,7 +123,7 @@ collect_links(arguments[0])
             for _pd in range(self.__config.get('page_down_count', 7)):
                 crawl_st = time()
                 collected = self.collect_pages_mval_id(
-                    mval_id) if mval_id else self.collect_pages()
+                mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
                 if len(collected - pages) > 0:
                     sleep_time = self.__config.get('page_sleep_time', 15)
                     pages.update(collected)
