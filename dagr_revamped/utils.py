@@ -353,8 +353,8 @@ def http_fetch_json(session, endpoint, dir_path, fname=None, **kwargs):
     return resp.json()
 
 
-def http_post_json_raw(session, endpoint, json):
-    resp = session.post(endpoint, json=json)
+def http_post_json_raw(session, endpoint, json, **kwargs):
+    resp = session.post(endpoint, json=json, **kwargs)
     resp.raise_for_status()
     return resp.json() == 'ok'
 
