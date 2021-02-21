@@ -29,7 +29,7 @@ class DAGRHTTPIo(DAGRIo):
         self.__load_json_ep = endpoints.get('load_json', None)
         self.__save_json_ep = endpoints.get('save_json', None)
         self.__replace_ep = endpoints.get('replace', None)
-        self.__update_fn_cache_ep=endpoints.get('update_fn_cache', None)
+        self.__update_fn_cache_ep = endpoints.get('update_fn_cache', None)
 
         session = Session()
 
@@ -54,4 +54,4 @@ class DAGRHTTPIo(DAGRIo):
                 session, self.__replace_ep, self.rel_dir_name, fname, new_fname)
         if not self.__update_fn_cache_ep is None:
             self.update_fn_cache = lambda fname: http_post_json_raw(
-                session, self.__update_fn_cache_ep, json={'filenames': [fname]})
+                session, self.__update_fn_cache_ep, json={'path': self.rel_dir_name, 'filenames': [fname]})
