@@ -315,11 +315,14 @@ def shorten_url(url):
 
 
 def artist_from_url(url, mode=None):
-    artist_url_p = None
-    if mode == 'album' or mode == 'collection':
-        artist_url_p = PurePosixPath(url).parent.parent.parent
-    else:
-        artist_url_p = PurePosixPath(url).parent.parent
+    artist_url_p = PurePosixPath(url).parents[{
+        'album': 2,
+        'collection': 2,
+        'gallery': 1,
+        'favs': 1,
+        'gallery_featured': 0,
+        'favs_featured': 0
+    }[mode]]
     artist_name = artist_url_p.name
     shortname = PurePosixPath(url).name
     return (artist_url_p, artist_name, shortname)
