@@ -22,6 +22,7 @@ from requests import codes as req_codes
 
 from .config import DAGRConfig
 from .DAGRCache import DAGRCache, DagrCacheLockException
+from .DAGRIo import DAGRIo
 from .exceptions import (DagrException, DagrHTTPException,
                          DagrPremiumUnavailable)
 from .plugin import PluginManager
@@ -35,7 +36,7 @@ class DAGR():
         self.__logger = logging.getLogger(__name__)
         self.__work_queue = {}
         self.error_report = []
-        self.kwargs = kwargs
+        self.__kwargs = kwargs
         self.config = kwargs.get('config') or DAGRConfig(kwargs)
         self.deviants = kwargs.get('deviants')
         self.filenames = kwargs.get('filenames')
@@ -78,9 +79,10 @@ class DAGR():
         self.devation_crawler = None
         self.deviantion_pocessor = None
         self.deviant_resolver = None
+        self.cache = None
+        self.io
         self.stop_running = threading.Event()
         self.pl_manager = (kwargs.get('pl_manager') or PluginManager)(self)
-        self.cache = kwargs.get('cache') or DAGRCache
         self.total_dl_count = 0
         self.init_mimetypes()
         self.init_classes()
@@ -107,6 +109,8 @@ class DAGR():
         self.ripper_init()
         self.processor_init()
         self.resolver_init()
+        self.cache_init()
+        self.io_init()
 
     def plugin_class_init(self, class_name, default=None):
         plugin_name = self.config.get('dagr.plugins.classes', class_name)
@@ -123,28 +127,34 @@ class DAGR():
 
     def browser_init(self):
         if not self.browser:
-            self.browser = self.kwargs.get('browser') or self.plugin_class_init(
+            self.browser = self.__kwargs.get('browser') or self.plugin_class_init(
                 'browser', create_browser)(self.mature)
 
     def crawler_init(self):
         if not self.devation_crawler:
-            self.devation_crawler = self.kwargs.get(
+            self.devation_crawler = self.__kwargs.get(
                 'crawler') or self.plugin_class_init('crawler', DAGRCrawler)(self)
 
     def ripper_init(self):
         if not self.ripper:
-            self.ripper = self.kwargs.get(
+            self.ripper = self.__kwargs.get(
                 'ripper') or self.plugin_class_init('ripper', None)
 
     def processor_init(self):
         if not self.deviantion_pocessor:
-            self.deviantion_pocessor = self.kwargs.get(
+            self.deviantion_pocessor = self.__kwargs.get(
                 'processor') or self.plugin_class_init('processor', DAGRDeviationProcessor)
 
     def resolver_init(self):
         if not self.deviant_resolver:
-            self.deviant_resolver = self.kwargs.get(
+            self.deviant_resolver = self.__kwargs.get(
                 'resolver') or self.plugin_class_init('resolver', DAGRDeviantResolver)
+
+    def cache_init(self):
+        self.cache = self.__kwargs.get('cache') or self.plugin_class_init('cache', DAGRCache)
+
+    def io_init(self):
+        self.io = self.__kwargs.get('io') or self.plugin_class_init('io', DAGRIo)
 
     def create_crawler(self):
         return self.devation_crawler(self)
@@ -228,10 +238,10 @@ class DAGR():
         return {}
 
     def check_lastcrawl(self, seconds, mode, deviant=None, mval=None):
-        base_dir, _rel_dir = get_base_dir(self.config, mode, deviant, mval)
+        base_dir, rel_dir = get_base_dir(self.config, mode, deviant, mval)
         crawl_mode = 'full' if self.maxpages is None else 'short'
         if base_dir.exists():
-            cache = self.cache(self.config, base_dir)
+            cache = self.cache(self.config, base_dir, cache_io=self.io((base_dir, rel_dir, self.config)))
             last_crawled = cache.last_crawled.get(crawl_mode)
             if last_crawled == 'never':
                 self.__logger.debug('{}: never crawled'.format(base_dir))
@@ -354,7 +364,7 @@ class DAGR():
         if deviant:
             deviant_lower = deviant.lower()
         try:
-            with DAGRCache.get_cache(self.config, mode, deviant, mval) as cache:
+            with self.cache.get_cache(self.config, mode, deviant, mval, dagr_io=self.io) as cache:
                 pages = self.crawl_pages(url_fmt, mode, deviant, mval, msg)
                 if not self.keep_running():
                     return
@@ -379,7 +389,7 @@ class DAGR():
         base_url = self.base_url()
         deviant_lower = deviant.lower()
         try:
-            with DAGRCache.get_cache(self.config, 'gallery', deviant, mval) as cache:
+            with self.cache.get_cache(self.config, 'gallery', deviant, mval, dagr_io=self.io) as cache:
                 self.process_deviations(cache, [url_fmt.format(**locals())])
         except DagrCacheLockException:
             pass
