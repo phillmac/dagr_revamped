@@ -80,7 +80,7 @@ class DAGR():
         self.deviantion_pocessor = None
         self.deviant_resolver = None
         self.cache = None
-        self.io
+        self.io = None
         self.stop_running = threading.Event()
         self.pl_manager = (kwargs.get('pl_manager') or PluginManager)(self)
         self.total_dl_count = 0
