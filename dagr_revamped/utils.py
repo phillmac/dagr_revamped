@@ -322,7 +322,7 @@ def artist_from_url(url, mode=None):
         'favs': 1,
         'gallery_featured': 0,
         'favs_featured': 0
-    }[mode]]
+    }.get(mode, 1)]
     artist_name = artist_url_p.name
     shortname = PurePosixPath(url).name
     return (artist_url_p, artist_name, shortname)
