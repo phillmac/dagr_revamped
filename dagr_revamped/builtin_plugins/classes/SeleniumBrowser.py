@@ -222,6 +222,9 @@ class SeleniumBrowser():
     def execute_async_script(self, *args, **kwargs):
         return self.__driver.execute_async_script(*args, **kwargs)
 
+    def move_to_element(self, elem):
+        ActionChains(self.__driver).move_to_element(elem).perform()
+
     def click_element(self, elem):
         ActionChains(self.__driver).move_to_element(elem).click().perform()
 
