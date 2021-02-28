@@ -213,6 +213,9 @@ class SeleniumBrowser():
     def find_element_by_tag_name(self, *args, **kwargs):
         return self.__driver.find_element_by_tag_name(*args, **kwargs)
 
+    def find_elements_by_tag_name(self, *args, **kwargs):
+        return self.__driver.find_elements_by_tag_name(*args, **kwargs)
+
     def find_element_by_link_text(self, *args, **kwargs):
         return self.__driver.find_element_by_link_text(*args, **kwargs)
 
