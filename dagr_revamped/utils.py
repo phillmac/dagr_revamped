@@ -320,6 +320,7 @@ def artist_from_url(url, mode=None):
         'collection': 2,
         'gallery': 1,
         'favs': 1,
+        'scraps': 1,
         'gallery_featured': 0,
         'favs_featured': 0
     }.get(mode, 1)

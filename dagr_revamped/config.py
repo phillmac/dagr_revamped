@@ -178,6 +178,7 @@ class DAGRConfig(DAGRBaseConf):
             'Art': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
             'Favs': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/favourites/all"),
             'Gallery': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/gallery/all"),
+            'Scraps': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/gallery/scraps"),
             'Collection': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/favourites/[a-zA-Z0-9_-]*/[a-zA-Z0-9_-]*"),
             'Album': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/gallery/[a-zA-Z0-9_-]*/[a-zA-Z0-9_-]*"),
             'Favs_Featured': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/favourites"),

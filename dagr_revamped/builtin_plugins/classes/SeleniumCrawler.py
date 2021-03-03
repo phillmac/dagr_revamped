@@ -172,6 +172,7 @@ collect_links(arguments[0])
         deviant_lower = deviant.lower()
         url = crawl_offset if isinstance(crawl_offset, str) else {
             'gallery': f"https://www.deviantart.com/{deviant_lower}/gallery/all",
+            'scraps': f"https://www.deviantart.com/{deviant_lower}/gallery/scraps",
             'favs': f"https://www.deviantart.com/{deviant_lower}/favourites/all",
             'album': f"https://www.deviantart.com/{deviant_lower}/gallery/{mval}",
             'collection': f"https://www.deviantart.com/{deviant_lower}/favourites/{mval}",
