@@ -184,3 +184,10 @@ class SeleniumCache():
                 slug, self.__local_cache, self.__remote_cache,  self.__remote_breaker)
         self.__caches.get(slug).remove(values)
         self.__flushed[slug] = False
+
+    def unload(self, slug):
+        if slug in self.__caches.keys():
+            if not self.__flushed.get(slug, False) == True:
+                self.__caches.get(slug).flush()
+                self.__flushed[slug] = True
+            del self.__caches[slug]
