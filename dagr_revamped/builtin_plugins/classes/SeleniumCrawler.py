@@ -197,5 +197,5 @@ collect_links(arguments[0])
         self.__browser.open_do_login(url)
         result = self.crawl_action(slug, mval_id, pages=pages, history=history)
         if self.__config.get('unload_cache_policy', '') == 'always':
-            self.__cache.unload(slug))
+            self.__cache.unload(slug)
         return result
