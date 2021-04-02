@@ -198,4 +198,5 @@ collect_links(arguments[0])
         result = self.crawl_action(slug, mval_id, pages=pages, history=history)
         if self.__config.get('unload_cache_policy', '') == 'always':
             self.__cache.unload(slug)
+            self.__logger.log(level=15, msg=f"Unloaded {slug} cache")
         return result
