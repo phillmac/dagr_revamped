@@ -1,6 +1,8 @@
 from dagr_revamped.utils import load_json, save_json
 import logging
 from pathlib import Path
+from time import time
+
 
 import pybreaker
 
@@ -24,6 +26,7 @@ class SlugCache():
             'local_values': self.__local_values
         }
         self.__loaded = set()
+        self.__loaded_ts = time()
 
         self.__caches = {
             'remote primary': remote.joinpath(slug).with_suffix('.json'),

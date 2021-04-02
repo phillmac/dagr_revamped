@@ -320,7 +320,7 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_mode', 'Webdriver_url', 'Driver_path', 'Full_crawl', 'Login_Policy', 'OOM_Max_Pages',
-            'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout'
+            'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout', 'Unload_Cache_Policy'
         ]),
         'DeviantArt': get_os_options('DeviantArt', ['Username', 'Password'])
     })

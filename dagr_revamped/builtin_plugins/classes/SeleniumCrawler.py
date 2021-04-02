@@ -195,4 +195,7 @@ collect_links(arguments[0])
             self.__logger.info('Performing full crawl, no history loaded')
 
         self.__browser.open_do_login(url)
-        return self.crawl_action(slug, mval_id, pages=pages, history=history)
+        result = self.crawl_action(slug, mval_id, pages=pages, history=history)
+        if self.__config.get('unload_cache_policy', '') == 'always':
+            self.__cache.unload(slug))
+        return result
