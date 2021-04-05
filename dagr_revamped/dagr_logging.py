@@ -74,10 +74,12 @@ def init_logging(config, level=None, host_mode=None):
         for _n, h in http_handler_hosts:
             log(lname=__name__, level=logging.INFO,
                 msg=f"Creating logging http handler {h}")
-            httphandler = DagrHTTPHandler(h, host_mode, maxBytes, backupCount, frmt, filtered_modules)
+            httphandler = DagrHTTPHandler(
+                h, host_mode, maxBytes, backupCount, frmt, filtered_modules)
             logging.getLogger().addHandler(httphandler)
     else:
-        log(lname=__name__, level=logging.WARN, msg='Skipping http handlers: missing host_mode param')
+        log(lname=__name__, level=logging.WARN,
+            msg='Skipping http handlers: missing host_mode param')
 
     for k, v in config.get('logging.extra').items():
         logging.addLevelName(int(k), v)

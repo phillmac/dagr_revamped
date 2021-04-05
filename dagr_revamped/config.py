@@ -162,7 +162,7 @@ class DAGRConfig(DAGRBaseConf):
         },
         'Logging.HTTP': {
             'FilteredModules': 'urllib3.connectionpool'
-        }
+        },
         'Logging.HTTP.Hosts': {
         },
         'Conf': {
