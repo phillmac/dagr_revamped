@@ -161,5 +161,6 @@ class DagrHTTPHandler(logging.Handler):
             del_props = [p for p in ['retry'] if p in record_info]
             for dp in del_props:
                 del record_info[dp]
+            
             resp = self.__session.post(
-                f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record': record.__dict__})
+                f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record': record_info})
