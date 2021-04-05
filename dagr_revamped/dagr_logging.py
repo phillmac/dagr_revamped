@@ -111,7 +111,7 @@ class RobustRFileHandler(RotatingFileHandler):
 
 
 class DagrHTTPHandler(logging.Handler):
-    def __init__(self, , host, host_mode, max_bytes, backup_count, frmt, filtered_modules):
+    def __init__(self, host, host_mode, max_bytes, backup_count, frmt, filtered_modules):
         self.__host = host
         self.__host_mode = host_mode
         self.MAX_POOLSIZE = 100
