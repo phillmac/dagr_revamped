@@ -70,6 +70,7 @@ def init_logging(config, level=None, host_mode=None):
 
     http_handler_hosts = config.get('logging.http.hosts').items()
     filtered_modules = config.get('logging.http', 'filteredmodules').split(',')
+    print({ 'filtered_modules': filtered_modules })
     if len(http_handler_hosts) > 0 and not host_mode is None:
         for _n, h in http_handler_hosts:
             log(lname=__name__, level=logging.INFO,
