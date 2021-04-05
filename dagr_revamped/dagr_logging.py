@@ -1,7 +1,7 @@
 import logging
 import sys
 import threading
-from logging.handlers import HTTPHandler, RotatingFileHandler
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 import requests
@@ -44,7 +44,7 @@ def determine_path(config, lname, lvalue):
 
 
 def get_logging_paths(config):
-    return set([determine_path(config, k, v) for k, v in config.get('logging.files.locations').items()])
+    return set([determine_path(config, k, v) for k, v in config.get('logging.files.locations').items() if not v == ''])
 
 
 def init_logging(config, level=None, host_mode=None):
@@ -68,15 +68,15 @@ def init_logging(config, level=None, host_mode=None):
         fh.setFormatter(logging.Formatter(frmt))
         logging.getLogger().addHandler(fh)
 
-    http_handler_hosts = config.get('logging.http', 'hosts', [])
-    if len(http_handler_hosts) > 0 and host_mode is None:
-        raise Exception(
-            "'host_mode' is required when 'logging.http.hosts' is configured.")
-    for h in http_handler_hosts:
-        log(lname=__name__, level=logging.INFO,
-            msg=f"Creating logging http handler {h}")
-        httphandler = DagrHTTPHandler(h, host_mode, maxBytes, backupCount, frmt)
-        logging.getLogger().addHandler(httphandler)
+    http_handler_hosts = config.get('logging.http.hosts').items()
+    if len(http_handler_hosts) > 0 and not host_mode is None:
+        for _n, h in http_handler_hosts:
+            log(lname=__name__, level=logging.INFO,
+                msg=f"Creating logging http handler {h}")
+            httphandler = DagrHTTPHandler(h, host_mode, maxBytes, backupCount, frmt)
+            logging.getLogger().addHandler(httphandler)
+    else:
+        log(lname=__name__, level=logging.WARN, msg='Skipping http handlers: missing host_mode param')
 
     for k, v in config.get('logging.extra').items():
         logging.addLevelName(int(k), v)
@@ -109,17 +109,18 @@ class RobustRFileHandler(RotatingFileHandler):
                 raise
 
 
-class DagrHTTPHandler(HTTPHandler):
+class DagrHTTPHandler(logging.Handler):
     def __init__(self, host, host_mode, max_bytes, backup_count, frmt):
         self.__host = host
         self.__host_mode = host_mode
         self.MAX_POOLSIZE = 100
-        self.session = session = requests.Session()
-        session.headers.update({
+        self.__session = requests.Session()
+
+        self.__session.headers.update({
             'Content-Type': 'application/json'
         })
 
-        self.session.mount('https://', HTTPAdapter(
+        self.__session.mount('https://', HTTPAdapter(
             max_retries=Retry(
                 total=5,
                 backoff_factor=0.5,
@@ -129,7 +130,7 @@ class DagrHTTPHandler(HTTPHandler):
             pool_maxsize=self.MAX_POOLSIZE
         ))
 
-        self.session.mount('http://', HTTPAdapter(
+        self.__session.mount('http://', HTTPAdapter(
             max_retries=Retry(
                 total=5,
                 backoff_factor=0.5,

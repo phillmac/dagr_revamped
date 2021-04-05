@@ -160,8 +160,7 @@ class DAGRConfig(DAGRBaseConf):
             'Local': '',
             'Remote': '',
         },
-        'Logging.HTTP': {
-            'Hosts': []
+        'Logging.HTTP.Hosts': {
         },
         'Conf': {
             'Version': '0.1.0'
