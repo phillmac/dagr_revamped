@@ -154,5 +154,6 @@ class DagrHTTPHandler(logging.Handler):
 
     def emit(self, record):
         if not record.module in self.__filtered_modules:
+            print(record.name, record.module)
             resp = self.__session.post(
                 f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record': record.__dict__})
