@@ -161,7 +161,7 @@ class DAGRConfig(DAGRBaseConf):
             'Remote': '',
         },
         'Logging.HTTP': {
-            'FilteredModules': 'urllib3.connectionpool'
+            'FilteredModules': 'urllib3.connectionpool,urllib3.util.retry'
         },
         'Logging.HTTP.Hosts': {
         },

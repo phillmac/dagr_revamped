@@ -157,10 +157,5 @@ class DagrHTTPHandler(logging.Handler):
     def emit(self, record):
         if not record.name in self.__filtered_modules:
             print(record.name, record.module)
-            record_info = {**record.__dict__}
-            del_props = [p for p in ['retry'] if p in record_info]
-            for dp in del_props:
-                del record_info[dp]
-            print(record_info.items())
             resp = self.__session.post(
-                f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record': record_info})
+                f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record': record.__dict__})
