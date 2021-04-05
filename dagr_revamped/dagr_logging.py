@@ -69,7 +69,7 @@ def init_logging(config, level=None, host_mode=None):
         logging.getLogger().addHandler(fh)
 
     http_handler_hosts = config.get('logging.http', 'hosts', [])
-    if len(http_handler_hosts > 0 and host_mode is None):
+    if len(http_handler_hosts) > 0 and host_mode is None:
         raise Exception(
             "'host_mode' is required when 'logging.http.hosts' is configured.")
     for h in http_handler_hosts:
