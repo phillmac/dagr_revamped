@@ -69,11 +69,12 @@ def init_logging(config, level=None, host_mode=None):
         logging.getLogger().addHandler(fh)
 
     http_handler_hosts = config.get('logging.http.hosts').items()
+    filtered_modules = config.get('logging.http', 'filteredmodules').split(',')
     if len(http_handler_hosts) > 0 and not host_mode is None:
         for _n, h in http_handler_hosts:
             log(lname=__name__, level=logging.INFO,
                 msg=f"Creating logging http handler {h}")
-            httphandler = DagrHTTPHandler(h, host_mode, maxBytes, backupCount, frmt)
+            httphandler = DagrHTTPHandler(h, host_mode, maxBytes, backupCount, frmt, filtered_modules)
             logging.getLogger().addHandler(httphandler)
     else:
         log(lname=__name__, level=logging.WARN, msg='Skipping http handlers: missing host_mode param')
@@ -110,11 +111,12 @@ class RobustRFileHandler(RotatingFileHandler):
 
 
 class DagrHTTPHandler(logging.Handler):
-    def __init__(self, host, host_mode, max_bytes, backup_count, frmt):
+    def __init__(self, , host, host_mode, max_bytes, backup_count, frmt, filtered_modules):
         self.__host = host
         self.__host_mode = host_mode
         self.MAX_POOLSIZE = 100
         self.__session = requests.Session()
+        self.__filtered_modules = filtered_modules
 
         self.__session.headers.update({
             'Content-Type': 'application/json'
@@ -151,6 +153,6 @@ class DagrHTTPHandler(logging.Handler):
         super().close()
 
     def emit(self, record):
-        print(record.__dict__)
-        resp = self.__session.post(
-            f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record': record.__dict__})
+        if not record.module in self.__filtered_modules:
+            resp = self.__session.post(
+                f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record': record.__dict__})
