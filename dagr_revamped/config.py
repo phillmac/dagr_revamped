@@ -162,7 +162,7 @@ class DAGRConfig(DAGRBaseConf):
         },
         'Logging.HTTP': {
             'Hosts': []
-        }
+        },
         'Conf': {
             'Version': '0.1.0'
         },
