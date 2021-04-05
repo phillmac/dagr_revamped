@@ -109,6 +109,8 @@ class RobustRFileHandler(RotatingFileHandler):
                 raise
 
 
+def filter_
+
 class DagrHTTPHandler(logging.Handler):
     def __init__(self, host, host_mode, max_bytes, backup_count, frmt):
         self.__host = host
@@ -151,5 +153,6 @@ class DagrHTTPHandler(logging.Handler):
         super().close()
 
     def emit(self, record):
+        print(record.name)
         resp = self.__session.post(
             f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record': record.__dict__})
