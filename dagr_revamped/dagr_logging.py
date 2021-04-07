@@ -70,12 +70,13 @@ def init_logging(config, level=None, host_mode=None):
 
     http_handler_hosts = config.get('logging.http.hosts').items()
     filtered_modules = config.get('logging.http', 'filteredmodules').split(',')
+    filtered_keys = config.get('logging.http', 'filteredkeys').split(',')
     if len(http_handler_hosts) > 0 and not host_mode is None:
         for _n, h in http_handler_hosts:
             log(lname=__name__, level=logging.INFO,
                 msg=f"Creating logging http handler {h}")
             httphandler = DagrHTTPHandler(
-                h, host_mode, maxBytes, backupCount, frmt, filtered_modules)
+                h, host_mode, maxBytes, backupCount, frmt, filtered_modules, filtered_keys)
             logging.getLogger().addHandler(httphandler)
     else:
         log(lname=__name__, level=logging.WARN,
@@ -113,12 +114,13 @@ class RobustRFileHandler(RotatingFileHandler):
 
 
 class DagrHTTPHandler(logging.Handler):
-    def __init__(self, host, host_mode, max_bytes, backup_count, frmt, filtered_modules):
+    def __init__(self, host, host_mode, max_bytes, backup_count, frmt, filtered_modules, filtered_keys):
         self.__host = host
         self.__host_mode = host_mode
         self.MAX_POOLSIZE = 100
         self.__session = requests.Session()
         self.__filtered_modules = filtered_modules
+        self.__filtered_keys = filtered_keys
 
         self.__session.headers.update({
             'Content-Type': 'application/json'
@@ -146,17 +148,21 @@ class DagrHTTPHandler(logging.Handler):
 
         super().__init__()
 
-        resp = self.__session.post(f"{self.__host}/logger/create",
-                                   json={'hostMode': self.__host_mode, 'maxBytes': max_bytes, 'backupCount': backup_count, 'frmt': frmt})
+        _resp = self.__session.post(f"{self.__host}/logger/create",
+                                    json={'hostMode': self.__host_mode, 'maxBytes': max_bytes, 'backupCount': backup_count, 'frmt': frmt})
 
     def close(self):
-        resp = self.__session.post(f"{self.__host}/logger/remove",
-                                   json={'hostMode': self.__host_mode})
+        _resp = self.__session.post(f"{self.__host}/logger/remove",
+                                    json={'hostMode': self.__host_mode})
         super().close()
 
     def emit(self, record):
         if not record.name in self.__filtered_modules:
-            #print(record.name, record.module)
-            print(record.__dict__)
-            resp = self.__session.post(
-                f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record': record.__dict__})
+            print(record.name, record.module)
+            # print(record.__dict__)
+
+            _resp = self.__session.post(
+                f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record':
+                                                      {
+                                                          kn: record.__dict__[kn] for kn in record.__dict__.keys() if not kn in self.__filtered_keys}
+                                                      })

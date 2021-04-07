@@ -161,7 +161,8 @@ class DAGRConfig(DAGRBaseConf):
             'Remote': '',
         },
         'Logging.HTTP': {
-            'FilteredModules': 'urllib3.connectionpool,urllib3.util.retry,selenium.webdriver.remote.remote_connection'
+            'FilteredModules': 'urllib3.connectionpool,urllib3.util.retry',
+            'FilteredKeys': 'args'
         },
         'Logging.HTTP.Hosts': {
         },
