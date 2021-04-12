@@ -147,7 +147,9 @@ class DagrHTTPHandler(logging.Handler):
         ))
 
         super().__init__()
+        self.create_remote()
 
+    def create_remote(self):
         _resp = self.__session.post(f"{self.__host}/logger/create",
                                     json={'hostMode': self.__host_mode, 'maxBytes': max_bytes, 'backupCount': backup_count, 'frmt': frmt})
 
@@ -157,12 +159,21 @@ class DagrHTTPHandler(logging.Handler):
         super().close()
 
     def emit(self, record):
+        self.post_record(record)
+
+    def post_record(self, record, retry=False):
         if not record.name in self.__filtered_modules:
             print(record.name, record.module)
             # print(record.__dict__)
 
-            _resp = self.__session.post(
+            resp = self.__session.post(
                 f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record':
                                                       {
                                                           kn: record.__dict__[kn] for kn in record.__dict__.keys() if not kn in self.__filtered_keys}
                                                       })
+            if resp.status_code == 400 and retry is False:
+                check_resp = self.__session.get(
+                    f"{self.__host}/logger/exists", json={'hostMode': self.__host_mode})
+                if check_resp.json['exists'] is False:
+                    self.create_remote()
+                    self.post_record(record, retry=True)
