@@ -117,6 +117,9 @@ class DagrHTTPHandler(logging.Handler):
     def __init__(self, host, host_mode, max_bytes, backup_count, frmt, filtered_modules, filtered_keys):
         self.__host = host
         self.__host_mode = host_mode
+        self.__max_bytes = max_bytes
+        self.__backup_count = backup_count
+        self.__frmt = frmt
         self.MAX_POOLSIZE = 100
         self.__session = requests.Session()
         self.__filtered_modules = filtered_modules
@@ -151,7 +154,7 @@ class DagrHTTPHandler(logging.Handler):
 
     def create_remote(self):
         _resp = self.__session.post(f"{self.__host}/logger/create",
-                                    json={'hostMode': self.__host_mode, 'maxBytes': max_bytes, 'backupCount': backup_count, 'frmt': frmt})
+                                    json={'hostMode': self.__host_mode, 'maxBytes': self.__max_bytes, 'backupCount': self.__backup_count, 'frmt': self.__frmt})
 
     def close(self):
         _resp = self.__session.post(f"{self.__host}/logger/remove",
