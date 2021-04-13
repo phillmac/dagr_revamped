@@ -987,6 +987,7 @@ class DAGRDeviationProcessor():
         filelink = None
         soup_config = self.config.get('dagr.bs4.config')
         resp = self.get_page_content()
+        current_url = self.browser.get_url()
         current_page = self.browser.get_current_page()
         # Full image link (via download link)
         link_text = re.compile('Download( (Image|File))?')
@@ -1025,17 +1026,17 @@ class DAGRDeviationProcessor():
         page_title = current_page.find('span', {'itemprop': 'title'})
         if page_title and page_title.text == 'Literature':
             self.__logger.log(level=5, msg='Found literature')
-            self.__file_link, self.__found_type = self.browser.get_url(), 'literature'
+            self.__file_link, self.__found_type = current_url, 'literature'
             return self.__file_link, self.__found_type
         lit_class = current_page.find('div', {'class': '_2JHSA'})
         if lit_class and lit_class.text.lower() == 'literature':
             self.__logger.log(level=5, msg='Found eclipse literature')
-            self.__file_link, self.__found_type = self.browser.get_url(), 'literature'
+            self.__file_link, self.__found_type = current_url, 'literature'
             return self.__file_link, self.__found_type
         journal = current_page.find('div', {'class': 'journal-wrapper'})
-        if journal:
+        if 'journal' in current_url or journal:
             self.__logger.log(level=5, msg='Found journal')
-            self.__file_link, self.__found_type = self.browser.get_url(), 'journal'
+            self.__file_link, self.__found_type = current_url, 'journal'
             return self.__file_link, self.__found_type
         # Check for antisocial
         if current_page.find('div', {'class': 'antisocial'}):
@@ -1093,7 +1094,7 @@ class DAGRDeviationProcessor():
             temp_browser = StatefulBrowser(
                 session=deepcopy(self.browser.session))
             temp_browser.open_fake_page(
-                deepcopy(resp.content), self.browser.get_url())
+                deepcopy(resp.content), current_url)
             filelink = pl_func(temp_browser)
             if filelink:
                 self.__logger.log(level=5, msg='Found {}'.format(found))
