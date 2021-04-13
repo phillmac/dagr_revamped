@@ -120,7 +120,7 @@ class TCPKeepAliveHttpAdapter(HTTPAdapter):
 
 
 class TCPKeepAliveSession(Session):
-    def __init__(self, max_poolsize):
+    def __init__(self, max_poolsize=100):
         super().__init__()
         self.mount('https://', TCPKeepAliveHttpAdapter(
             max_retries=Retry(
