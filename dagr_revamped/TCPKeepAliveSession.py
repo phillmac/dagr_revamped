@@ -30,6 +30,8 @@ class TCPKeepAliveValidationMethods:
     def adjust_connection_socket(conn):
         # TCP Keep Alive Probes for different platforms
         platform = sys.platform
+        if not getattr(conn, 'sock', None):  # AppEngine might not have  `.sock`
+            conn.connect()
         # TCP Keep Alive Probes for Linux
         if platform == 'linux' and hasattr(socket, "TCP_KEEPIDLE") and hasattr(socket, "TCP_KEEPINTVL") and hasattr(socket, "TCP_KEEPCNT"):
             conn.sock.setsockopt(socket.IPPROTO_TCP,
