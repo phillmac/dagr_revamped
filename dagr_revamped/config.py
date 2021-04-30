@@ -181,6 +181,7 @@ class DAGRConfig(DAGRBaseConf):
             'Password': ''
         },
         "DeviantArt.Regexes": {
+            'Tag': (r"https://(www\.)?deviantart\.com/tag/[a-zA-Z0-9_-]*"),
             'Art': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/art/[a-zA-Z0-9_-]*"),
             'Favs': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/favourites/all"),
             'Gallery': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/gallery/all"),
