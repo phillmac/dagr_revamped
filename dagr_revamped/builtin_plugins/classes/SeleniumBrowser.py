@@ -138,6 +138,10 @@ class SeleniumBrowser():
     def title(self):
         return self.__driver.title
 
+    @property
+    def current_url(self):
+        return self.__driver.current_url
+
     def absolute_url(self, url):
         return urllib.parse.urljoin(self.__driver.current_url, url)
 
