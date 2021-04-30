@@ -164,7 +164,7 @@ collect_links(arguments[0])
         self.__cache.flush(slug)
         return pages
 
-    def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False, crawl_offset=None):
+    def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False, crawl_offset=None, no_crawl=None):
         full_crawl = full_crawl or self.__config.get(
             'full_crawl', '').lower() == 'force'
         slug = None
@@ -189,6 +189,10 @@ collect_links(arguments[0])
         pages = set()
         history = set()
         history.update(self.__cache.query(slug))
+        if not full_crawl:
+            self.__logger.info('Skiping crawl')
+            pages.update(history)
+            return pages
         if not full_crawl:
             pages.update(history)
         else:
