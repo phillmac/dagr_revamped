@@ -181,6 +181,9 @@ collect_links(arguments[0])
             'search:': f"https://www.deviantart.com/search?q={mval}"
         }.get(mode)
 
+        if not url:
+            raise Exception(f"Unable to get url for mode {mode}")
+
         if mval:
             mval_path = PurePosixPath(mval)
             slug = f"{deviant}_{mode}_{'_'.join(mval_path.parts)}"
