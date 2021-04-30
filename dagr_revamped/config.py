@@ -173,9 +173,9 @@ class DAGRConfig(DAGRBaseConf):
             'BaseUrl': 'https://www.deviantart.com',
             'MatureContent': False,
             'Antisocial': True,
-            'Modes': 'album,collection,query,scraps,favs,gallery,search,page',
-            'MValArgs': 'album,collection,query,category,page,search',
-            'NDModes': 'search',
+            'Modes': 'album,collection,query,scraps,favs,gallery,search,page,tag',
+            'MValArgs': 'album,collection,query,category,page,search,tag',
+            'NDModes': 'search,tag',
             'MaxPages': 15000,
             'Username': '',
             'Password': ''
