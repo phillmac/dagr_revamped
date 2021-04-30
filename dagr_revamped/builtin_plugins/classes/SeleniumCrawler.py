@@ -190,7 +190,7 @@ collect_links(arguments[0])
         pages = set()
         history = set()
         history.update(self.__cache.query(slug))
-        if not full_crawl:
+        if no_crawl:
             self.__logger.info('Skiping crawl')
             pages.update(history)
             return pages
