@@ -169,7 +169,7 @@ collect_links(arguments[0])
             'full_crawl', '').lower() == 'force'
         slug = None
         mval_id = None
-        deviant_lower = deviant.lower()
+        deviant_lower = deviant.lower() if deviant else None
         url = crawl_offset if isinstance(crawl_offset, str) else {
             'gallery': f"https://www.deviantart.com/{deviant_lower}/gallery/all",
             'scraps': f"https://www.deviantart.com/{deviant_lower}/gallery/scraps",
@@ -177,7 +177,8 @@ collect_links(arguments[0])
             'album': f"https://www.deviantart.com/{deviant_lower}/gallery/{mval}",
             'collection': f"https://www.deviantart.com/{deviant_lower}/favourites/{mval}",
             'favs_featured': f"https://www.deviantart.com/{deviant_lower}/favourites",
-            'gallery_featured': f"https://www.deviantart.com/{deviant_lower}/gallery"
+            'gallery_featured': f"https://www.deviantart.com/{deviant_lower}/gallery",
+            'search:': f"https://www.deviantart.com/search?q={mval}"
         }.get(mode)
 
         if mval:
