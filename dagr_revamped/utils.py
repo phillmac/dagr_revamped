@@ -316,6 +316,7 @@ def shorten_url(url):
 
 def artist_from_url(url, mode=None):
     pindex = {
+        'tag': -1,
         'album': 2,
         'collection': 2,
         'gallery': 1,
@@ -324,6 +325,9 @@ def artist_from_url(url, mode=None):
         'gallery_featured': 0,
         'favs_featured': 0
     }.get(mode, 1)
+
+    if pindex == -1:
+        return (None, None, None)
 
     artist_url_p = PurePosixPath(url).parents[pindex]
     artist_name = artist_url_p.name
