@@ -43,6 +43,7 @@ def create_driver(config):
             params['executable_path'] = driver_path
         driver = webdriver.Chrome(**params)
     elif webdriver_mode == 'remote':
+        max_tries = config.get('webdriver_max_tries', 1)
         logger.info('Starting selenium in remote mode')
         tries = 0
         while driver is None:
@@ -52,7 +53,7 @@ def create_driver(config):
                     desired_capabilities=capabilities)
             except:
                 tries += 1
-                if tries > 4:
+                if tries >= max_tries:
                     raise
                 sleep(5)
 
