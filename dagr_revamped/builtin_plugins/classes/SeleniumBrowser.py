@@ -45,7 +45,7 @@ def create_driver(config):
     elif webdriver_mode == 'remote':
         logger.info('Starting selenium in remote mode')
         tries = 0
-        while True:
+        while driver is None:
             try:
                 driver = webdriver.Remote(
                     command_executor=ce_url,
