@@ -1,21 +1,21 @@
 import logging
 import re
 import urllib
+from time import sleep
 
 from bs4 import BeautifulSoup
-from selenium.webdriver import ActionChains
-
+from dagr_revamped.exceptions import DagrException
 from dagr_revamped.plugin import DagrImportError
 from dagr_revamped.utils import create_browser as utils_create_browser
-from dagr_revamped.exceptions import DagrException
+from selenium.webdriver import ActionChains
 
 from .Response import Response
 
 try:
     from selenium import webdriver
     from selenium.webdriver.common.keys import Keys
-    from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support.expected_conditions import staleness_of
+    from selenium.webdriver.support.ui import WebDriverWait
 
 except ModuleNotFoundError:
     raise DagrImportError('Required package selenium not available')
@@ -44,9 +44,18 @@ def create_driver(config):
         driver = webdriver.Chrome(**params)
     elif webdriver_mode == 'remote':
         logger.info('Starting selenium in remote mode')
-        driver = webdriver.Remote(
-            command_executor=ce_url,
-            desired_capabilities=capabilities)
+        tries = 0
+        while True:
+            try:
+                driver = webdriver.Remote(
+                    command_executor=ce_url,
+                    desired_capabilities=capabilities)
+            except:
+                tries += 1
+                if tries > 4:
+                    raise
+                sleep(5)
+
     return driver
 
 
@@ -167,7 +176,7 @@ class SeleniumBrowser():
                 raise LoginDisabledError('Login disabled by config')
             self.do_login()
         if self.__driver.current_url != url:
-                self.__driver.get(url)
+            self.__driver.get(url)
 
     def open(self, url):
         if self.__login_policy == 'force':
@@ -234,6 +243,7 @@ class SeleniumBrowser():
 
     def quit(self):
         self.__driver.quit()
+
 
 class LoginDisabledError(DagrException):
     pass
