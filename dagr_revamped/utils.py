@@ -395,12 +395,15 @@ def http_replace(session, endpoint, dir_path, fname, new_fname):
     resp.raise_for_status()
     return resp.json() == 'ok'
 
-
-def dump_html(fpath, page, content):
+def get_html_name(fpath, page):
     if not fpath.exists():
         fpath.mkdir(parents=True)
-    fname = (fpath
+        fname = (fpath
              .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)))
              .with_suffix('.html'))
+    return fname
+
+
+def dump_html(fname, content):
     logger.info('Dumping html to {}'.format(fname))
     fname.write_bytes(content)

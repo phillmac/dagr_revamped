@@ -28,7 +28,8 @@ from .exceptions import (DagrException, DagrHTTPException,
 from .plugin import PluginManager
 from .utils import (StatefulBrowser, compare_size, convert_queue,
                     create_browser, dump_html, filter_deviants, get_base_dir,
-                    load_bulk_files, make_dirs, shorten_url, update_d)
+                    get_html_name, load_bulk_files, make_dirs, shorten_url,
+                    update_d)
 
 
 class DAGR():
@@ -151,10 +152,12 @@ class DAGR():
                 'resolver') or self.plugin_class_init('resolver', DAGRDeviantResolver)
 
     def cache_init(self):
-        self.cache = self.__kwargs.get('cache') or self.plugin_class_init('cache', DAGRCache)
+        self.cache = self.__kwargs.get(
+            'cache') or self.plugin_class_init('cache', DAGRCache)
 
     def io_init(self):
-        self.io = self.__kwargs.get('io') or self.plugin_class_init('io', DAGRIo)
+        self.io = self.__kwargs.get(
+            'io') or self.plugin_class_init('io', DAGRIo)
 
     def create_crawler(self):
         return self.devation_crawler(self)
@@ -241,7 +244,8 @@ class DAGR():
         base_dir, rel_dir = get_base_dir(self.config, mode, deviant, mval)
         crawl_mode = 'full' if self.maxpages is None else 'short'
         if base_dir.exists():
-            cache = self.cache(self.config, base_dir, cache_io=self.io((base_dir, rel_dir, self.config)))
+            cache = self.cache(self.config, base_dir, cache_io=self.io(
+                (base_dir, rel_dir, self.config)))
             last_crawled = cache.last_crawled.get(crawl_mode)
             if last_crawled == 'never':
                 self.__logger.debug('{}: never crawled'.format(base_dir))
@@ -1113,5 +1117,6 @@ class DAGRDeviationProcessor():
         if self.__findlink_debug_loc:
             debug_folder = self.base_dir.joinpath(
                 self.__findlink_debug_loc).expanduser()
-            dump_html(debug_folder, self.page_link, resp.content)
+            html_name = get_html_name(debug_folder, self.page_link)
+            dump_html(html_name, resp.content)
         raise DagrException('all attemps to find a link failed')
