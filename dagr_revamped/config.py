@@ -191,6 +191,17 @@ class DAGRConfig(DAGRBaseConf):
             'Favs_Featured': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/favourites"),
             'Gallery_Featured': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/gallery")
         },
+        "DeviantArt.Regexes.Priorities": {
+            'Album': 1,
+            'Collection': 1,
+            'Favs': 2,
+            'Gallery': 2,
+            'Tag': 2,
+            'Art': 2,
+            'Scraps': 2,
+            'Favs_Featured': 3,
+            'Gallery_Featured', 3
+        },
         'DeviantArt.Modes.Album': {
             'url_fmt': '{base_url}/{deviant_lower}/gallery/{mval}?offset={offset}'
         },
