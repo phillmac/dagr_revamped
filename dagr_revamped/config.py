@@ -192,7 +192,7 @@ class DAGRConfig(DAGRBaseConf):
             'Gallery_Featured': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/gallery")
         },
         "DeviantArt.Regexes.Params": {
-        'MaxPriority': 3
+        'MaxPriority': 4
         },
         "DeviantArt.Regexes.Priorities": {
             'Album': 1,
