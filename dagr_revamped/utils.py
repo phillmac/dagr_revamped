@@ -398,9 +398,9 @@ def http_replace(session, endpoint, dir_path, fname, new_fname):
 def get_html_name(fpath, page):
     if not fpath.exists():
         fpath.mkdir(parents=True)
-        fname = (fpath
-             .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)))
-             .with_suffix('.html'))
+    fname = (fpath
+            .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)))
+            .with_suffix('.html'))
     return fname
 
 
