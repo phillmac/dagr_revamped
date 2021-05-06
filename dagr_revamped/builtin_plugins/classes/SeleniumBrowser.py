@@ -171,7 +171,8 @@ class SeleniumBrowser():
 
     def open_do_login(self, url):
         self.__open(url)
-        if self.get_current_page().find('a', {'href': self.__login_url}):
+        found = self.get_current_page().find('a', {'href': self.__login_url})
+        if found:
             logger.info('Detected login required')
             if self.__login_policy == 'disable':
                 raise LoginDisabledError('Login disabled by config')
