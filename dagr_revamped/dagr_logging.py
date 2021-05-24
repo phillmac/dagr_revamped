@@ -177,6 +177,6 @@ class DagrHTTPHandler(logging.Handler):
             if resp.status_code == 400 and retry is False:
                 check_resp = self.__session.get(
                     f"{self.__host}/logger/exists", json={'hostMode': self.__host_mode})
-                if check_resp.json['exists'] is False:
+                if check_resp.json()['exists'] is False:
                     self.create_remote()
                     self.post_record(record, retry=True)
