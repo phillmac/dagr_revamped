@@ -24,8 +24,10 @@ setup(
         'deviantart @ git+https://github.com/phillmac/deviantart@c21ce195b466618ae16a9146412b3b713be71ef5'
     ],
     extras_require={
-        'calmjs':  ["calmjs==3.3.1"],
-        'selenium': ['selenium==3.141.0']
+        'calmjs':  ['calmjs==3.3.1'],
+        'selenium': ['selenium==3.141.0'],
+        'easywebdav': ['easywebdav==1.2.0'],
+        'full': ['calmjs', 'selenium', 'easywebdav']
     },
     classifiers=[
         'Programming Language :: Python :: 3',
