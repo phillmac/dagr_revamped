@@ -486,8 +486,12 @@ class DAGR():
             dp = self.deviantion_pocessor(
                 self, cache, link, verify_exists=verify_exists)
             downloaded = dp.process_deviation()
-            if callback:
-                callback(link, dp.get_page_content().content)
+            try:
+                if callback:
+                    callback(link, dp.get_page_content().content)
+            except DagrHTTPException as ex:
+                cache.add_httperror(link, ex)
+                self.handle_download_error(link, ex)
             delay_needed = dl_delay - (time() - pstart)
             if downloaded and delay_needed > 0:
                 self.__logger.log(
