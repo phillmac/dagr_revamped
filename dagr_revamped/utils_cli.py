@@ -1,5 +1,6 @@
 import logging
 import shutil
+from os import scandir
 from pathlib import PurePosixPath
 from pprint import pformat
 from time import time
@@ -12,7 +13,8 @@ from .dagr_logging import log as dagr_log
 from .DAGRCache import DAGRCache, DagrCacheLockException
 from .DAGRManager import DAGRManager
 from .utils import (buffered_file_write, convert_queue, filter_deviants,
-                    get_base_dir, load_bulk_files, strip_topdirs, update_bulk_list)
+                    get_base_dir, load_bulk_files, strip_topdirs,
+                    update_bulk_list)
 from .version import version
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,7 @@ dagr-utils.py fixnolinks [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py fixartists [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py processqueue [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py extractdeviant [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] DEVIANT FILENAMES
+dagr-utils.py updatebulk [--forcesave] [-v|-vv|--debug=DEBUGLVL]
 dagr-utils.py updatebulk [--forcesave] [-v|-vv|--debug=DEBUGLVL]
 
 
@@ -113,7 +116,7 @@ class DAGRUtils():
         self.__global_files_mapping = {}
         self.__global_dirs_mapping = {}
         self.__global_deviant_dirs_cache = dict((str(d.name).lower(), d) for d in (
-            di for di in self.__config.output_dir.iterdir() if di.is_dir() and not di.name.lower() in self.__exclude_dirs))
+            di for di in scandir(self.__config.output_dir) if di.is_dir() and not di.name.lower() in self.__exclude_dirs))
         self.__kwargs = kwargs
 
     def handle_utils_cmd(self):
@@ -151,6 +154,7 @@ class DAGRUtils():
     def shorten_url_cache(self):
         wq = self.build_queue()
 
+
     def update_bulk(self):
         dirs_cache = self.__global_deviant_dirs_cache
         mvalargs = self.__config.get('deviantart', 'mvalargs')
@@ -162,11 +166,11 @@ class DAGRUtils():
                 logger.warning("Skipping {}".format(dn))
             else:
                 logger.log(level=15, msg="Scanning {}".format(di.name))
-                for mode_sd in (d for d in di.iterdir() if d.is_dir()):
+                for mode_sd in (d for d in scandir(di) if d.is_dir()):
                     logger.log(
                         level=15, msg="Scanning {}/{}".format(dn, mode_sd.name))
                     if mode_sd.name in mvalargs:
-                        for mval_sd in (d for d in mode_sd.iterdir() if d.is_dir()):
+                        for mval_sd in (d for d in scandir(mode_sd) if d.is_dir()):
                             logger.log(
                                 level=15, msg="Scanning {}/{}/{}".format(dn, mode_sd.name, mval_sd.name))
                             bulk_cache.append(
