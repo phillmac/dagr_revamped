@@ -79,3 +79,7 @@ class DAGRIo():
 
     def update_fn_cache(self, fname):
         pass
+
+    def write(self, fname, content):
+        with self.__base_dir.joinpath(fname).open('rb') as f:
+            return f.write(content)

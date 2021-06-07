@@ -7,7 +7,8 @@ from requests import Session
 
 from .DAGRIo import DAGRIo
 from .utils import (http_exists, http_fetch_json, http_list_dir,
-                    http_post_json, http_replace, http_post_json_raw)
+                    http_post_file_multipart, http_post_json, http_post_raw,
+                    http_replace)
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class DAGRHTTPIo(DAGRIo):
         self.__save_json_ep = endpoints.get('save_json', None)
         self.__replace_ep = endpoints.get('replace', None)
         self.__update_fn_cache_ep = endpoints.get('update_fn_cache', None)
+        self.__write_file_ep = endpoints.get('write_file', None)
 
         session = Session()
 
@@ -52,6 +54,11 @@ class DAGRHTTPIo(DAGRIo):
         if not self.__replace_ep is None:
             self.replace = lambda fname, new_fname: http_replace(
                 session, self.__replace_ep, self.rel_dir_name, fname, new_fname)
+
         if not self.__update_fn_cache_ep is None:
-            self.update_fn_cache = lambda fname: http_post_json_raw(
+            self.update_fn_cache = lambda fname: http_post_raw(
                 session, self.__update_fn_cache_ep, json={'path': self.rel_dir_name, 'filenames': [fname]})
+
+        if not self.__write_file_ep is None:
+            self.write = lambda fname, content: http_post_file_multipart(
+                session, self.__write_file_ep,  self.rel_dir_name, fname, content)

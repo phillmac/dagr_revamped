@@ -12,6 +12,7 @@ from mechanicalsoup import StatefulBrowser
 from requests import Request
 from requests import adapters as req_adapters
 from requests import session as req_session
+from requests_toolbelt import MultipartEncoder
 
 logger = logging.getLogger(__name__)
 
@@ -358,6 +359,16 @@ def ensure_path(fpath, resolve=True):
     return (fpath if isinstance(fpath, Path) else Path(fpath)).resolve()
 
 
+def http_encode_multipart(dir_path, filename, content):
+    return MultipartEncoder(
+        fields={'params': json.dumps(dict(
+                path=dir_path,
+                filename=filename
+                )),
+                'content': content}
+    )
+
+
 def http_fetch_json(session, endpoint, dir_path, fname=None, **kwargs):
     resp = session.get(
         endpoint, json={'path': dir_path, 'filename': fname, **kwargs})
@@ -365,10 +376,15 @@ def http_fetch_json(session, endpoint, dir_path, fname=None, **kwargs):
     return resp.json()
 
 
-def http_post_json_raw(session, endpoint, **kwargs):
+def http_post_raw(session, endpoint, **kwargs):
     resp = session.post(endpoint, **kwargs)
     resp.raise_for_status()
     return resp.json() == 'ok'
+
+
+def http_post_file_multipart(session, endpoint, dir_path, filename, content):
+    m = http_encode_multipart(dir_path, filename, content)
+    return http_post_raw(session, endpoint, data=m, headers={'Content-Type': m.content_type})
 
 
 def http_post_json(session, endpoint, dir_path, fname, content, do_backup=True):
@@ -378,7 +394,7 @@ def http_post_json(session, endpoint, dir_path, fname, content, do_backup=True):
                'content': content, 'do_backup': do_backup}, TextIOWrapper(compressor))
     buffer.seek(0)
     headers = {'Content-Type': 'application/gzip'}
-    return http_post_json_raw(session, endpoint, headers=headers, data=buffer)
+    return http_post_raw(session, endpoint, headers=headers, data=buffer)
 
 
 def http_exists(session, endpoint, dir_path, fname, update_cache=None):
@@ -395,12 +411,13 @@ def http_replace(session, endpoint, dir_path, fname, new_fname):
     resp.raise_for_status()
     return resp.json() == 'ok'
 
+
 def get_html_name(fpath, page):
     if not fpath.exists():
         fpath.mkdir(parents=True)
     fname = (fpath
-            .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)))
-            .with_suffix('.html'))
+             .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)))
+             .with_suffix('.html'))
     return fname
 
 
