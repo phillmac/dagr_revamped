@@ -81,5 +81,10 @@ class DAGRIo():
         pass
 
     def write(self, fname, content):
-        with self.__base_dir.joinpath(fname).open('rb') as f:
-            return f.write(content)
+        written = None
+        dest = self.__base_dir.joinpath(fname)
+        tmp = dest.with_suffix('.tmp')
+        with tmp.open('rb') as f:
+            written = f.write(content)
+        tmp.rename(dest)
+        return written
