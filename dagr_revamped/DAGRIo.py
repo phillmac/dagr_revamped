@@ -9,8 +9,6 @@ from .utils import load_json, save_json
 
 logger = logging.getLogger(__name__)
 
-print(__name__)
-
 
 class DAGRIo():
     @staticmethod
