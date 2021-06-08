@@ -372,9 +372,9 @@ class DAGRConfig(DAGRBaseConf):
         self.__arguments = None
         self.__config_options = {}
         self.merge_configs(self.DEFAULTS.keys(), (
+            self.OVERRIDES.get,
             self.get_ini_section,
             self.get_json_section,
-            self.OVERRIDES.get,
             self.DEFAULTS.get,
         ))
 
