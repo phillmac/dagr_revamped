@@ -138,7 +138,7 @@ class SeleniumCache():
     def __init__(self, app_config, config):
         output_dir = app_config.output_dir
         self.__local_cache = Path(config.get(
-            'local_cache_path', '~/.config/.dagr/seleniumcache')).expanduser().resolve()
+            'local_cache_path', '~/.cache/dagr_selenium')).expanduser().resolve()
         self.__remote_cache = output_dir.joinpath(
             config.get('remote_cache_path', '.selenium')).expanduser().resolve()
         fail_max = config.get('remote_breaker_fail_max', 1)
