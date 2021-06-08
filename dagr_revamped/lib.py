@@ -933,9 +933,9 @@ class DAGRDeviationProcessor():
                 break
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
-                if [re for re in self.ripper.retry_exception_names() if except_name in re]:
-                    self.__logger.debug(
+                self.__logger.debug(
                         'Exception while saving link', exc_info=True)
+                if [re for re in self.ripper.retry_exception_names() if except_name in re]:
                     if not except_name in tries:
                         tries[except_name] = 0
                     tries[except_name] += 1
