@@ -83,7 +83,7 @@ class DAGRIo():
 
     def write(self, content, fname=None, dest=None):
         written = None
-        dest = self.__get_dest(fname=None, dest=None)
+        dest = self.__get_dest(fname, dest)
         tmp = dest.with_suffix('.tmp')
         logger.log(level=5, msg=f"Writing item to {dest}")
         with tmp.open('r') as f:
@@ -95,7 +95,7 @@ class DAGRIo():
 
     def write_bytes(self, content, fname=None, dest=None):
         written = None
-        dest = self.__get_dest(fname=None, dest=None)
+        dest = self.__get_dest(fname, dest)
         tmp = dest.with_suffix('.tmp')
         logger.log(level=5, msg=f"Writing item to {dest}")
         with tmp.open('rb') as f:
