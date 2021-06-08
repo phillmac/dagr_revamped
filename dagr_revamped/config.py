@@ -108,10 +108,10 @@ class DAGRBaseConf():
     def get_conf_files(self):
         return copy(self.__conf_files)
 
-    def merge_configs(self, section_names, conf_calbacks):
+    def merge_configs(self, section_names, conf_callbacks):
         for sec_name in section_names:
             dagr_log(__name__, 5, f'Merging section {sec_name}')
-            conf_sections = (cb(sec_name) for cb in conf_calbacks)
+            conf_sections = (cb(sec_name) for cb in conf_callbacks)
             self.__settings[sec_name.lower()] = merge_all(*conf_sections)
 
 
