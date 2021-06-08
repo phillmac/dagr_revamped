@@ -1,12 +1,15 @@
 import logging
-from os import scandir
-from pathlib import Path, PurePosixPath
-
+from email.utils import parsedate
 from json import JSONDecodeError
+from os import scandir, utime
+from pathlib import Path, PurePosixPath
+from time import mktime
 
 from .utils import load_json, save_json
 
 logger = logging.getLogger(__name__)
+
+print(__name__)
 
 
 class DAGRIo():
@@ -40,8 +43,8 @@ class DAGRIo():
     def save_json(self, fname, content, do_backup=True):
         return save_json(self.__base_dir.joinpath(fname), content)
 
-    def exists(self, fname, update_cache=None):
-        return self.__base_dir.joinpath(fname).exists()
+    def exists(self, fname=None, dest=None, update_cache=None):
+        return self.__get_dest(fname, dest).exists()
 
     def replace(self, fname, new_fname):
         return self.__base_dir.joinpath(fname).replace(new_fname)
@@ -80,11 +83,38 @@ class DAGRIo():
     def update_fn_cache(self, fname):
         pass
 
-    def write(self, fname, content):
+    def write(self, content, fname=None, dest=None):
         written = None
-        dest = self.__base_dir.joinpath(fname)
+        dest = self.__get_dest(fname=None, dest=None)
         tmp = dest.with_suffix('.tmp')
-        with tmp.open('rb') as f:
+        logger.log(level=5, msg=f"Writing item to {dest}")
+        with tmp.open('r') as f:
             written = f.write(content)
+        logger.log(level=4, msg='Renaming temp file')
         tmp.rename(dest)
+        logger.log(level=4, msg='Finished writing')
         return written
+
+    def write_bytes(self, content, fname=None, dest=None):
+        written = None
+        dest = self.__get_dest(fname=None, dest=None)
+        tmp = dest.with_suffix('.tmp')
+        logger.log(level=5, msg=f"Writing item to {dest}")
+        with tmp.open('rb') as f:
+            written = f.write_bytes(content)
+        logger.log(level=4, msg='Renaming temp file')
+        tmp.rename(dest)
+        logger.log(level=4, msg='Finished writing')
+        return written
+
+    def utime(self, mtime, fname=None, dest=None):
+        mod_time = mktime(parsedate(mtime))
+        logger.log(level=4, msg=f"Updating file times to {mod_time}")
+        utime(self.__get_dest(fname, dest), (mod_time, mod_time))
+
+    def __get_dest(self, fname=None, dest=None):
+        if dest is None:
+            if fname is None:
+                raise TypeError('Either fname or dest arg is required')
+            dest = self.__base_dir.joinpath(fname)
+        return dest

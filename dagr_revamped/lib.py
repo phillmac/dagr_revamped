@@ -5,14 +5,12 @@ import sys
 import threading
 from copy import deepcopy
 from datetime import datetime
-from email.utils import parsedate
 from mimetypes import add_type as add_mimetype
 from mimetypes import guess_extension
 from mimetypes import init as mimetypes_init
-from os import utime
 from pathlib import Path, PurePosixPath
 from pprint import pformat
-from time import mktime, sleep, time
+from time import sleep, time
 
 import deviantart
 from bs4 import BeautifulSoup
@@ -245,7 +243,7 @@ class DAGR():
         crawl_mode = 'full' if self.maxpages is None else 'short'
         if base_dir.exists():
             cache = self.cache(self.config, base_dir, cache_io=self.io(
-                (base_dir, rel_dir, self.config)))
+                base_dir, rel_dir, self.config))
             last_crawled = cache.last_crawled.get(crawl_mode)
             if last_crawled == 'never':
                 self.__logger.debug('{}: never crawled'.format(base_dir))
@@ -913,11 +911,11 @@ class DAGRDeviationProcessor():
                     self.__logger.warning(
                         "Cache entry {} exists - skipping".format(fname))
                 return False
-        dest = self.get_dest()
+        #dest = self.get_dest()
         if self.force_verify_exists:
             self.__logger.log(
                 level=5, msg='Verifying {} really exists'.format(fname))
-        if self.cache.cache_io.exists(fname):
+        if self.cache.cache_io.exists(fname=fname):
             self.cache.add_filename(fname)
             self.__logger.warning(
                 "FS entry {} exists - skipping".format(fname))
@@ -926,19 +924,12 @@ class DAGRDeviationProcessor():
 
     def save_content(self):
         dest = self.get_dest()
-        tmp = dest.with_suffix('.tmp')
         tries = {}
         while True:
             try:
                 response = self.get_response()
-                self.__logger.log(
-                    level=5, msg=f"Writing deviation to {dest}")
-                tmp.write_bytes(self.__response.content)
-                self.__logger.log(
-                    level=4, msg='Renaming temp file')
-                tmp.rename(dest)
-                self.__logger.log(
-                    level=4, msg='Finished writing')
+                self.cache.cache_io.write_bytes(
+                    self.__response.content, dest=dest)
                 break
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
@@ -957,10 +948,9 @@ class DAGRDeviationProcessor():
                     # self.__logger.error('Exception name {}'.format(except_name))
                     raise DagrException(
                         f'Failed to save content: {except_name}')
-        if response.headers.get('last-modified'):
+        if mtime := response.headers.get('last-modified'):
             # Set file dates to last modified time
-            mod_time = mktime(parsedate(response.headers.get('last-modified')))
-            utime(dest, (mod_time, mod_time))
+            self.cache.cache_io.utime(mtime, dest=dest)
 
     def response_content_type(self):
         if self.__content_type:
