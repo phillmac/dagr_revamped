@@ -192,7 +192,7 @@ class DAGRConfig(DAGRBaseConf):
             'Gallery_Featured': (r"https://(www\.)?deviantart\.com/[a-zA-Z0-9_-]*/gallery")
         },
         "DeviantArt.Regexes.Params": {
-        'MaxPriority': 4
+            'MaxPriority': 4
         },
         "DeviantArt.Regexes.Priorities": {
             'Album': 1,
@@ -274,6 +274,9 @@ class DAGRConfig(DAGRBaseConf):
             'ShortUrls': False,
             'UpdateFilesList': True
         },
+        'Dagr.Cache.Paths': {
+            'Local': '~/.cache/dagr'
+        },
         "Dagr.Io.HTTP.Endpoints": {},
         'Dagr.DeviationProcessor': {
             'FNS_Address': ''
@@ -307,10 +310,13 @@ class DAGRConfig(DAGRBaseConf):
             'Processor': 'Default'
         },
         'Dagr.Plugins.Locations': {
-            'Default': '~/.config/dagr/plugins'
+            'Default': '~/.plugins/dagr',
+            'Other': '~/.dagr/plugins'
         },
         'Dagr.Plugins.Selenium': {
-            'CachePath': '.selenium'
+            'Local_Cache_Path': '~/.cache/dagr_selenium',
+            'Remote_Cache_Path': '.selenium',
+            'Remote_Cache_Type': 'Defualt'
         },
         'Dagr.Retry': {
             'SleepDuration': 0.5
@@ -341,7 +347,7 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_Mode', 'Webdriver_URL', 'Webdriver_Max_Tries' 'Driver_Path', 'Full_Crawl', 'Login_Policy', 'OOM_Max_Pages',
-            'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout', 'Unload_Cache_Policy'
+            'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Cache_Type', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout', 'Unload_Cache_Policy'
         ]),
         'DeviantArt': get_os_options('DeviantArt', ['Username', 'Password'])
     })
