@@ -86,7 +86,7 @@ class DAGRIo():
         dest = self.__get_dest(fname, dest)
         tmp = dest.with_suffix('.tmp')
         logger.log(level=5, msg=f"Writing item to {dest}")
-        with tmp.open('r') as f:
+        with tmp.open('w') as f:
             written = f.write(content)
         logger.log(level=4, msg='Renaming temp file')
         tmp.rename(dest)
@@ -98,7 +98,7 @@ class DAGRIo():
         dest = self.__get_dest(fname, dest)
         tmp = dest.with_suffix('.tmp')
         logger.log(level=5, msg=f"Writing item to {dest}")
-        with tmp.open('rb') as f:
+        with tmp.open('wb') as f:
             written = f.write_bytes(content)
         logger.log(level=4, msg='Renaming temp file')
         tmp.rename(dest)
