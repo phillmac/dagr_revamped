@@ -98,8 +98,7 @@ class DAGRIo():
         dest = self.__get_dest(fname, dest)
         tmp = dest.with_suffix('.tmp')
         logger.log(level=5, msg=f"Writing item to {dest}")
-        with tmp.open('wb') as f:
-            written = f.write_bytes(content)
+        written = tmp.write_bytes(content)
         logger.log(level=4, msg='Renaming temp file')
         tmp.rename(dest)
         logger.log(level=4, msg='Finished writing')
