@@ -369,11 +369,16 @@ def http_encode_multipart(dir_path, filename, content):
     )
 
 
-def http_fetch_json(session, endpoint, dir_path, fname=None, **kwargs):
+def http_fetch_json(session, endpoint, **kwargs):
     resp = session.get(
-        endpoint, json={'path': dir_path, 'filename': fname, **kwargs})
+        endpoint, json=kwargs)
     resp.raise_for_status()
     return resp.json()
+
+
+def http_post_json(session, endpoint, **kwargs):
+    return http_post_raw(session,
+                         endpoint, json=kwargs)
 
 
 def http_post_raw(session, endpoint, **kwargs):
@@ -387,7 +392,7 @@ def http_post_file_multipart(session, endpoint, dir_path, filename, content):
     return http_post_raw(session, endpoint, data=m, headers={'Content-Type': m.content_type})
 
 
-def http_post_json(session, endpoint, dir_path, fname, content, do_backup=True):
+def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=True):
     buffer = BytesIO()
     compressor = gzip.GzipFile(fileobj=buffer, mode="w")
     json.dump({'path': dir_path, 'filename': fname,
@@ -397,30 +402,26 @@ def http_post_json(session, endpoint, dir_path, fname, content, do_backup=True):
     return http_post_raw(session, endpoint, headers=headers, data=buffer)
 
 
-def http_exists(session, endpoint, dir_path, fname, update_cache=None):
-    return http_fetch_json(session, endpoint, dir_path, fname=fname, update_cache=update_cache)['exists']
+def http_exists(session, endpoint, dir_path, itemname, update_cache=None):
+    return http_fetch_json(session, endpoint, path=dir_path, itemname=itemname, update_cache=update_cache)['exists']
 
 
 def http_list_dir(session, endpoint, dir_path):
-    return http_fetch_json(session, endpoint, dir_path)
+    return http_fetch_json(session, endpoint, path=dir_path)
 
 
 def http_replace(session, endpoint, dir_path, fname, new_fname):
-    resp = session.post(
-        endpoint, json={'path': dir_path, 'filename': fname, 'new_filename': new_fname})
-    resp.raise_for_status()
-    return resp.json() == 'ok'
+    return http_post_json(session, endpoint, path=dir_path, filename=fname, new_filename=new_fname)
 
 
-def get_html_name(fpath, page):
-    if not fpath.exists():
-        fpath.mkdir(parents=True)
-    fname = (fpath
-             .joinpath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)))
-             .with_suffix('.html'))
-    return fname
+def http_mkdir(session, endpoint, dir_path, dir_name):
+    return http_post_json(session, endpoint, path=dir_path, dir_name=dir_name)
 
 
-def dump_html(fname, content):
-    logger.info('Dumping html to {}'.format(fname))
-    fname.write_bytes(content)
+def get_html_name(page):
+    return re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)).with_suffix('.html')
+
+
+def dump_html(dest, content):
+    logger.info('Dumping html to {}'.format(dest))
+    dest.write_bytes(content)

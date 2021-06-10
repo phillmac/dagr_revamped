@@ -9,6 +9,12 @@ from .utils import load_json, save_json
 
 logger = logging.getLogger(__name__)
 
+def get_fname(fname=None, dest=None):
+    if fname is None:
+        if dest is None:
+            raise TypeError('Either fname or dest arg is required')
+        return dest.name
+    return fname
 
 class DAGRIo():
     @staticmethod
@@ -41,8 +47,8 @@ class DAGRIo():
     def save_json(self, fname, content, do_backup=True):
         return save_json(self.__base_dir.joinpath(fname), content)
 
-    def exists(self, fname=None, dest=None, update_cache=None):
-        return self.__get_dest(fname, dest).exists()
+    def exists(self, fname=None, dest=None, subdir=None, update_cache=None):
+        return self.__get_dest(fname, dest, subdir).exists()
 
     def replace(self, fname, new_fname):
         return self.__base_dir.joinpath(fname).replace(new_fname)
@@ -81,9 +87,9 @@ class DAGRIo():
     def update_fn_cache(self, fname):
         pass
 
-    def write(self, content, fname=None, dest=None):
+    def write(self, content, fname=None, dest=None, subdir=None):
         written = None
-        dest = self.__get_dest(fname, dest)
+        dest = self.__get_dest(fname, dest, subdir)
         tmp = dest.with_suffix('.tmp')
         logger.log(level=5, msg=f"Writing item to {dest}")
         with tmp.open('w') as f:
@@ -93,9 +99,9 @@ class DAGRIo():
         logger.log(level=4, msg='Finished writing')
         return written
 
-    def write_bytes(self, content, fname=None, dest=None):
+    def write_bytes(self, content, fname=None, dest=None, subdir=None):
         written = None
-        dest = self.__get_dest(fname, dest)
+        dest = self.__get_dest(fname, dest, subdir)
         tmp = dest.with_suffix('.tmp')
         logger.log(level=5, msg=f"Writing item to {dest}")
         written = tmp.write_bytes(content)
@@ -104,14 +110,20 @@ class DAGRIo():
         logger.log(level=4, msg='Finished writing')
         return written
 
-    def utime(self, mtime, fname=None, dest=None):
+    def utime(self, mtime, fname=None, dest=None, subdir=None):
         mod_time = mktime(parsedate(mtime))
         logger.log(level=4, msg=f"Updating file times to {mod_time}")
-        utime(self.__get_dest(fname, dest), (mod_time, mod_time))
+        utime(self.__get_dest(fname, dest, subdir), (mod_time, mod_time))
 
-    def __get_dest(self, fname=None, dest=None):
-        if dest is None:
-            if fname is None:
-                raise TypeError('Either fname or dest arg is required')
-            dest = self.__base_dir.joinpath(fname)
-        return dest
+    def dir_exists(self, dir_name):
+        dir_item = self.__base_dir.joinpath(dir_name)
+        return (not dir_item.is_symlink()) and dir_item.is_dir()
+
+    def mkdir(self, dir_name):
+        return self.__base_dir.joinpath(dir_name).mkdir()
+
+    def __get_dest(self, fname=None, dest=None, subdir=None):
+        fname = get_fname(fname, dest)
+        if subdir:
+            return self.__base_dir.joinpath(subdir, fname)
+        return self.__base_dir.joinpath(fname)
