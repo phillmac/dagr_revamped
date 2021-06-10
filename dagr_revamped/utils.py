@@ -419,7 +419,7 @@ def http_mkdir(session, endpoint, dir_path, dir_name):
 
 
 def get_html_name(page):
-    return re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page)).with_suffix('.html')
+    PurePath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page))).with_suffix('.html')
 
 
 def dump_html(dest, content):
