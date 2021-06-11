@@ -20,6 +20,9 @@ class DAGRHTTPIo(DAGRIo):
                                key_errors=False) or {}
         return DAGRHTTPIo(base_dir, rel_dir, endpoints)
 
+    def get_rel_path(self, subdir):
+        return str(PurePosixPath(self.__rel_dir.joinpath(subdir)))
+
     def __init__(self, base_dir, rel_dir, endpoints):
         super().__init__(base_dir, rel_dir)
 
@@ -39,8 +42,8 @@ class DAGRHTTPIo(DAGRIo):
         session = Session()
 
         if not self.__exists_ep is None:
-            self.exists = lambda fname=None, dest=None, update_cache=None: http_exists(
-                session, self.__exists_ep, dir_path=self.rel_dir_name, itemname=get_fname(fname, dest), update_cache=update_cache)
+            self.exists = lambda fname=None, dest=None, subdir=None, update_cache=None: http_exists(
+                session, self.__exists_ep, dir_path=self.get_rel_path(subdir), itemname=get_fname(fname, dest), update_cache=update_cache)
 
         if not self.__list_dir_ep is None:
             self.list_dir = lambda: http_list_dir(
@@ -63,20 +66,16 @@ class DAGRHTTPIo(DAGRIo):
                 session, self.__update_fn_cache_ep, path=self.rel_dir_name, filenames=[fname])
 
         if not self.__write_file_ep is None:
-            self.write = lambda content, fname=None, dest=None: http_post_file_multipart(
-                session, self.__write_file_ep,  self.rel_dir_name, get_fname(fname, dest), content)
+            self.write = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
+                session, self.__write_file_ep,  self.get_rel_path(subdir), get_fname(fname, dest), content)
 
         if not self.__write_file_ep is None:
-            self.write_bytes = lambda content, fname=None, dest=None: http_post_file_multipart(
-                session, self.__write_file_ep,  self.rel_dir_name, get_fname(fname, dest), content)
+            self.write_bytes = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
+                session, self.__write_file_ep,  self.get_rel_path(subdir), get_fname(fname, dest), content)
 
         if not self.__utime_ep is None:
             self.utime = lambda mtime, fname=None, dest=None: http_post_json(
                 session, self.__utime_ep,  mtime=mtime, path=self.rel_dir_name, filename=get_fname(fname, dest))
-
-        if not self.__dir_exists_ep is None:
-            self.dir_exists = lambda dir_name: http_exists(
-                session, self.__dir_exists_ep, dir_path=self.rel_dir_name, itemname=dir_name)
 
         if not self.__dir_exists_ep is None:
             self.dir_exists = lambda dir_name: http_exists(
