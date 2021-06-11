@@ -21,6 +21,8 @@ class DAGRHTTPIo(DAGRIo):
         return DAGRHTTPIo(base_dir, rel_dir, endpoints)
 
     def get_rel_path(self, subdir):
+        if subdir is None:
+            return self.rel_dir
         return str(PurePosixPath(self.rel_dir.joinpath(subdir)))
 
     def __init__(self, base_dir, rel_dir, endpoints):
