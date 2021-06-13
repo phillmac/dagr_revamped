@@ -103,13 +103,13 @@ class DAGR():
             add_mimetype(k, v)
 
     def init_classes(self):
+        self.io_init()
         self.browser_init()
         self.crawler_init()
         self.ripper_init()
         self.processor_init()
         self.resolver_init()
         self.cache_init()
-        self.io_init()
 
     def plugin_class_init(self, class_name, default=None):
         plugin_name = self.config.get('dagr.plugins.classes', class_name)
@@ -747,6 +747,8 @@ class DAGRDeviationProcessor():
         self.__force_verify_exists = self.ripper.verifyexists if force_verify_exists is None else force_verify_exists
         self.__response = kwargs.get('response')
         self.__file_ext = kwargs.get('file_ext')
+        # self.__html_dump_loc = self.config.get(
+        #     'dagr.html', 'dumplocation')
         self.__verify_debug_loc = self.config.get(
             'dagr.verify', 'debuglocation')
         self.__findlink_debug_loc = self.config.get(
