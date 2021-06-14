@@ -80,9 +80,9 @@ class DAGRHTTPIo(DAGRIo):
                 session, self.__utime_ep,  mtime=mtime, path=self.rel_dir_name, filename=get_fname(fname, dest))
 
         if not self.__dir_exists_ep is None:
-            self.dir_exists = lambda dir_name: http_exists(
+            self.dir_exists = lambda dir_name = None: http_exists(
                 session, self.__dir_exists_ep, dir_path=self.rel_dir_name, itemname=dir_name)
 
         if not self.__mkdir_ep is None:
-            self.mkdir = lambda dir_name: http_mkdir(
+            self.mkdir = lambda dir_name = None: http_mkdir(
                 session, self.__mkdir_ep, dir_path=self.rel_dir_name, dir_name=dir_name)

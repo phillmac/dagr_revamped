@@ -9,12 +9,14 @@ from .utils import load_json, save_json
 
 logger = logging.getLogger(__name__)
 
+
 def get_fname(fname=None, dest=None):
     if fname is None:
         if dest is None:
             raise TypeError('Either fname or dest arg is required')
         return dest.name
     return fname
+
 
 class DAGRIo():
     @staticmethod
@@ -115,12 +117,15 @@ class DAGRIo():
         logger.log(level=4, msg=f"Updating file times to {mod_time}")
         utime(self.__get_dest(fname, dest, subdir), (mod_time, mod_time))
 
-    def dir_exists(self, dir_name):
-        dir_item = self.__base_dir.joinpath(dir_name)
+    def dir_exists(self, dir_name=None):
+        dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(
+            dir_name)
         return (not dir_item.is_symlink()) and dir_item.is_dir()
 
-    def mkdir(self, dir_name):
-        return self.__base_dir.joinpath(dir_name).mkdir()
+    def mkdir(self, dir_name=None):
+        dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(
+            dir_name)
+        return dir_item.mkdir()
 
     def __get_dest(self, fname=None, dest=None, subdir=None):
         fname = get_fname(fname, dest)
