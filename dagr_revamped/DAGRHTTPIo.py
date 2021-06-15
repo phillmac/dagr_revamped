@@ -3,7 +3,8 @@ from os import scandir
 from pathlib import Path, PurePosixPath
 from pprint import pformat
 
-from requests import Session
+from .TCPKeepAliveSession import TCPKeepAliveSession
+
 
 from .DAGRIo import DAGRIo, get_fname
 from .utils import (http_exists, http_fetch_json, http_list_dir, http_mkdir,
@@ -41,7 +42,7 @@ class DAGRHTTPIo(DAGRIo):
         self.__dir_exists_ep = endpoints.get('dir_exists', None)
         self.__mkdir_ep = endpoints.get('mkdir', None)
 
-        session = Session()
+        session = TCPKeepAliveSession()
 
         if not self.__exists_ep is None:
             self.exists = lambda fname=None, dest=None, subdir=None, update_cache=None: http_exists(
