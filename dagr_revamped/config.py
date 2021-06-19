@@ -316,7 +316,7 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr.Plugins.Selenium': {
             'Local_Cache_Path': '~/.cache/dagr_selenium',
             'Remote_Cache_Path': '.selenium',
-            'Remote_Cache_Type': 'Defualt'
+            'Remote_Cache_Type': 'Default'
         },
         'Dagr.Retry': {
             'SleepDuration': 0.5
@@ -367,9 +367,10 @@ class DAGRConfig(DAGRBaseConf):
 
     def __init__(self, *args, include=None, **kwargs):
         outputdir = self.OVERRIDES.get('dagr', {}).get('outputdirectory')
-        super().__init__(*args, include=include if include else [Path(outputdir).resolve()] if not outputdir is None else [], **kwargs)
-        self.__arguments=None
-        self.__config_options={}
+        super().__init__(*args, include=include if include else [
+            Path(outputdir).resolve()] if not outputdir is None else [], **kwargs)
+        self.__arguments = None
+        self.__config_options = {}
         self.merge_configs(self.DEFAULTS.keys(), (
             self.OVERRIDES.get,
             self.get_ini_section,
@@ -378,20 +379,20 @@ class DAGRConfig(DAGRBaseConf):
         ))
 
     def set_args(self, arguments):
-        self.__arguments=arguments
+        self.__arguments = arguments
         if not self.__arguments.get('config_options') is None:
             for opt in self.__arguments.get('config_options').split(','):
-                [opt_name, opt_value]=opt.lower().split(':')
+                [opt_name, opt_value] = opt.lower().split(':')
                 if (not opt_name) or (not opt_value):
                     dagr_log(__name__, logging.WARNING,
                              f'Unable to parse config option {opt_name} : {opt_value}')
                     continue
-                opt_name_parts=opt_name.split('.')
+                opt_name_parts = opt_name.split('.')
                 opt_name_parts.reverse()
-                opt_key, *opt_sec_parts=opt_name_parts
+                opt_key, *opt_sec_parts = opt_name_parts
                 opt_sec_parts.reverse()
-                opt_section='.'.join(opt_sec_parts)
-                self.__config_options=dict_merge(
+                opt_section = '.'.join(opt_sec_parts)
+                self.__config_options = dict_merge(
                     self.__config_options, {opt_section: {opt_key: opt_value}})
 
             dagr_log(__name__, 30,
