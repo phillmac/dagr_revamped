@@ -112,3 +112,6 @@ debug/
 
 # Logs
 *.log.txt
+
+tests/intergration/test_results/
+tests/intergration/dagr_selenium
