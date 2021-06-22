@@ -57,8 +57,6 @@ class DAGRCache():
 
     def __init__(self, dagr_config, cache_io, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
         self.dagr_config = dagr_config
-        self.base_dir = cache_io.base_dir
-        self.rel_dir = cache_io.rel_dir
         self.__cache_io = cache_io
         self.__lock = None
         self.__lock_path = None
@@ -149,11 +147,18 @@ class DAGRCache():
         self.__lock.release()
         if self.__lock._acquire_count == 0:
             unlink_lockfile(self.__lock_path)
+            
 
     def files_gen(self):
         if self.__files_list is None:
             self.__files_list = self.__load_fileslist()
         return (f for f in self.__files_list if not any(r.match(f) for r in self.__excluded_fnames_regex))
+
+    @property
+    def base_dir(self): return self.cache_io.base_dir
+
+    @property
+    def rel_dir(self): return self.cache_io.rel_dir
 
     @ property
     def files_list(self):
