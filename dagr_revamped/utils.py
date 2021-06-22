@@ -1,3 +1,4 @@
+from pathlib import PurePath
 import gzip
 import json
 import logging
@@ -34,7 +35,58 @@ def strip_topdirs(config, directory):
     return Path(*dirparts)
 
 
-def get_base_dir(config, mode, deviant=None, mval=None):
+def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
+    rel_dir = None
+    if deviant:
+        rel_dir = PurePosixPath(deviant, mode)
+    else:
+        rel_dir = PurePosixPath(mode)
+
+    if mval:
+        mval = PurePath(mval)
+        use_old = config.get('dagr.subdirs', 'useoldformat')
+        move = config.get('dagr.subdirs', 'move')
+        old_path = rel_dir.joinpath(mval)
+        new_path = rel_dir.joinpath(mval.name)
+        tmp_io = dagr_io(rel_dir, str(rel_dir), config)
+        if use_old:
+            logger.debug('Old format subdirs enabled')
+            rel_dir = old_path
+        elif not new_path == old_path and tmp_io.exists_dir(old_path):
+            if move:
+                if tmp_io.exists_dir(new_path):
+                    raise Exception(
+                        f'Unable to move {old_path}: subfolder {new_path} already exists')
+                logger.log(level=25, msg=f"Moving {old_path} to {new_path}")
+                try:
+                    parent = old_path.parent
+                    tmp_io.rename_dir(old_path, new_path)
+                    tmp_io.rmdir(parent)
+                    rel_dir = new_path
+                except OSError:
+                    logger.error(
+                        f"Unable to move subfolder {new_path}", exc_info=True)
+                    raise
+            else:
+                logger.debug('Move subdirs not enabled')
+        else:
+            rel_dir = new_path
+        logger.debug(f"Base dir: {rel_dir}")
+        remote_io = dagr_io(rel_dir, str(rel_dir), config)
+        if not remote_io.exists():
+            remote_io.mkdir()
+        return remote_io
+
+    try:
+        make_dirs(base_dir)
+    except OSError:
+        logger.error('Unable to create base_dir', exc_info=True)
+        return
+    logger.log(level=5, msg=pformat(locals()))
+    return base_dir, base_dir.relative_to(directory)
+
+
+def get_base_dir(io, config, mode, deviant=None, mval=None):
     directory = config.output_dir.expanduser().resolve()
     if deviant:
         base_dir = directory.joinpath(deviant, mode)
@@ -386,6 +438,16 @@ def http_post_raw(session, endpoint, **kwargs):
     resp.raise_for_status()
     return resp.json() == 'ok'
 
+def http_send_raw(session, endpoint, method='GET', **kwargs):
+    req = Request(method, endpoint, **kwargs)
+    prepped = session.prepare_request(req)
+    resp = session.send(prepped)
+    resp.raise_for_status()
+    return resp.json() == 'ok'
+
+def http_send_json(session, endpoint, method='POST', **kwargs):
+    return http_send_raw(session,
+                         endpoint, method=method, json=kwargs)
 
 def http_post_file_multipart(session, endpoint, dir_path, filename, content):
     m = http_encode_multipart(dir_path, filename, content)
@@ -418,10 +480,13 @@ def http_mkdir(session, endpoint, dir_path, dir_name):
     return http_post_json(session, endpoint, path=dir_path, dir_name=dir_name)
 
 
+def http_rename_dir(session, endpoint, dir_path, dir_name, new_dir_name):
+    return http_send_json(session, endpoint, method='PATCH', path=dir_path, itemname=dir_name, new_itemname=new_dir_name)
+
+
 def get_html_name(page):
     return PurePath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page))).with_suffix('.html')
 
-from pathlib import PurePath
 
 def dump_html(dest, content):
     logger.info('Dumping html to {}'.format(dest))

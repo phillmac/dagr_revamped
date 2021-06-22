@@ -2,7 +2,7 @@ import logging
 from email.utils import parsedate
 from json import JSONDecodeError
 from os import scandir, utime
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PurePath
 from time import mktime
 
 from .utils import load_json, save_json
@@ -16,6 +16,23 @@ def get_fname(fname=None, dest=None):
             raise TypeError('Either fname or dest arg is required')
         return dest.name
     return fname
+
+
+def get_dir_name(dir_name=None, src=None):
+    if dir_name is None:
+        if src is None:
+            raise TypeError('Either dir_name or src arg is required')
+        return src.name
+    return dir_name
+
+
+def get_new_dir_name(new_dir_name=None, dest=None):
+    if new_dir_name is None:
+        if dest is None:
+            raise TypeError(
+                'Either new_dir_name or dest arg is required')
+        return dest.name
+    return new_dir_name
 
 
 class DAGRIo():
@@ -119,13 +136,31 @@ class DAGRIo():
 
     def dir_exists(self, dir_name=None):
         dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(
-            dir_name)
+            PurePath(dir_name).name)
         return (not dir_item.is_symlink()) and dir_item.is_dir()
 
     def mkdir(self, dir_name=None):
         dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(
-            dir_name)
-        return dir_item.mkdir()
+            PurePath(dir_name).name)
+        dir_item.mkdir()
+        return True
+
+    def rmdir(self, dir_name):
+        dir_item = self.__base_dir.joinpath(PurePath(dir_name).name)
+        dir_item.rmdir()
+        return True
+
+    def rename_dir(self, dir_name=None, src=None, new_dir_name=None, dest=None):
+        dir_name = get_dir_name(dir_name, src)
+        new_dir_name = get_new_dir_name(new_dir_name, dest)
+        old_dir_item = self.__base_dir.joinpath(dir_name)
+        new_dir_item = self.__base_dir.joinpath(new_dir_name)
+
+        if not old_dir_item.is_dir():
+            raise ValueError('Item is not a directory')
+
+        old_dir_item.rename(new_dir_item)
+        return True
 
     def __get_dest(self, fname=None, dest=None, subdir=None):
         fname = get_fname(fname, dest)

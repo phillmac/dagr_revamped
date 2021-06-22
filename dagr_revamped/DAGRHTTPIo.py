@@ -3,13 +3,12 @@ from os import scandir
 from pathlib import Path, PurePosixPath
 from pprint import pformat
 
+from .DAGRIo import DAGRIo, get_fname, get_dir_name, get_new_dir_name
 from .TCPKeepAliveSession import TCPKeepAliveSession
-
-
-from .DAGRIo import DAGRIo, get_fname
 from .utils import (http_exists, http_fetch_json, http_list_dir, http_mkdir,
                     http_post_file_json, http_post_file_multipart,
-                    http_post_json, http_post_raw, http_replace)
+                    http_post_json, http_post_raw, http_rename_dir,
+                    http_replace)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +40,7 @@ class DAGRHTTPIo(DAGRIo):
         self.__utime_ep = endpoints.get('utime', None)
         self.__dir_exists_ep = endpoints.get('dir_exists', None)
         self.__mkdir_ep = endpoints.get('mkdir', None)
+        self.__rename_dir_ep = endpoints.get('rename_dir', None)
 
         session = TCPKeepAliveSession()
 
@@ -87,3 +87,5 @@ class DAGRHTTPIo(DAGRIo):
         if not self.__mkdir_ep is None:
             self.mkdir = lambda dir_name = None: http_mkdir(
                 session, self.__mkdir_ep, dir_path=self.rel_dir_name, dir_name=dir_name)
+        if not self.__rename_dir_ep is None:
+            self.rename_dir = lambda dir_name=None, src=None, new_dir_name=None, dest=None: http_rename_dir(session, self.__rename_dir_ep, dir_path=self.rel_dir_name, dir_name=get_dir_name(dir_name, src), new_dir_name=get_new_dir_name(new_dir_name, dest))
