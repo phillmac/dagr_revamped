@@ -77,14 +77,6 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
             remote_io.mkdir()
         return remote_io
 
-    try:
-        make_dirs(base_dir)
-    except OSError:
-        logger.error('Unable to create base_dir', exc_info=True)
-        return
-    logger.log(level=5, msg=pformat(locals()))
-    return base_dir, base_dir.relative_to(directory)
-
 
 def get_base_dir(io, config, mode, deviant=None, mval=None):
     directory = config.output_dir.expanduser().resolve()
