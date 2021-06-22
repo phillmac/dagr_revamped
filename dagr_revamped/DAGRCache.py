@@ -8,7 +8,7 @@ from platform import node as get_hostname
 
 import portalocker
 
-from .utils import artist_from_url, get_base_dir, shorten_url, unlink_lockfile
+from .utils import artist_from_url, get_remote_io, shorten_url, unlink_lockfile
 from .DAGRIo import DAGRIo
 
 logger = logging.getLogger(__name__)
@@ -52,9 +52,7 @@ class DAGRCache():
     @staticmethod
     def get_cache(config, mode, deviant, mval=None, dagr_io=None,
                   load_files=None, warn_not_found=None, preload_fileslist_policy=None):
-        base_dir, rel_dir = get_base_dir(config, mode, deviant, mval)
-        cache_io = (dagr_io if dagr_io is not None else DAGRIo).create(
-            base_dir, rel_dir, config)
+        cache_io = get_remote_io(dagr_io if dagr_io is not None else DAGRIo, config, mode, deviant, mval)
         return DAGRCache(config, cache_io, load_files=load_files, warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
     def __init__(self, dagr_config, cache_io, load_files=None, warn_not_found=None, preload_fileslist_policy=None):

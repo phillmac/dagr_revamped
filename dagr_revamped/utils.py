@@ -48,7 +48,7 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
         move = config.get('dagr.subdirs', 'move')
         old_path = rel_dir.joinpath(mval)
         new_path = rel_dir.joinpath(mval.name)
-        tmp_io = dagr_io(rel_dir, str(rel_dir), config)
+        tmp_io = dagr_io.create(rel_dir, str(rel_dir), config)
         if use_old:
             logger.debug('Old format subdirs enabled')
             rel_dir = old_path
@@ -72,7 +72,7 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
         else:
             rel_dir = new_path
         logger.debug(f"Base dir: {rel_dir}")
-        remote_io = dagr_io(rel_dir, str(rel_dir), config)
+        remote_io = dagr_io.create(rel_dir, str(rel_dir), config)
         if not remote_io.exists():
             remote_io.mkdir()
         return remote_io
