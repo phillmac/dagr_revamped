@@ -72,10 +72,10 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
         else:
             rel_dir = new_path
         logger.debug(f"Base dir: {rel_dir}")
-        remote_io = dagr_io.create(rel_dir, str(rel_dir), config)
-        if not remote_io.exists():
-            remote_io.mkdir()
-        return remote_io
+    remote_io = dagr_io.create(rel_dir, str(rel_dir), config)
+    if not remote_io.exists():
+        remote_io.mkdir()
+    return remote_io
 
 
 def get_base_dir(config, mode, deviant=None, mval=None):
