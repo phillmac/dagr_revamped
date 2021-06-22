@@ -78,7 +78,7 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
         return remote_io
 
 
-def get_base_dir(io, config, mode, deviant=None, mval=None):
+def get_base_dir(config, mode, deviant=None, mval=None):
     directory = config.output_dir.expanduser().resolve()
     if deviant:
         base_dir = directory.joinpath(deviant, mode)
