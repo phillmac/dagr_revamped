@@ -85,10 +85,6 @@ class DAGRHTTPIo(DAGRIo):
         else:
             self.write = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
                 session, self.__write_file_ep,  self.get_rel_path(subdir), get_fname(fname, dest), content)
-
-        if not self.__write_file_ep is None:
-            logger.warning('No write file endpoint configured')
-        else:
             self.write_bytes = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
                 session, self.__write_file_ep,  self.get_rel_path(subdir), get_fname(fname, dest), content)
 
