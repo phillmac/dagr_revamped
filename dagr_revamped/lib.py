@@ -133,8 +133,9 @@ class DAGR():
 
     def crawler_cache_init(self):
         if not self.crawler_cache:
-            self.crawler_cache = self.__kwargs.get(
-                'crawler_cache') or self.plugin_class_init('crawler_cache', None)(self,self.io)
+            crawler_cache_class = self.__kwargs.get('crawler_cache') or self.plugin_class_init('crawler_cache', None)
+            if crawler_cache_class:
+                self.crawler_cache = crawler_cache_class(self, self.io)
     
     def crawler_init(self):
         if not self.devation_crawler:
