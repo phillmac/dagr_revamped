@@ -3,7 +3,7 @@ from os import scandir
 from pathlib import Path, PurePosixPath
 from pprint import pformat
 
-from .DAGRIo import DAGRIo, get_fname, get_dir_name, get_new_dir_name
+from .DAGRIo import DAGRIo, get_dir_name, get_fname, get_new_dir_name
 from .TCPKeepAliveSession import TCPKeepAliveSession
 from .utils import (http_exists, http_fetch_json, http_list_dir, http_mkdir,
                     http_post_file_json, http_post_file_multipart,
@@ -59,7 +59,7 @@ class DAGRHTTPIo(DAGRIo):
         if self.__load_json_ep is None:
             logger.warning('No load json endpoint configured')
         else:
-            self.load_json = lambda fname: https_fetch_json(
+            self.load_json = lambda fname: http_fetch_json(
                 session, self.__load_json_ep,  path=self.rel_dir_name, filename=fname)
 
         if self.__save_json_ep is None:
@@ -113,4 +113,5 @@ class DAGRHTTPIo(DAGRIo):
         if self.__rename_dir_ep is None:
             logger.warning('No rename dir endpoint configured')
         else:
-            self.rename_dir = lambda dir_name=None, src=None, new_dir_name=None, dest=None: http_rename_dir(session, self.__rename_dir_ep, dir_path=self.rel_dir_name, dir_name=get_dir_name(dir_name, src), new_dir_name=get_new_dir_name(new_dir_name, dest))
+            self.rename_dir = lambda dir_name=None, src=None, new_dir_name=None, dest=None: http_rename_dir(
+                session, self.__rename_dir_ep, dir_path=self.rel_dir_name, dir_name=get_dir_name(dir_name, src), new_dir_name=get_new_dir_name(new_dir_name, dest))
