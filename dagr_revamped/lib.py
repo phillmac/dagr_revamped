@@ -75,6 +75,7 @@ class DAGR():
         self.reverse = lambda: self.config.get('dagr', 'reverse') or False
         self.ripper = None
         self.browser = None
+        self.crawler_cache = None
         self.devation_crawler = None
         self.deviantion_pocessor = None
         self.deviant_resolver = None
@@ -105,6 +106,7 @@ class DAGR():
     def init_classes(self):
         self.io_init()
         self.browser_init()
+        self.crawler_cache_init()
         self.crawler_init()
         self.ripper_init()
         self.processor_init()
@@ -129,6 +131,11 @@ class DAGR():
             self.browser = self.__kwargs.get('browser') or self.plugin_class_init(
                 'browser', create_browser)(self.mature)
 
+    def crawler_cache_init(self):
+        if not self.crawler_cache:
+            self.crawler_cache = self.__kwargs.get(
+                'crawler_cache') or self.plugin_class_init('crawler_cache', None)(self,self.io)
+    
     def crawler_init(self):
         if not self.devation_crawler:
             self.devation_crawler = self.__kwargs.get(
@@ -1113,6 +1120,6 @@ class DAGRDeviationProcessor():
         if self.__findlink_debug_loc:
             debug_folder = self.base_dir.joinpath(
                 self.__findlink_debug_loc).expanduser()
-            html_name = get_html_name(debug_folder, self.page_link)
-            dump_html(html_name, resp.content)
+            html_name = get_html_name(self.page_link)
+            dump_html(debug_folder.joinpath(html_name), resp.content)
         raise DagrException('all attemps to find a link failed')
