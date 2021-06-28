@@ -70,8 +70,6 @@ class DAGRCache():
             self.preload_fileslist_policy = preload_fileslist_policy if not preload_fileslist_policy is None else config_preload_fileslist_policy
             self.preload_http_endpoint = self.dagr_config.get(
                 'dagr.cache', 'preload_http_endpoint')
-        self.json_http_endpoint = self.dagr_config.get(
-            'dagr.cache', 'json_http_endpoint')
         self.settings_name = self.dagr_config.get(
             'dagr.cache', 'settings') or '.settings'
         self.settings = next(self.__load_cache(
@@ -605,8 +603,9 @@ class DAGRCache():
             self.__files_list = self.__load_fileslist()
         if fn in self.__files_list:
             logger.log(
-                level=15, msg='{} already in filenames cache'.format(fn))
+                level=15, msg=f"{fn} already in filenames cache")
         else:
+            logger.log(level=5, msg=f"Adding {fn} to filenames cache")
             self.__files_list.add(fn)
             self.__cache_io.update_fn_cache(fn)
             # if not self.__files_list_lower is None:
