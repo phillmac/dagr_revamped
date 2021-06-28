@@ -41,6 +41,8 @@ class DAGRIo():
         return DAGRIo(base_dir, rel_dir)
 
     def __init__(self, base_dir, rel_dir):
+        if isinstance(base_dir, PurePath):
+            base_dir=Path(base_dir)
         self.__base_dir = base_dir
         self.__rel_dir = rel_dir
         self.__rel_dir_name = str(PurePosixPath(rel_dir))
