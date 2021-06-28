@@ -1119,8 +1119,6 @@ class DAGRDeviationProcessor():
                 raise DagrException('maybe a mature deviation/' +
                                     'unable to find downloadable deviation')
         if self.__findlink_debug_loc:
-            debug_folder = self.base_dir.joinpath(
-                self.__findlink_debug_loc).expanduser()
-            html_name = get_html_name(self.page_link)
-            dump_html(debug_folder.joinpath(html_name), resp.content)
+            html_name = get_html_name(self.page_link).name
+            dump_html(self.cache.cache_io, self.__findlink_debug_loc, html_name,  resp.content)
         raise DagrException('all attemps to find a link failed')

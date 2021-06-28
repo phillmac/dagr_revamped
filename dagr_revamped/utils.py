@@ -476,10 +476,15 @@ def http_rename_dir(session, endpoint, dir_path, dir_name, new_dir_name):
     return http_send_json(session, endpoint, method='PATCH', path=dir_path, itemname=dir_name, new_itemname=new_dir_name)
 
 
+
+
 def get_html_name(page):
     return PurePath(re.sub('[^a-zA-Z0-9_-]+', '_', shorten_url(page))).with_suffix('.html')
 
 
-def dump_html(dest, content):
-    logger.info('Dumping html to {}'.format(dest))
-    dest.write_bytes(content)
+def dump_html(cache_io, subdir, html_name, content):
+    if not cache_io.exists_dir(subdir):
+        cache_io.mkdir(subdir)
+    cache_io.write_bytes(content, fname=html_name, subdir=subdir)
+
+    
