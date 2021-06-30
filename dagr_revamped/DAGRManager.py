@@ -51,8 +51,7 @@ class DAGRManager():
 
     def get_cache(self):
         if not self.__cache:
-            self.__cache = self.get_dagr().pl_manager.get_funcs(
-                'crawler_cache').get('selenium')()
+            self.__cache = self.get_dagr().crawler_cache
         return self.__cache
 
     def get_host_mode(self):
