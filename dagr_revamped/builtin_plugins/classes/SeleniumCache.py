@@ -27,11 +27,11 @@ class SlugCache():
     def __load(self):
         update_local = self.__local_io.load_primary_or_backup(self.__filename, warn_not_found=False)
         if update_local:
-            self.__local_values.update(update_local)
+            self.__local_values.update(i if isinstance(i, str) else deep_tuple(i) for i in update_local)
 
         update_remote = self.__remote_io.load_primary_or_backup(self.__filename, warn_not_found=False)
         if update_remote:
-            self.__remote_values.update(update_remote)
+            self.__remote_values.update(i if isinstance(i, str) else deep_tuple(i) for i in update_remote)
 
     @property
     def local_stale(self):
