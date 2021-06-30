@@ -11,7 +11,6 @@ from mimetypes import init as mimetypes_init
 from pathlib import Path, PurePosixPath
 from pprint import pformat
 from time import time
-from utils import sleep
 
 import deviantart
 from bs4 import BeautifulSoup
@@ -19,11 +18,13 @@ from bs4.element import Tag
 from dateutil.parser import parse as date_parse
 from requests import codes as req_codes
 
+from .utils import sleep
+
 from .config import DAGRConfig
-from .DAGRCache import DAGRCache, DagrCacheLockException
+from .DAGRCache import DAGRCache
 from .DAGRIo import DAGRIo
-from .exceptions import (DagrException, DagrHTTPException,
-                         DagrPremiumUnavailable)
+from .exceptions import (DagrCacheLockException, DagrException,
+                         DagrHTTPException, DagrPremiumUnavailable)
 from .plugin import PluginManager
 from .utils import (StatefulBrowser, compare_size, convert_queue,
                     create_browser, dump_html, filter_deviants, get_base_dir,

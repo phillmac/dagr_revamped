@@ -10,8 +10,9 @@ from docopt import docopt
 from .config import DAGRConfig
 from .dagr_logging import init_logging
 from .dagr_logging import log as dagr_log
-from .DAGRCache import DAGRCache, DagrCacheLockException
+from .DAGRCache import DAGRCache
 from .DAGRManager import DAGRManager
+from .exceptions import DagrCacheLockException
 from .utils import (buffered_file_write, convert_queue, filter_deviants,
                     get_base_dir, load_bulk_files, strip_topdirs,
                     update_bulk_list)

@@ -19,6 +19,10 @@ class DagrHTTPException(DagrException):
             f"HTTP {http_code} error")
         self.http_code = http_code
 
+class DagrCacheLockException(Exception):
+    pass
+
+
 # class Dagr404Exception(DagrHTTPException):
 #     def __init__(self):
 #         super().__init__(

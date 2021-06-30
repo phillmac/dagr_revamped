@@ -6,9 +6,8 @@ from pprint import pformat
 from time import time
 from platform import node as get_hostname
 
-import portalocker
 
-from .utils import artist_from_url, get_remote_io, shorten_url, unlink_lockfile
+from .utils import artist_from_url, get_remote_io, shorten_url
 from .DAGRIo import DAGRIo
 
 logger = logging.getLogger(__name__)
@@ -130,21 +129,11 @@ class DAGRCache():
             self.__convert_urls()
 
     def __enter__(self):
-        try:
-            if not self.__lock:
-                self.__lock_path = self.base_dir.joinpath('.lock')
-                self.__lock = portalocker.RLock(
-                    self.__lock_path, fail_when_locked=True)
-            self.__lock.acquire()
-            return self
-        except (portalocker.exceptions.LockException, portalocker.exceptions.AlreadyLocked, OSError) as ex:
-            logger.warning(f"Skipping locked directory {self.base_dir}")
-            raise DagrCacheLockException(ex)
+        self.cache_io.lock()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.__lock.release()
-        if self.__lock._acquire_count == 0:
-            unlink_lockfile(self.__lock_path)
+        self.cache_io.release_lock()
             
 
     def files_gen(self):
@@ -641,5 +630,4 @@ class DAGRCache():
         self.__files_list.discard(fname)
 
 
-class DagrCacheLockException(Exception):
-    pass
+

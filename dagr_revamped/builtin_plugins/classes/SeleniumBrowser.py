@@ -1,7 +1,7 @@
 import logging
 import re
 import urllib
-from time import sleep
+from dagr_revamped.utils import sleep
 
 from bs4 import BeautifulSoup
 from dagr_revamped.exceptions import DagrException

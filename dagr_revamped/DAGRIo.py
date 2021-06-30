@@ -2,10 +2,13 @@ import logging
 from email.utils import parsedate
 from json import JSONDecodeError
 from os import scandir, utime
-from pathlib import Path, PurePosixPath, PurePath
+from pathlib import Path, PurePath, PurePosixPath
 from time import mktime
 
-from .utils import load_json, save_json
+import portalocker
+
+from .exceptions import DagrCacheLockException
+from .utils import load_json, save_json, unlink_lockfile
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +49,8 @@ class DAGRIo():
         self.__base_dir = base_dir
         self.__rel_dir = rel_dir
         self.__rel_dir_name = str(PurePosixPath(rel_dir))
+        self.__lock = None
+        self.__lock_path = None
 
     @ property
     def base_dir(self):
@@ -163,6 +168,21 @@ class DAGRIo():
 
         old_dir_item.rename(new_dir_item)
         return True
+    def lock(self):
+        try:
+            if not self.__lock:
+                self.__lock_path = self.__base_dir.joinpath('.lock')
+                self.__lock = portalocker.RLock(
+                    self.__lock_path, fail_when_locked=True)
+                self.__lock.acquire()
+        except (portalocker.exceptions.LockException, portalocker.exceptions.AlreadyLocked, OSError) as ex:
+            logger.warning(f"Skipping locked directory {self.base_dir}")
+            raise DagrCacheLockException(ex)
+    
+    def release_lock(self):
+        self.__lock.release()
+        if self.__lock._acquire_count == 0:
+            unlink_lockfile(self.__lock_path)
 
     def __get_dest(self, fname=None, dest=None, subdir=None):
         fname = get_fname(fname, dest)

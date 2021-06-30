@@ -344,7 +344,7 @@ def backup_cache_file(fpath):
 
 def unlink_lockfile(lockfile):
     if not isinstance(lockfile, Path):
-        lockfile = Path(lockfile)
+        raise Exception('lockfile muts be a Path instance')
     if lockfile.exists():
         try:
             lockfile.unlink()
