@@ -149,7 +149,7 @@ class DAGRIo():
     def mkdir(self, dir_name=None):
         dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(
             PurePath(dir_name).name)
-        dir_item.mkdir()
+        dir_item.mkdir(parents=True)
         return True
 
     def rmdir(self, dir_name):
