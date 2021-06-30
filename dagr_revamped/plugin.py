@@ -95,6 +95,9 @@ class PluginManager():
     def register_shutdown(self, name, func):
         self.__register('shutdown', name, func)
 
+    def register_io(self, name, func):
+        self.__register('io', name, func)
+
 
 class DagrImportError(Exception):
     pass
