@@ -135,10 +135,11 @@ class DAGR():
 
     def crawler_cache_init(self):
         if not self.crawler_cache:
-            crawler_cache_class = self.__kwargs.get('crawler_cache') or self.plugin_class_init('crawler_cache', None)
+            crawler_cache_class = self.__kwargs.get(
+                'crawler_cache') or self.plugin_class_init('crawler_cache', None)
             if crawler_cache_class:
                 self.crawler_cache = crawler_cache_class(self, self.io)
-    
+
     def crawler_init(self):
         if not self.devation_crawler:
             self.devation_crawler = self.__kwargs.get(
@@ -166,9 +167,6 @@ class DAGR():
     def io_init(self):
         self.io = self.__kwargs.get(
             'io') or self.plugin_class_init('io', DAGRIo)
-
-    def create_crawler(self):
-        return self.devation_crawler(self)
 
     def get_queue(self):
         return self.__work_queue
@@ -410,8 +408,7 @@ class DAGR():
         if self.nocrawl:
             self.__logger.debug('No crawl mode, skipping pages crawl')
             return []
-        crawler = self.create_crawler()
-        return crawler.crawl(url_fmt, mode, deviant, mval, msg)
+        return self.deviation_crawler.crawl(url_fmt, mode, deviant, mval, msg)
 
     def get_folders(self, url_fmt, folder_regex, deviant):
         deviant_lower = deviant.lower()
@@ -946,7 +943,7 @@ class DAGRDeviationProcessor():
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
                 self.__logger.debug(
-                        'Exception while saving link', exc_info=True)
+                    'Exception while saving link', exc_info=True)
                 if [re for re in self.ripper.retry_exception_names() if except_name in re]:
                     if not except_name in tries:
                         tries[except_name] = 0
@@ -1128,5 +1125,6 @@ class DAGRDeviationProcessor():
                                     'unable to find downloadable deviation')
         if self.__findlink_debug_loc:
             html_name = get_html_name(self.page_link).name
-            dump_html(self.cache.cache_io, self.__findlink_debug_loc, html_name,  resp.content)
+            dump_html(self.cache.cache_io, self.__findlink_debug_loc,
+                      html_name,  resp.content)
         raise DagrException('all attemps to find a link failed')
