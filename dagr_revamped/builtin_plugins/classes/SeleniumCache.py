@@ -25,11 +25,13 @@ class SlugCache():
         self.__load()
 
     def __load(self):
-        self.__local_values.update(self.__local_io.load_primary_or_backup(
-            self.__filename, warn_not_found=False))
+        update_local = self.__local_io.load_primary_or_backup(self.__filename, warn_not_found=False)
+        if update_local:
+            self.__local_values.update(update_local)
 
-        self.__remote_values.update(self.__remote_io.load_primary_or_backup(
-            self.__filename, warn_not_found=False))
+        update_remote = self.__remote_io.load_primary_or_backup(self.__filename, warn_not_found=False)
+        if update_remote:
+            self.__remote_values.update(update_remote)
 
     @property
     def local_stale(self):
