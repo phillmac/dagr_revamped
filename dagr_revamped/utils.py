@@ -1,11 +1,11 @@
-from pathlib import PurePath
+import asyncio
 import gzip
 import json
 import logging
 import re
 from collections.abc import Iterable, Mapping
 from io import BytesIO, StringIO, TextIOWrapper
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePath, PurePosixPath
 from pprint import pformat, pprint
 from random import choice
 
@@ -487,3 +487,13 @@ def dump_html(cache_io, subdir, html_name, content):
     if not cache_io.exists_dir(subdir):
         cache_io.mkdir(subdir)
     cache_io.write_bytes(content, fname=html_name, subdir=subdir)
+
+
+async def perform_sleep(delay):
+    for _count in range(0, 10 * delay):
+        await asyncio.sleep(0.1)
+
+
+def sleep(delay):
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(perform_sleep(delay))

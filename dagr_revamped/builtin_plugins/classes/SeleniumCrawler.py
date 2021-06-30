@@ -2,7 +2,9 @@
 
 import logging
 from pathlib import PurePosixPath
-from time import sleep, time
+from time import time
+from dagr_revamped.utils import sleep
+
 
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException

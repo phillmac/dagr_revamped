@@ -10,7 +10,8 @@ from mimetypes import guess_extension
 from mimetypes import init as mimetypes_init
 from pathlib import Path, PurePosixPath
 from pprint import pformat
-from time import sleep, time
+from time import time
+from utils import sleep
 
 import deviantart
 from bs4 import BeautifulSoup
