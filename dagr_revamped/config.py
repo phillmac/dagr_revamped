@@ -344,7 +344,7 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr.Cache': get_os_options('Dagr.Cache', ['Fileslist_Preload_Threshold', 'Preload_HTTP_Endpoint']),
         'Dagr.DeviationProcessor': get_os_options('Dagr.DeviationProcessor', ['FNS_Address']),
         'Dagr.Logging':  get_os_options('Dagr.Logging', ['Level']),
-        'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Ripper', 'Resolver', 'Crawler', 'Processor']),
+        'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Resolver', 'Crawler', 'Processor', 'Crawler_Cache']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_Mode', 'Webdriver_URL', 'Webdriver_Max_Tries' 'Driver_Path', 'Full_Crawl', 'Login_Policy', 'OOM_Max_Pages',
             'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Cache_Type', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout', 'Unload_Cache_Policy'
