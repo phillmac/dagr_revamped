@@ -2,6 +2,7 @@ import asyncio
 import gzip
 import json
 import logging
+import math
 import re
 from collections.abc import Iterable, Mapping
 from io import BytesIO, StringIO, TextIOWrapper
@@ -490,8 +491,8 @@ def dump_html(cache_io, subdir, html_name, content):
 
 
 async def perform_sleep(delay):
-    for _count in range(0, 10 * delay):
-        await asyncio.sleep(0.1)
+    for _count in range(0, math.ceil(100 * delay)):
+        await asyncio.sleep(0.01)
 
 
 def sleep(delay):
