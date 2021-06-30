@@ -3,9 +3,9 @@ from os import scandir
 from pathlib import Path, PurePosixPath
 from pprint import pformat
 
-from .DAGRIo import DAGRIo, get_dir_name, get_fname, get_new_dir_name
-from .TCPKeepAliveSession import TCPKeepAliveSession
-from .utils import (http_exists, http_fetch_json, http_list_dir, http_mkdir,
+from dagr_revamped.DAGRIo import DAGRIo, get_dir_name, get_fname, get_new_dir_name
+from dagr_revamped.TCPKeepAliveSession import TCPKeepAliveSession
+from dagr_revamped.utils import (http_exists, http_fetch_json, http_list_dir, http_mkdir,
                     http_post_file_json, http_post_file_multipart,
                     http_post_json, http_post_raw, http_rename_dir,
                     http_replace)
