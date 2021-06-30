@@ -1,10 +1,8 @@
-from dagr_revamped.utils import load_json, save_json
 import logging
 from pathlib import Path
 from time import time
 
-
-import pybreaker
+from pybreaker import CircuitBreakerError
 
 logger = logging.getLogger(__name__)
 
@@ -16,43 +14,22 @@ def deep_tuple(x):
 
 
 class SlugCache():
-    def __init__(self, slug, local, remote, remote_breaker):
+    def __init__(self, slug, local_io, remote_io, remote_breaker):
         self.__slug = slug
+        self.__local_io = local_io
+        self.__remote_io = remote_io
         self.__local_values = set()
         self.__remote_values = set()
         self.__remote_breaker = remote_breaker
-        self.__values = {
-            'remote_values': self.__remote_values,
-            'local_values': self.__local_values
-        }
-        self.__loaded = set()
-        self.__loaded_ts = time()
-
-        self.__caches = {
-            'remote primary': remote.joinpath(slug).with_suffix('.json'),
-            'remote backup': remote.joinpath(slug).with_suffix('.bak'),
-            'local primary': local.joinpath(slug).with_suffix('.json'),
-            'local backup': local.joinpath(slug).with_suffix('.bak')
-        }
+        self.__filename = f"{self.__slug}.json"
         self.__load()
 
     def __load(self):
-        for ctype in ['remote', 'local']:
-            for cname in [k for k in self.__caches.keys() if ctype in k]:
-                cpath = self.__caches.get(cname)
-                try:
-                    if cpath.exists():
-                        self.__values.get(f"{ctype}_values").update(
-                            i if isinstance(i, str) else deep_tuple(i) for i in load_json(cpath))
-                        self.__loaded.add(cname)
-                        break
-                except:
-                    logger.log(
-                        level=25, msg=f"Failed to load {self.__slug} {cname} cache {cpath}", exc_info=True)
-        if not len(self.__loaded) > 0:
-            logger.warning(f"Unable to load any caches for {self.__slug}")
-        else:
-            logger.log(level=15, msg=f"Loaded caches {self.__loaded}")
+        self.__local_values.update(self.__local_io.load_primary_or_backup(
+            self.__filename, warn_not_found=False))
+
+        self.__remote_values.update(self.__remote_io.load_primary_or_backup(
+            self.__filename, warn_not_found=False))
 
     @property
     def local_stale(self):
@@ -65,25 +42,19 @@ class SlugCache():
     def __flush_local(self, force_overwrite=False):
         if not force_overwrite:
             self.__local_values.update(self.__remote_values)
-        save_json(self.__caches.get('local primary'), self.__local_values)
+        self.__local_io.save_json(
+            fname=self.__filename, content=self.__local_values)
 
     def __flush_remote(self, force_overwrite=False, ignore_breaker=False):
-        def do_flush_remote(remote_values, local_values, caches, force_overwrite):
-            if not force_overwrite:
-                remote_values.update(local_values)
-            save_json(caches.get('remote primary'), remote_values)
-
-        @self.__remote_breaker
-        def do_flush_remote_breaker(remote_values, local_values, caches, force_overwrite):
-            do_flush_remote(remote_values, local_values,
-                            caches, force_overwrite)
+        if not force_overwrite:
+            self.__remote_values.update(self.__local_values)
 
         if ignore_breaker:
-            do_flush_remote(self.__remote_values,
-                            self.__local_values, self.__caches, force_overwrite)
+            self.__remote_io.save_json(
+                fname=self.__filename, content=self.__remote_values)
         else:
-            do_flush_remote_breaker(
-                self.__remote_values, self.__local_values, self.__caches, force_overwrite)
+            self.__remote_breaker.call(
+                self.__remote_io.save_json, fname=self.__filename, content=self.__remote_values)
 
     def flush(self, force_overwrite=False):
         logger.log(level=15, msg=f"Flushing {self.__slug}")
@@ -94,7 +65,7 @@ class SlugCache():
         try:
             if force_overwrite or self.remote_stale:
                 self.__flush_remote(force_overwrite=force_overwrite)
-        except pybreaker.CircuitBreakerError:
+        except CircuitBreakerError:
             logger.warning('Unable to flush remote: CircuitBreakerError')
 
     def query(self):
@@ -135,27 +106,12 @@ class SlugCache():
 
 
 class SeleniumCache():
-    def __init__(self, app_config, config):
-        output_dir = app_config.output_dir
-        self.__local_cache = Path(config.get(
-            'local_cache_path', '~/.cache/dagr_selenium')).expanduser().resolve()
-        self.__remote_cache = output_dir.joinpath(
-            config.get('remote_cache_path', '.selenium')).expanduser().resolve()
-        fail_max = config.get('remote_breaker_fail_max', 1)
-        reset_timeout = config.get('remote_breaker_reset_timeout', 10)
-        self.__remote_breaker = pybreaker.CircuitBreaker(
-            fail_max=fail_max, reset_timeout=reset_timeout)
-        logger.log(
-            level=15, msg=f"Remote cache cb - fail_max: {fail_max} reset_timeout: {reset_timeout}")
-
+    def __init__(self, local_io, remote_io, remote_breaker):
+        self.__local_io = local_io
+        self.__remote_io = remote_io
+        self.__remote_breaker = remote_breaker
         self.__caches = {}
         self.__flushed = {}
-
-        if not self.__local_cache.exists():
-            self.__local_cache.mkdir(parents=True)
-
-        if not self.__remote_cache.exists():
-            self.__remote_cache.mkdir()
 
     def flush(self, slug=None, force_overwrite=False):
         if slug is None:
@@ -171,20 +127,20 @@ class SeleniumCache():
     def query(self, slug):
         if not slug in self.__caches.keys():
             self.__caches[slug] = SlugCache(
-                slug, self.__local_cache, self.__remote_cache, self.__remote_breaker)
+                slug, self.__local_io, self.__remote_io, self.__remote_breaker)
         return self.__caches.get(slug).query()
 
     def update(self, slug, values):
         if not slug in self.__caches.keys():
             self.__caches[slug] = SlugCache(
-                slug, self.__local_cache, self.__remote_cache, self.__remote_breaker)
+                slug, self.__local_io, self.__remote_io, self.__remote_breaker)
         self.__caches.get(slug).update(values)
         self.__flushed[slug] = False
 
     def remove(self, slug, values):
         if not slug in self.__caches.keys():
             self.__caches[slug] = SlugCache(
-                slug, self.__local_cache, self.__remote_cache,  self.__remote_breaker)
+                slug, self.__local_io, self.__remote_io,  self.__remote_breaker)
         self.__caches.get(slug).remove(values)
         self.__flushed[slug] = False
 
