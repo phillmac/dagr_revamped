@@ -18,6 +18,7 @@ class SeleniumPlugin():
         self.__config = self.__app_config.get(self.__config_key, None)
         self.__browser = None
         self.__cache = Cache(self.__app_config, self.__config)
+        self.__crawler = None
 
         if self.__config is None:
             raise DagrPluginConfigError('Selenium plugin config missing')
@@ -43,9 +44,11 @@ class SeleniumPlugin():
         return self.__browser
 
     def create_crawler(self, *args, **kwargs):
-        if self.__browser is None:
-            raise Exception('Cannot init crawler before browser')
-        return lambda ripper: Crawler(self.__app_config, self.__config, self.__browser, self.__cache)
+        if self.__crawler is None:
+            if self.__browser is None:
+                raise Exception('Cannot init crawler before browser')
+            self.__crawler = Crawler(self.__app_config, self.__config, self.__browser, self.__cache)
+        return self.__crawler
 
     def shutdown(self):
         self.__cache.flush()

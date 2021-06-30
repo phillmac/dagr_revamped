@@ -135,15 +135,16 @@ class DAGR():
 
     def crawler_cache_init(self):
         if not self.crawler_cache:
-            crawler_cache_class = self.__kwargs.get(
+            create_cache = self.__kwargs.get(
                 'crawler_cache') or self.plugin_class_init('crawler_cache', None)
-            if crawler_cache_class:
-                self.crawler_cache = crawler_cache_class(self, self.io)
+            if create_cache:
+                self.crawler_cache = create_cache(self, self.io)
 
     def crawler_init(self):
         if not self.devation_crawler:
-            self.devation_crawler = self.__kwargs.get(
-                'crawler') or self.plugin_class_init('crawler', DAGRCrawler)(self)
+            create_crawler = self.__kwargs.get(
+                'crawler') or self.plugin_class_init('crawler', DAGRCrawler)
+            self.devation_crawler = create_crawler(self)
 
     def ripper_init(self):
         if not self.ripper:
