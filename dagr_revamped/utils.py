@@ -9,6 +9,7 @@ from io import BytesIO, StringIO, TextIOWrapper
 from pathlib import Path, PurePath, PurePosixPath
 from pprint import pformat, pprint
 from random import choice
+from time import sleep as time_sleep
 
 from mechanicalsoup import StatefulBrowser
 from requests import Request
@@ -425,8 +426,8 @@ def http_fetch_json(session, endpoint, **kwargs):
 
 def http_post_json(session, endpoint, **kwargs):
     return http_post_raw(session,
-                              endpoint, json=kwargs)
-    
+                         endpoint, json=kwargs)
+
 
 def http_post_raw(session, endpoint, **kwargs):
     resp = session.post(endpoint, **kwargs)
@@ -501,5 +502,6 @@ async def perform_sleep(delay):
 
 
 def sleep(delay):
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(perform_sleep(delay))
+    time_sleep(delay)
+    # loop = asyncio.get_event_loop()
+    # loop.run_until_complete(perform_sleep(delay))
