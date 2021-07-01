@@ -16,6 +16,8 @@ from requests import adapters as req_adapters
 from requests import session as req_session
 from requests_toolbelt import MultipartEncoder
 
+from .exceptions import DagrException
+
 logger = logging.getLogger(__name__)
 
 
@@ -423,13 +425,16 @@ def http_fetch_json(session, endpoint, **kwargs):
 
 def http_post_json(session, endpoint, **kwargs):
     return http_post_raw(session,
-                         endpoint, json=kwargs)
-
+                              endpoint, json=kwargs)
+    
 
 def http_post_raw(session, endpoint, **kwargs):
     resp = session.post(endpoint, **kwargs)
     resp.raise_for_status()
-    return resp.json() == 'ok'
+    resp_json = resp.json()
+    if resp_json == 'ok':
+        return True
+    raise DAGRException(resp_json)
 
 
 def http_send_raw(session, endpoint, method='GET', **kwargs):
