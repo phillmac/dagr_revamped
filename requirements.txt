@@ -10,7 +10,7 @@ lxml==4.6.3
 MechanicalSoup==1.0.0
 pluginbase==1.0.0
 ply==3.11
-portalocker==1.4.0
+portalocker==2.3.0
 pybreaker==0.6.0
 python-dateutil==2.7.5
 sanction==0.4.1
