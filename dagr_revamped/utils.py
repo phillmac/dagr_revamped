@@ -56,9 +56,9 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
         if use_old:
             logger.debug('Old format subdirs enabled')
             rel_dir = old_path
-        elif not new_path == old_path and tmp_io.exists_dir(old_path):
+        elif not new_path == old_path and tmp_io.dir_exists(old_path):
             if move:
-                if tmp_io.exists_dir(new_path):
+                if tmp_io.dir_exists(new_path):
                     raise Exception(
                         f'Unable to move {old_path}: subfolder {new_path} already exists')
                 logger.log(level=25, msg=f"Moving {old_path} to {new_path}")
@@ -491,7 +491,7 @@ def get_html_name(page):
 
 
 def dump_html(cache_io, subdir, html_name, content):
-    if not cache_io.exists_dir(subdir):
+    if not cache_io.dir_exists(subdir):
         cache_io.mkdir(subdir)
     cache_io.write_bytes(content, fname=html_name, subdir=subdir)
 
