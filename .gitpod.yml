@@ -6,3 +6,6 @@ ports:
   port: 3002
   onOpen: ignore
   visibility: private
+tasks:
+- command: >
+    pip install -e .
