@@ -439,7 +439,8 @@ def http_post_raw(session, endpoint, **kwargs):
     try:
         resp.raise_for_status()
     except:
-        logger.exception(resp_json or resp.text)
+        logger.error(resp_json or resp.text)
+        raise
     if resp_json == 'ok':
         return True
     raise DAGRException(resp_json or resp.text)
