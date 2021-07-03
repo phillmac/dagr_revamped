@@ -430,12 +430,19 @@ def http_post_json(session, endpoint, **kwargs):
 
 
 def http_post_raw(session, endpoint, **kwargs):
+    resp_json = None
     resp = session.post(endpoint, **kwargs)
-    resp.raise_for_status()
-    resp_json = resp.json()
+    try:
+        resp_json = resp.json()
+    except:
+        pass
+    try:
+        resp.raise_for_status()
+    except:
+        logger.exception(resp_json or resp.text)
     if resp_json == 'ok':
         return True
-    raise DAGRException(resp_json)
+    raise DAGRException(resp_json or resp.text)
 
 
 def http_send_raw(session, endpoint, method='GET', **kwargs):
