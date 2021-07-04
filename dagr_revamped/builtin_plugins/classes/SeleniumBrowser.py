@@ -7,7 +7,6 @@ from bs4 import BeautifulSoup
 from dagr_revamped.exceptions import DagrException
 from dagr_revamped.plugin import DagrImportError
 from dagr_revamped.utils import create_browser as utils_create_browser
-from selenium.webdriver import ActionChains
 
 from .Response import Response
 
@@ -16,7 +15,7 @@ try:
     from selenium.webdriver.common.keys import Keys
     from selenium.webdriver.support.expected_conditions import staleness_of
     from selenium.webdriver.support.ui import WebDriverWait
-
+    from selenium.common.exceptions import WebDriverException
 except ModuleNotFoundError:
     raise DagrImportError('Required package selenium not available')
 
@@ -238,13 +237,16 @@ class SeleniumBrowser():
         return self.__driver.execute_async_script(*args, **kwargs)
 
     def move_to_element(self, elem):
-        ActionChains(self.__driver).move_to_element(elem).perform()
+        webdriver.ActionChains(self.__driver).move_to_element(elem).perform()
 
     def click_element(self, elem):
-        ActionChains(self.__driver).move_to_element(elem).click().perform()
+        webdriver.ActionChains(self.__driver).move_to_element(elem).click().perform()
 
     def quit(self):
-        self.__driver.quit()
+        try:
+            self.__driver.quit()
+        except WebDriverException:
+            logger.exception('Unable to close browser session')
 
 
 class LoginDisabledError(DagrException):
