@@ -72,7 +72,7 @@ class PluginManager():
     def __register(self, cat, name, func):
         if not cat in self.__funcs:
             self.__funcs[cat] = {}
-        self.__funcs[cat][name] = func
+        self.__funcs[cat][name.lower()] = func
 
     def get_funcs(self, cat):
         return {k: v for k, v in self.__funcs.get(cat, {}).items()}
