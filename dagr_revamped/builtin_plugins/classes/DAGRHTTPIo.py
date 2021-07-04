@@ -3,12 +3,15 @@ from os import scandir
 from pathlib import Path, PurePosixPath
 from pprint import pformat
 
-from dagr_revamped.DAGRIo import DAGRIo, get_dir_name, get_fname, get_new_dir_name
+from dagr_revamped.DAGRIo import (DAGRIo, get_dir_name, get_fname,
+                                  get_new_dir_name)
 from dagr_revamped.TCPKeepAliveSession import TCPKeepAliveSession
-from dagr_revamped.utils import (http_exists, http_fetch_json, http_list_dir, http_mkdir,
-                    http_post_file_json, http_post_file_multipart,
-                    http_post_json, http_post_raw, http_rename_dir,
-                    http_replace)
+from dagr_revamped.utils import (http_exists, http_fetch_json, http_list_dir,
+                                 http_lock_dir, http_mkdir,
+                                 http_post_file_json, http_post_file_multipart,
+                                 http_post_json, http_post_raw,
+                                 http_refresh_lock, http_release_lock,
+                                 http_rename_dir, http_replace)
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +44,8 @@ class DAGRHTTPIo(DAGRIo):
         self.__dir_exists_ep = endpoints.get('dir_exists', None)
         self.__mkdir_ep = endpoints.get('mkdir', None)
         self.__rename_dir_ep = endpoints.get('rename_dir', None)
+        self.__dir_lock_ep = endpoints.get('dir_lock', None)
+
 
         session = TCPKeepAliveSession()
 
@@ -111,3 +116,9 @@ class DAGRHTTPIo(DAGRIo):
         else:
             self.rename_dir = lambda dir_name=None, src=None, new_dir_name=None, dest=None: http_rename_dir(
                 session, self.__rename_dir_ep, dir_path=self.rel_dir_name, dir_name=get_dir_name(dir_name, src), new_dir_name=get_new_dir_name(new_dir_name, dest))
+
+        if self.__dir_lock_ep is None:
+            logger.warning('No dir lock endpoint configured')
+        else:
+            self.lock = lambda : http_lock_dir(session, self.__dir_lock_ep, dir_path=self.rel_dir_name)
+            self.release_lock = lambda : http_release_lock(session, self.__dir_lock_ep, dir_path=self.rel_dir_name)

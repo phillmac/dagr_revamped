@@ -17,7 +17,7 @@ from requests import adapters as req_adapters
 from requests import session as req_session
 from requests_toolbelt import MultipartEncoder
 
-from .exceptions import DagrException
+from .exceptions import DagrException, DagrCacheLockException
 
 logger = logging.getLogger(__name__)
 
@@ -492,6 +492,19 @@ def http_mkdir(session, endpoint, dir_path, dir_name):
 
 def http_rename_dir(session, endpoint, dir_path, dir_name, new_dir_name):
     return http_send_json(session, endpoint, method='PATCH', path=dir_path, itemname=dir_name, new_itemname=new_dir_name)
+
+def http_lock_dir(session, endpoint, dir_path):
+    if http_fetch_json(session, endpoint, path=dir_path)['locked']:
+        raise DagrCacheLockException()
+    return http_post_json(session, endpoint, path=dir_path)
+
+
+def http_release_lock(session, endpoint, dir_path):
+    return http_send_json(session, endpoint, method='DELETE', path=dir_path)
+
+
+def http_refresh_lock(session, endpoint, dir_path):
+    return http_send_json(session, endpoint, method='PATCH', path=dir_path)
 
 
 def get_html_name(page):

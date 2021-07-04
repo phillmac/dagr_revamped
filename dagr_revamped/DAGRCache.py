@@ -57,8 +57,8 @@ class DAGRCache():
     def __init__(self, dagr_config, cache_io, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
         self.dagr_config = dagr_config
         self.__cache_io = cache_io
-        self.__lock = None
-        self.__lock_path = None
+        # self.__lock = None
+        # self.__lock_path = None
         self.__warn_not_found = warn_not_found
         config_preload_fileslist_policy = self.dagr_config.get(
             'dagr.cache', 'preload_fileslist_policy')
@@ -134,7 +134,7 @@ class DAGRCache():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cache_io.release_lock()
-            
+
 
     def files_gen(self):
         if self.__files_list is None:
