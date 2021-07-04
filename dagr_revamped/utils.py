@@ -465,6 +465,8 @@ def http_post_file_multipart(session, endpoint, dir_path, filename, content):
 
 
 def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=True):
+    if isinstance(content, set):
+        content = list(content)
     buffer = BytesIO()
     compressor = gzip.GzipFile(fileobj=buffer, mode="w")
     json.dump({'path': dir_path, 'filename': fname,
