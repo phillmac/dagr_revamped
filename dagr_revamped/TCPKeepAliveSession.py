@@ -31,7 +31,7 @@ class TCPKeepAliveValidationMethods:
         # TCP Keep Alive Probes for different platforms
         platform = sys.platform
         if not getattr(conn, 'sock', None):  # AppEngine might not have  `.sock`
-            if conn.sock is None: # HTTPS _validate_conn calls conn.connect() already HTTP doesn't
+            if conn.sock is None:  # HTTPS _validate_conn calls conn.connect() already HTTP doesn't
                 conn.connect()
         # TCP Keep Alive Probes for Linux
         if platform == 'linux' and hasattr(socket, "TCP_KEEPIDLE") and hasattr(socket, "TCP_KEEPINTVL") and hasattr(socket, "TCP_KEEPCNT"):
@@ -123,13 +123,13 @@ class TCPKeepAliveHttpAdapter(HTTPAdapter):
 
 
 class TCPKeepAliveSession(Session):
-    def __init__(self, max_poolsize=100):
+    def __init__(self, max_poolsize=100, total_retries=5):
         super().__init__()
         self.mount('https://', TCPKeepAliveHttpAdapter(
             max_retries=Retry(
-                total=5,
+                total=total_retries,
                 backoff_factor=0.5,
-                status_forcelist=[403, 500]
+                status_forcelist=[500, 502, 504]
             ),
             pool_connections=max_poolsize,
             pool_maxsize=max_poolsize
@@ -139,7 +139,7 @@ class TCPKeepAliveSession(Session):
             max_retries=Retry(
                 total=5,
                 backoff_factor=0.5,
-                status_forcelist=[403, 500]
+                status_forcelist=[500, 502, 504]
             ),
             pool_connections=max_poolsize,
             pool_maxsize=max_poolsize

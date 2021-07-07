@@ -14,9 +14,9 @@ from time import sleep as time_sleep
 from mechanicalsoup import StatefulBrowser
 from requests import Request
 from requests import adapters as req_adapters
-from requests import session as req_session
+# from requests import session as req_session
 from requests_toolbelt import MultipartEncoder
-
+from .TCPKeepAliveSession import TCPKeepAliveSession
 from .exceptions import DagrException, DagrCacheLockException
 
 logger = logging.getLogger(__name__)
@@ -320,12 +320,12 @@ def create_browser(mature=False, user_agent=None):
         'Mozilla/5.0 (Windows; U; Windows NT 6.1; pl; rv:1.9.1)'
         ' Gecko/20090624 Firefox/3.5 (.NET CLR 3.5.30729)'
     )
-    session = req_session()
+    session = TCPKeepAliveSession()
     session.headers.update({'Referer': 'https://www.deviantart.com/'})
 
     if mature:
         session.cookies.update({'agegate_state': '1'})
-    session.mount('https://', req_adapters.HTTPAdapter(max_retries=3))
+    # session.mount('https://', req_adapters.HTTPAdapter(max_retries=3))
 
     if user_agent is None:
         user_agent = choice(user_agents)

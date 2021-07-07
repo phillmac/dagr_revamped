@@ -4,10 +4,7 @@ import threading
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
-
+from .TCPKeepAliveSession import TCPKeepAliveSession
 __logging_ready = threading.Event()
 __buffered_records = {}
 
@@ -121,33 +118,13 @@ class DagrHTTPHandler(logging.Handler):
         self.__backup_count = backup_count
         self.__frmt = frmt
         self.MAX_POOLSIZE = 100
-        self.__session = requests.Session()
+        self.__session = TCPKeepAliveSession()
         self.__filtered_modules = filtered_modules
         self.__filtered_keys = filtered_keys
 
         self.__session.headers.update({
             'Content-Type': 'application/json'
         })
-
-        self.__session.mount('https://', HTTPAdapter(
-            max_retries=Retry(
-                total=5,
-                backoff_factor=0.5,
-                status_forcelist=[403, 500]
-            ),
-            pool_connections=self.MAX_POOLSIZE,
-            pool_maxsize=self.MAX_POOLSIZE
-        ))
-
-        self.__session.mount('http://', HTTPAdapter(
-            max_retries=Retry(
-                total=5,
-                backoff_factor=0.5,
-                status_forcelist=[403, 500]
-            ),
-            pool_connections=self.MAX_POOLSIZE,
-            pool_maxsize=self.MAX_POOLSIZE
-        ))
 
         super().__init__()
         self.create_remote()
