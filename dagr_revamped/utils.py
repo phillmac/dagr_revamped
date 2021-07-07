@@ -417,11 +417,16 @@ def http_encode_multipart(dir_path, filename, content):
     )
 
 
-def http_fetch_json(session, endpoint, **kwargs):
-    resp = session.get(
-        endpoint, json=kwargs)
-    resp.raise_for_status()
-    return resp.json()
+def http_fetch_json(session, endpoint, log_errors=False, **kwargs):
+    try:
+        resp = session.get(
+            endpoint, json=kwargs)
+        resp.raise_for_status()
+        return resp.json()
+    except:
+        if log_errors:
+            logger.exception('Error while fetching json')
+        raise
 
 
 def http_post_json(session, endpoint, **kwargs):
@@ -464,7 +469,7 @@ def http_post_file_multipart(session, endpoint, dir_path, filename, content):
     return http_post_raw(session, endpoint, data=m, headers={'Content-Type': m.content_type})
 
 
-def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=True):
+def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=True, log_errors=False):
     if isinstance(content, set):
         content = list(content)
     buffer = BytesIO()
@@ -473,7 +478,12 @@ def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=T
                'content': content, 'do_backup': do_backup}, TextIOWrapper(compressor))
     buffer.seek(0)
     headers = {'Content-Type': 'application/gzip'}
-    return http_post_raw(session, endpoint, headers=headers, data=buffer)
+    try:
+        return http_post_raw(session, endpoint, headers=headers, data=buffer)
+    except:
+        if log_errors:
+            logger.exception('Error while posting json')
+        raise
 
 
 def http_exists(session, endpoint, dir_path, itemname, update_cache=None):

@@ -64,14 +64,14 @@ class DAGRHTTPIo(DAGRIo):
         if self.__load_json_ep is None:
             logger.warning('No load json endpoint configured')
         else:
-            self.load_json = lambda fname: http_fetch_json(
-                session, self.__load_json_ep,  path=self.rel_dir_name, filename=fname)
+            self.load_json = lambda fname, log_errors=True: http_fetch_json(
+                session, self.__load_json_ep,  path=self.rel_dir_name, filename=fname, log_errors=log_errors)
 
         if self.__save_json_ep is None:
             logger.warning('No save json endpoint configured')
         else:
-            self.save_json = lambda fname, content, do_backup=True: http_post_file_json(
-                session, self.__save_json_ep, self.rel_dir_name, fname, content, do_backup)
+            self.save_json = lambda fname, content, do_backup=True, log_errors=True: http_post_file_json(
+                session, self.__save_json_ep, self.rel_dir_name, fname, content, do_backup, log_errors=log_errors)
 
         if self.__replace_ep is None:
             logger.warning('No replace endpoint configured')

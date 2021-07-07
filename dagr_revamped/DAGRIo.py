@@ -67,10 +67,10 @@ class DAGRIo():
     def list_dir(self):
         return (i.name for i in scandir(self.__base_dir))
 
-    def load_json(self, fname):
+    def load_json(self, fname, log_errors=None):
         return load_json(self.__base_dir.joinpath(fname))
 
-    def save_json(self, fname, content, do_backup=True):
+    def save_json(self, fname, content, do_backup=True, log_errors=None):
         return save_json(self.__base_dir.joinpath(fname), content)
 
     def exists(self, fname=None, dest=None, subdir=None, update_cache=None):
@@ -178,7 +178,7 @@ class DAGRIo():
         except (portalocker.exceptions.LockException, portalocker.exceptions.AlreadyLocked, OSError) as ex:
             logger.warning(f"Skipping locked directory {self.base_dir}")
             raise DagrCacheLockException(ex)
-    
+
     def release_lock(self):
         self.__lock.release()
         if self.__lock._acquire_count == 0:
