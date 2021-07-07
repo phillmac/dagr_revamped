@@ -112,7 +112,7 @@ class SeleniumBrowser():
             staleness_of(element), message=message)
 
     def do_login(self):
-        if self.__login_policy == 'disable':
+        if self.__login_policy == 'disable' or self.__login_policy == 'prohibit':
             logger.warning('Ignoring login request')
             return
         if not self.__driver.current_url in self.__login_url:
