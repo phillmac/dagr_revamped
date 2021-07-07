@@ -1,21 +1,23 @@
 import logging
 import re
 import urllib
-from dagr_revamped.utils import sleep
+from pprint import pprint
 
 from bs4 import BeautifulSoup
 from dagr_revamped.exceptions import DagrException
 from dagr_revamped.plugin import DagrImportError
 from dagr_revamped.utils import create_browser as utils_create_browser
+from dagr_revamped.utils import sleep
 
 from .Response import Response
 
 try:
     from selenium import webdriver
+    from selenium.common.exceptions import (NoSuchElementException,
+                                            WebDriverException)
     from selenium.webdriver.common.keys import Keys
     from selenium.webdriver.support.expected_conditions import staleness_of
     from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.common.exceptions import WebDriverException
 except ModuleNotFoundError:
     raise DagrImportError('Required package selenium not available')
 
@@ -124,10 +126,14 @@ class SeleniumBrowser():
 
         if (not user) or (not passwd):
             raise Exception('Username or password not configured')
-
-        self.__driver.find_element_by_id('username').send_keys(user)
-        self.__driver.find_element_by_id('password').send_keys(passwd)
-        self.__driver.find_element_by_id('loginbutton').send_keys(Keys.RETURN)
+        try:
+            self.__driver.find_element_by_id('username').send_keys(user)
+            self.__driver.find_element_by_id('password').send_keys(passwd)
+            self.__driver.find_element_by_id(
+                'loginbutton').send_keys(Keys.RETURN)
+        except NoSuchElementException:
+            pprint(self.get_current_page().prettify())
+            raise
         while self.__driver.current_url in self.__login_url:
             self.wait_ready()
 
@@ -240,7 +246,8 @@ class SeleniumBrowser():
         webdriver.ActionChains(self.__driver).move_to_element(elem).perform()
 
     def click_element(self, elem):
-        webdriver.ActionChains(self.__driver).move_to_element(elem).click().perform()
+        webdriver.ActionChains(self.__driver).move_to_element(
+            elem).click().perform()
 
     def quit(self):
         try:
