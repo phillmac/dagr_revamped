@@ -506,7 +506,9 @@ def http_rename_dir(session, endpoint, dir_path, dir_name, new_dir_name):
     return http_send_json(session, endpoint, method='PATCH', path=dir_path, itemname=dir_name, new_itemname=new_dir_name)
 
 def http_lock_dir(session, endpoint, dir_path):
-    if http_fetch_json(session, endpoint, path=dir_path)['locked']:
+    result = http_fetch_json(session, endpoint, path=dir_path)
+    logger.log(level=15, msg=f"Path: {dir_path}, result: {result}")
+    if result['locked']:
         raise DagrCacheLockException()
     return http_post_json(session, endpoint, path=dir_path)
 
