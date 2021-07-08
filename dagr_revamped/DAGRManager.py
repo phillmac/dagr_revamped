@@ -8,6 +8,7 @@ from .lib import DAGR
 
 logger = logging.getLogger(__name__)
 
+from threading import Event
 
 class DAGRManager():
     def __init__(self, config=None):
@@ -19,10 +20,18 @@ class DAGRManager():
         self.__mode = None
         self.__stop_check = None
         self.__hostname = get_hostname().lower()
+        self.__session_bad = Event()
+
+    @property
+    def session_ok(self):
+        return not self.__session_bad.is_set()
 
     @property
     def mode(self):
         return self.__mode
+
+    def session_bad(self):
+        self.__session_bad.set()
 
     def get_config(self):
         return self.__config
