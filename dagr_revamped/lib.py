@@ -729,7 +729,7 @@ class DAGRDeviantResolver():
             return deviant, group
         except:
             self.__logger.log(
-                level=5, msg='Unable to get deviant info', exc_info=True)
+                level=15, msg='Unable to get deviant info', exc_info=True)
         raise DagrException('Unable to get deviant info')
 
 
