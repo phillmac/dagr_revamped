@@ -127,10 +127,10 @@ collect_links(arguments[0])
                 collected = self.collect_pages_mval_id(
                     mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
                 if len(collected - pages) > 0:
-                    sleep_time = self.__config.get('page_sleep_time', 15)
+                    sleep_time = self.__config.get('collect_sleep_time_long', 15)
                     pages.update(collected)
                 else:
-                    sleep_time = self.__config.get('page_sleep_time', 5)
+                    sleep_time = self.__config.get('collect_sleep_time_short', 5)
                 self.__logger.info(f"URL count {len(pages)}")
                 pd_st = time()
                 try:
