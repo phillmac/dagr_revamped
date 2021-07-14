@@ -117,10 +117,15 @@ class DAGRBaseConf():
 
 def get_os_options(base_key, keys, defaults=None):
     options = {} if defaults is None else defaults
+    dagr_log(__name__, 5, f'Base key {base_key}')
     for k in keys:
-        value = os.environ.get(f"{base_key}.{k}".lower(), None)
+        var_name = f"{base_key}.{k}".lower()
+        dagr_log(__name__, 5, f'var_name {var_name}')
+        value = os.environ.get(var_name, None)
+        dagr_log(__name__, 5, f'value {value}')
         if not value is None:
             options[k.lower()] = value
+    dagr_log(__name__, 5, f'options {options}')
     return options
 
 
@@ -348,7 +353,7 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr.Logging':  get_os_options('Dagr.Logging', ['Level']),
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Resolver', 'Crawler', 'Processor', 'Crawler_Cache', 'Io']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
-            'Enabled', 'Webdriver_Mode', 'Webdriver_URL', 'Webdriver_Max_Tries' 'Driver_Path', 'Full_Crawl', 'Login_Policy', 'OOM_Max_Pages',
+            'Enabled', 'Webdriver_Mode', 'Webdriver_URL', 'Webdriver_Max_Tries', 'Driver_Path', 'Full_Crawl', 'Login_Policy', 'OOM_Max_Pages',
             'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Cache_Type', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout', 'Unload_Cache_Policy', 'QueueMan_Fetch_Url', 'QueueMan_Enqueue_Url'
         ]),
         'DeviantArt': get_os_options('DeviantArt', ['Username', 'Password'])
@@ -456,7 +461,8 @@ class DAGRConfig(DAGRBaseConf):
             'getjson': lambda: self.show_loaded('json'),
             'getoutputdir': lambda: print(self.output_dir) or True,
             'getloglevel': lambda: print('Log level:', self.map_log_level()) or True,
-            'set': self.set_config
+            'set': self.set_config,
+            'overrides': lambda: pprint(self.OVERRIDES) or True
         }
         cmd = self.__arguments.get('conf_cmd')
         mapped = conf_cmd_maping.get(cmd)
