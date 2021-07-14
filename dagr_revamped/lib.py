@@ -32,6 +32,9 @@ from .utils import (StatefulBrowser, compare_size, convert_queue,
                     update_d)
 
 
+logger = logging.getLogger(__name__)
+
+
 class DAGR():
     def __init__(self, **kwargs):
         self.__logger = logging.getLogger(__name__)
@@ -442,8 +445,9 @@ class DAGR():
         return resolver.resolve(deviant)
 
     def process_deviations(self, cache, pages, **kwargs):
-        self.__logger.log(level=4, msg=pformat(kwargs))
+        logger.log(level=4, msg=pformat(kwargs))
         dl_delay = self.download_delay()
+        logger.info(f"Download delay: {dl_delay}")
         disable_filter = kwargs.get('disable_filter', False)
         verify_exists = kwargs.get('verify_exists', None)
         callback = kwargs.get('callback', None)
@@ -454,10 +458,10 @@ class DAGR():
         overwrite = self.overwrite()
 
         if not (overwrite or self.fixmissing or self.verifybest or disable_filter):
-            self.__logger.log(level=15, msg='Filtering links')
+            logger.log(level=15, msg='Filtering links')
             pages = cache.filter_links(pages)
         else:
-            self.__logger.log(level=5, msg=pformat({
+            logger.log(level=5, msg=pformat({
                 'overwrite': overwrite,
                 'fixmissing': self.fixmissing,
                 'verifybest': self.verifybest,
@@ -465,19 +469,19 @@ class DAGR():
             }))
 
         page_count = len(pages)
-        self.__logger.log(
+        logger.log(
             level=15, msg='Total deviations to download: {}'.format(page_count))
         fileslist_preload_threshold = self.config.get(
             'dagr.cache', 'fileslist_preload_threshold')
-        self.__logger.log(
+        logger.log(
             level=15, msg=f"fileslist preload threshold: {fileslist_preload_threshold}")
         if isinstance(fileslist_preload_threshold, int) and fileslist_preload_threshold > 0:
             if page_count < fileslist_preload_threshold:
                 cache.preload_fileslist_policy = 'disable'
-                self.__logger.log(
+                logger.log(
                     level=15, msg='Deviations count below fileslist preload threshold')
             else:
-                self.__logger.log(
+                logger.log(
                     level=15, msg='Deviations count meets fileslist preload threshold')
                 cache.preload_fileslist_policy = 'enable'
         progress = self.progress()
@@ -487,7 +491,7 @@ class DAGR():
                 cache.save()
             if not self.keep_running(check_stop=count % progress == 0):
                 return
-            self.__logger.info(
+            logger.info(
                 'Processing deviation {} of {} ( {} )'.format(count, len(pages), link))
             dp = self.deviantion_pocessor(
                 self, cache, link, verify_exists=verify_exists)
@@ -520,7 +524,7 @@ class DAGR():
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
                 if [re for re in self.retry_exception_names() if except_name in re]:
-                    self.__logger.warning('Get exception', exc_info=True)
+                    logger.warning('Get exception', exc_info=True)
                     if not except_name in tries:
                         tries[except_name] = 0
                     tries[except_name] += 1
