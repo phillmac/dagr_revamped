@@ -97,7 +97,7 @@ class DAGR():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.pl_manager.shutdown()
-        if self.browser.quit:
+        if self.browser and self.browser.quit:
             self.browser.quit()
 
     def init_mimetypes(self):
