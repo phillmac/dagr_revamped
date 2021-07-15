@@ -4,7 +4,12 @@ import threading
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+from requests.exceptions import ConnectionError
+
+from dagr_revamped.utils import sleep
+
 from .TCPKeepAliveSession import TCPKeepAliveSession
+
 __logging_ready = threading.Event()
 __buffered_records = {}
 
@@ -141,19 +146,24 @@ class DagrHTTPHandler(logging.Handler):
     def emit(self, record):
         self.post_record(record)
 
-    def post_record(self, record, retry=False):
+    def post_record(self, record, retry=False, connection_retry=False):
         if not record.name in self.__filtered_modules:
             print(record.name, record.module)
             # print(record.__dict__)
-
-            resp = self.__session.post(
-                f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record':
-                                                      {
-                                                          kn: record.__dict__[kn] for kn in record.__dict__.keys() if not kn in self.__filtered_keys}
-                                                      })
-            if resp.status_code == 400 and retry is False:
-                check_resp = self.__session.get(
-                    f"{self.__host}/logger/exists", json={'hostMode': self.__host_mode})
-                if check_resp.json()['exists'] is False:
-                    self.create_remote()
-                    self.post_record(record, retry=True)
+            try:
+                resp = self.__session.post(
+                    f"{self.__host}/logger/append", json={'hostMode': self.__host_mode, 'record':
+                                                          {
+                                                              kn: record.__dict__[kn] for kn in record.__dict__.keys() if not kn in self.__filtered_keys}
+                                                          })
+                if resp.status_code == 400 and retry is False:
+                    check_resp = self.__session.get(
+                        f"{self.__host}/logger/exists", json={'hostMode': self.__host_mode})
+                    if check_resp.json()['exists'] is False:
+                        self.create_remote()
+                        self.post_record(record, retry=True)
+            except ConnectionError:
+                if connection_retry:
+                    raise
+                sleep(30)
+                self.post_record(record, connection_retry=True)
