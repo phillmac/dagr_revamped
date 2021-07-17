@@ -445,7 +445,7 @@ class DAGR():
 
     def resolve_deviant(self, deviant):
         if self.__last_resolved is not None:
-            delay_needed = self.resolve_rate_limit - \
+            delay_needed = self.resolve_rate_limit() - \
                 (time() - self.__last_resolved)
             if delay_needed > 0:
                 self.__logger.log(
