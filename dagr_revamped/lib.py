@@ -453,8 +453,8 @@ class DAGR():
                 sleep(delay_needed)
 
         resolver = self.deviant_resolver(self)
-        result = resolver.resolve(deviant)
         self.__last_resolved = time()
+        result = resolver.resolve(deviant)
         return result
 
     def process_deviations(self, cache, pages, **kwargs):
