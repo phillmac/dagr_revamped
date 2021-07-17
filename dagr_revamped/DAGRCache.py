@@ -499,9 +499,6 @@ class DAGRCache():
     @ property
     def q_exclude(self):
         result = set()
-        if self.__queue is None:
-            self.__queue = self.__load_queue()
-        result.update((u.lower() for u in self.__queue))
         if self.__premium is None:
             self.__premium = self.__load_premium()
         result.update((u.lower() for u in self.__premium))
