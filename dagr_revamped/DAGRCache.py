@@ -498,18 +498,23 @@ class DAGRCache():
 
     @ property
     def q_exclude(self):
+        result = set()
         if self.__queue is None:
             self.__queue = self.__load_queue()
+        result.update((u.lower() for u in self.__queue))
         if self.__premium is None:
             self.__premium = self.__load_premium()
+        result.update((u.lower() for u in self.__premium))
         if self.__httperrors is None:
             self.__httperrors = self.__load_httperrors()
-        return set([*self.downloaded_pages, *self.existing_pages, *self.__queue, *self.__premium, *self.__httperrors])
+            errors_404 = [k for k,v in self.__httperrors.items() if v['error_code'] == 404]
+        result.update((u.lower() for u in errors_404))
+        return result
 
     def add_queue(self, page):
         if self.__queue is None:
             self.__queue = self.__load_queue()
-        if page in self.q_exclude:
+        if page.lower() in self.q_exclude:
             return
         self.__queue_stale = True
         self.__queue.append(page)
@@ -518,7 +523,8 @@ class DAGRCache():
         if self.__queue is None:
             self.__queue = self.__load_queue()
         exclude = self.q_exclude
-        enqueue = [p for p in pages if not p in exclude]
+        logger.log(level=15, msg=f"Queue exclude length is {len(exclude)}")
+        enqueue = [p for p in pages if not p.lower() in exclude]
         if enqueue:
             self.__queue_stale = True
             self.__queue += enqueue
@@ -529,7 +535,7 @@ class DAGRCache():
         if self.__queue is None:
             self.__queue = self.__load_queue()
         qcount = len(self.__queue)
-        keep = set(self.__queue) - self.q_exclude
+        keep = set(u.lower() for u in self.__queue) - self.q_exclude
         kcount = len(keep)
         delta = qcount - kcount
         if not delta == 0:
