@@ -254,7 +254,8 @@ class DAGRConfig(DAGRBaseConf):
             'Reverse': False,
             # 'RecursionLimit': 10000,
             'SaveProgress': 50,
-            'DownloadDelay': 6.00,
+            'DownloadDelay': 7.00,
+            'ResolveRateLimit': 10.00,
             'Verbose': False,
         },
         'Dagr.Bulk.Filenames': {

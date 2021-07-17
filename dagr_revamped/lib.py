@@ -73,6 +73,8 @@ class DAGR():
         self.overwrite = lambda: self.config.get('dagr', 'overwrite')
         self.progress = lambda: self.config.get('dagr', 'saveprogress')
         self.download_delay = lambda: self.config.get('dagr', 'downloaddelay')
+        self.resolve_rate_limit = lambda: self.config.get(
+            'dagr', 'resolveratelimit')
         self.retry_exception_names = lambda: (
             k for k, v in self.config.get('dagr.retry.exceptionnames').items() if v)
         self.retry_sleep_duration = lambda: self.config.get(
@@ -81,7 +83,7 @@ class DAGR():
         self.ripper = None
         self.browser = None
         self.crawler_cache = None
-        self.devation_crawler = None
+        self.deviation_crawler = None
         self.deviantion_pocessor = None
         self.deviant_resolver = None
         self.cache = None
@@ -89,6 +91,7 @@ class DAGR():
         self.stop_running = threading.Event()
         self.pl_manager = (kwargs.get('pl_manager') or PluginManager)(self)
         self.total_dl_count = 0
+        self.__last_resolved = None
         self.init_mimetypes()
         self.init_classes()
 
@@ -144,10 +147,10 @@ class DAGR():
                 self.crawler_cache = create_cache(self.io)
 
     def crawler_init(self):
-        if not self.devation_crawler:
+        if not self.deviation_crawler:
             create_crawler = self.__kwargs.get(
                 'crawler') or self.plugin_class_init('crawler', DAGRCrawler)
-            self.devation_crawler = create_crawler(self)
+            self.deviation_crawler = create_crawler(self)
 
     def ripper_init(self):
         if not self.ripper:
@@ -441,8 +444,18 @@ class DAGR():
         return folders
 
     def resolve_deviant(self, deviant):
+        if self.__last_resolved is not None:
+            delay_needed = self.resolve_rate_limit - \
+                (time() - self.__last_resolved)
+            if delay_needed > 0:
+                self.__logger.log(
+                    level=15, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
+                sleep(delay_needed)
+
         resolver = self.deviant_resolver(self)
-        return resolver.resolve(deviant)
+        result = resolver.resolve(deviant)
+        self.__last_resolved = time()
+        return result
 
     def process_deviations(self, cache, pages, **kwargs):
         logger.log(level=4, msg=pformat(kwargs))
