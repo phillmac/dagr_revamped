@@ -24,9 +24,9 @@ class DAGRHTTPIo(DAGRIo):
         return DAGRHTTPIo(base_dir, rel_dir, endpoints)
 
     def get_rel_path(self, subdir=None, dir_name=None):
-        if isinstance (dir_name, Path) and subdir.is_absolute():
+        if subdir is not None and isinstance (dir_name, Path) and subdir.is_absolute():
             raise Exception('subdir cannot be absolute')
-        if not isinstance (dir_name, str):
+        if dir_name is not None and not isinstance (dir_name, str):
             raise Exception('dir_name must be an instance of str')
 
         result = PurePosixPath(self.rel_dir)
