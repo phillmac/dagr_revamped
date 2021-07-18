@@ -504,7 +504,7 @@ class DAGRCache():
         result.update((u.lower() for u in self.__premium))
         if self.__httperrors is None:
             self.__httperrors = self.__load_httperrors()
-        errors_404 = [k for k,v in self.__httperrors.items() if v['error_code'] == 404]
+        errors_404 = [k for k,v in self.__httperrors.items() if any(e['error_code'] == 404 for e in v)]
         result.update((u.lower() for u in errors_404))
         return result
 
