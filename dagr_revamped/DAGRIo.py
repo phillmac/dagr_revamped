@@ -40,12 +40,14 @@ def get_new_dir_name(new_dir_name=None, dest=None):
 
 class DAGRIo():
     @staticmethod
-    def create(base_dir, rel_dir, _config):
+    def create(base_dir, rel_dir, config):
+        if isinstance(base_dir, PurePath):
+                base_dir=Path(base_dir)
+        if not base_dir.is_absolute():
+            base_dir=config.output_dir.joinpath(base_dir)
         return DAGRIo(base_dir, rel_dir)
 
     def __init__(self, base_dir, rel_dir):
-        if isinstance(base_dir, PurePath):
-            base_dir=Path(base_dir)
         self.__base_dir = base_dir
         self.__rel_dir = rel_dir
         self.__rel_dir_name = str(PurePosixPath(rel_dir))
