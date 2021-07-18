@@ -75,7 +75,7 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
                 logger.debug('Move subdirs not enabled')
         else:
             rel_dir = new_path
-        logger.debug(f"Base dir: {rel_dir}")
+    logger.debug(f"Base dir: {rel_dir}")
     remote_io = dagr_io.create(rel_dir, str(rel_dir), config)
     if not remote_io.dir_exists():
         remote_io.mkdir()
