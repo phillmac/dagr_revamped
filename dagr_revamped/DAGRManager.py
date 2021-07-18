@@ -49,7 +49,7 @@ class DAGRManager():
         return self.get_dagr().browser
 
     def get_crawler(self):
-        return self.get_dagr().devation_crawler
+        return self.get_dagr().deviation_crawler
 
     def get_dagr(self, **kwargs) -> DAGR:
         if self.__dagr is None:
