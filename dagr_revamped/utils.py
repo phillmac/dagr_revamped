@@ -497,7 +497,7 @@ def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=T
         raise
 
 
-def http_exists(session, endpoint, dir_path, itemname, update_cache=None):
+def http_exists(session, endpoint, dir_path, itemname=None, update_cache=None):
     return http_fetch_json(session, endpoint, path=dir_path, itemname=itemname, update_cache=update_cache)['exists']
 
 
@@ -509,7 +509,7 @@ def http_replace(session, endpoint, dir_path, fname, new_fname):
     return http_post_json(session, endpoint, path=dir_path, filename=fname, new_filename=new_fname)
 
 
-def http_mkdir(session, endpoint, dir_path, dir_name):
+def http_mkdir(session, endpoint, dir_path, dir_name=None):
     return http_post_json(session, endpoint, path=dir_path, dir_name=dir_name)
 
 
