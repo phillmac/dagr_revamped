@@ -23,10 +23,18 @@ class DAGRHTTPIo(DAGRIo):
                                key_errors=False) or {}
         return DAGRHTTPIo(base_dir, rel_dir, endpoints)
 
-    def get_rel_path(self, subdir):
-        if subdir is None:
-            return self.rel_dir
-        return str(PurePosixPath(self.rel_dir).joinpath(subdir))
+    def get_rel_path(self, subdir=None, dir_name=None):
+        if isinstance (dir_name, Path) and subdir.is_absolute():
+            raise Exception('subdir cannot be absolute')
+        if not isinstance (dir_name, str):
+            raise Exception('dir_name must be an instance of str')
+
+        result = PurePosixPath(self.rel_dir)
+        if subdir is not None:
+            result = result.joinpath(subdir)
+        if dir_name is not None:
+            result = result.joinpath(dir_name)
+        return str(result)
 
     def __init__(self, base_dir, rel_dir, endpoints):
         super().__init__(base_dir, rel_dir)
@@ -53,7 +61,7 @@ class DAGRHTTPIo(DAGRIo):
             logger.warning('No exists endpoint configured')
         else:
             self.exists = lambda fname=None, dest=None, subdir=None, update_cache=None: http_exists(
-                session, self.__exists_ep, dir_path=self.get_rel_path(subdir), itemname=get_fname(fname, dest), update_cache=update_cache)
+                session, self.__exists_ep, dir_path=self.get_rel_path(subdir=subdir), itemname=get_fname(fname, dest), update_cache=update_cache)
 
         if self.__list_dir_ep is None:
             logger.warning('No list dir endpoint configured')
@@ -89,9 +97,9 @@ class DAGRHTTPIo(DAGRIo):
             logger.warning('No write file endpoint configured')
         else:
             self.write = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
-                session, self.__write_file_ep,  self.get_rel_path(subdir), get_fname(fname, dest), content)
+                session, self.__write_file_ep,  self.get_rel_path(subdir=subdir), get_fname(fname, dest), content)
             self.write_bytes = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
-                session, self.__write_file_ep,  self.get_rel_path(subdir), get_fname(fname, dest), content)
+                session, self.__write_file_ep,  self.get_rel_path(subdir=subdir), get_fname(fname, dest), content)
 
         if self.__utime_ep is None:
             logger.warning('No utime endpoint configured')
@@ -102,14 +110,14 @@ class DAGRHTTPIo(DAGRIo):
         if self.__dir_exists_ep is None:
             logger.warning('No dir exists endpoint configured')
         else:
-            self.dir_exists = lambda dir_name = None: http_exists(
-                session, self.__dir_exists_ep, dir_path=self.rel_dir_name, itemname=dir_name)
+            self.dir_exists = lambda subdir=None, dir_name = None: http_exists(
+                session, self.__dir_exists_ep, dir_path=self.get_rel_path(subdir=subdir, dir_name=dir_name))
 
         if self.__mkdir_ep is None:
             logger.warning('No mkdir endpoint configured')
         else:
-            self.mkdir = lambda dir_name = None: http_mkdir(
-                session, self.__mkdir_ep, dir_path=self.rel_dir_name, dir_name=dir_name)
+            self.mkdir = lambda subdir=None, dir_name = None: http_mkdir(
+                session, self.__mkdir_ep, dir_path=self.get_rel_path(subdir=subdir, dir_name=dir_name))
 
         if self.__rename_dir_ep is None:
             logger.warning('No rename dir endpoint configured')
