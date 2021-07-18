@@ -627,7 +627,7 @@ class DAGRCache():
         #         logger.log(level=15, msg=f"Got lcfn gen hit {rfn} for {sn_lower}")
         #         return rfn
 
-        return None
+        # return None
 
     def prune_filename(self, fname):
         self.__files_list.discard(fname)
