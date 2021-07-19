@@ -67,28 +67,39 @@ class SeleniumBrowser():
         self.__config = config
         self.__mature = mature
         self.__login_policy = self.__config.get('login_policy')
-        logger.log(level=15, msg=f"Login policy: {self.__login_policy}")
         self.__login_url = self.__config.get(
             'login_url', [
                 'https://deviantart.com/users/login',
                 'https://www.deviantart.com/users/login'
             ])
+        self.__create_driver_policy = self.__config.get(
+            'create_driver_policy', False)
+
+        logger.log(level=15, msg=f"Login policy: {self.__login_policy}")
+        logger.log(
+            level=15, msg=f"Create driver policy: {self.__create_driver_policy}")
+
         if driver:
             self.__driver = driver
-        else:
+        elif self.__create_driver_policy not in [
+            'disabled',
+            'prohibit',
+            'on-demand-only'
+        ]:
             self.__driver = create_driver(self.__config)
-        if self.__mature:
-            self.__driver.get('https://deviantart.com')
-            self.__driver.add_cookie({
-                'name': 'agegate_state',
-                'value': '1',
-                "domain": 'deviantart.com',
-                "expires": '',
-                'path': '/',
-                'httpOnly': False,
-                'HostOnly': False,
-                'Secure': False
-            })
+
+        # if self.__mature:
+        #     self.__driver.get('https://deviantart.com')
+        #     self.__driver.add_cookie({
+        #         'name': 'agegate_state',
+        #         'value': '1',
+        #         "domain": 'deviantart.com',
+        #         "expires": '',
+        #         'path': '/',
+        #         'httpOnly': False,
+        #         'HostOnly': False,
+        #         'Secure': False
+        #     })
 
         self.__script_timeout = self.__config.get('script_timeout', 45)
         self.__driver.set_script_timeout(self.__script_timeout)
@@ -99,6 +110,17 @@ class SeleniumBrowser():
             user_agent=self.__driver.execute_script(
                 "return navigator.userAgent;")
         )
+
+    def __enter__(self):
+        if self.__driver is None:
+            if self.__create_driver_policy in ['prohibit']:
+                raise DagrException('Policy disallows creating driver')
+            self.__driver = create_driver(self.__config)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.__create_driver_policy in [None, 'keep']:
+            self.quit()
 
     def wait_ready(self):
         WebDriverWait(self.__driver, 60).until(
@@ -112,9 +134,8 @@ class SeleniumBrowser():
             staleness_of(element), message=message)
 
     def do_login(self):
-        if self.__login_policy == 'disable' or self.__login_policy == 'prohibit':
-            logger.warning('Ignoring login request')
-            return
+        if self.__login_policy == 'prohibit':
+            raise LoginDisabledError('Login policy set to prohibit')
         if not self.__driver.current_url in self.__login_url:
             self.__driver.get(next(iter(self.__login_url)))
 
@@ -136,6 +157,14 @@ class SeleniumBrowser():
             raise
         while self.__driver.current_url in self.__login_url:
             self.wait_ready()
+
+    @property
+    def login_policy(self):
+        return self.__login_policy
+
+    @property
+    def create_driver_policy(self):
+        return self.__create_driver_policy
 
     @property
     def session(self):
@@ -167,9 +196,9 @@ class SeleniumBrowser():
         self.__driver.get(url)
         self.wait_ready()
         if self.__driver.current_url in self.__login_url:
+            if self.__login_policy in ['disable', 'prohibit']:
+                raise LoginDisabledError('Automatic login disabled')
             logger.info('Detected login required')
-            if self.__login_policy == 'disable':
-                raise LoginDisabledError('Login disabled by config')
             self.do_login()
             if self.__driver.current_url != url:
                 self.__driver.get(url)
@@ -178,10 +207,9 @@ class SeleniumBrowser():
         self.__open(url)
         found = self.get_current_page().find('a', {'href': self.__login_url})
         if found:
-            logger.info('Detected login required')
-            if self.__login_policy == 'disable':
-                raise LoginDisabledError('Login disabled by config')
-            self.do_login()
+            if self.__login_policy not in ['disable', 'prohibit']:
+                logger.info('Detected login required')
+                self.do_login()
         if self.__driver.current_url != url:
             self.__driver.get(url)
 
@@ -252,6 +280,7 @@ class SeleniumBrowser():
     def quit(self):
         try:
             self.__driver.quit()
+            self.__driver = None
         except WebDriverException:
             logger.exception('Unable to close browser session')
 
