@@ -1,6 +1,7 @@
 import logging
 import re
 import urllib
+from contextlib import contextmanager
 from pprint import pprint
 
 from bs4 import BeautifulSoup
@@ -121,6 +122,21 @@ class SeleniumBrowser():
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.__create_driver_policy in [None, 'keep']:
             self.quit()
+
+    @contextmanager
+    def get_r_context(self):
+        if self.__driver:
+            yield
+            return
+
+        if self.__create_driver_policy in ['prohibit']:
+                raise DagrException('Policy disallows creating driver')
+        self.__driver = create_driver(self.__config)
+        try:
+            yield
+        finally:
+            if not self.__create_driver_policy in [None, 'keep']:
+                self.quit()
 
     def wait_ready(self):
         WebDriverWait(self.__driver, 60).until(
