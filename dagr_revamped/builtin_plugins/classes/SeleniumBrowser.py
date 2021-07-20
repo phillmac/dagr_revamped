@@ -25,44 +25,6 @@ except ModuleNotFoundError:
 logger = logging.getLogger(__name__)
 
 
-def create_driver(config):
-    driver = None
-    options = webdriver.ChromeOptions()
-    options.add_argument('--disable-web-security')
-    options.add_argument("--start-maximized")
-    # options.add_argument("--no-sandbox") #See: https://bugs.chromium.org/p/chromedriver/issues/detail?id=2473
-    # options.add_argument("--disable-dev-shm-usage")
-    # options.add_argument("--remote-debugging-port=9222")
-    capabilities = {**options.to_capabilities(), **
-                    config.get('capabilities', {})}
-    ce_url = config.get('webdriver_url', None)
-    webdriver_mode = config.get('webdriver_mode')
-    if webdriver_mode == 'local':
-        logger.info('Starting selenium in local mode')
-        driver_path = config.get('driver_path', None)
-        params = {'desired_capabilities': capabilities}
-        if driver_path:
-            params['executable_path'] = driver_path
-        driver = webdriver.Chrome(**params)
-    elif webdriver_mode == 'remote':
-        max_tries = config.get('webdriver_max_tries', 1)
-        logger.info('Starting selenium in remote mode')
-        tries = 0
-        while driver is None:
-            try:
-                driver = webdriver.Remote(
-                    command_executor=ce_url,
-                    desired_capabilities=capabilities)
-            except:
-                tries += 1
-                if tries >= max_tries:
-                    raise
-                sleep(5)
-    script_timeout = config.get('script_timeout', 45)
-    driver.set_script_timeout(script_timeout)
-    logger.info(f"Async script timeout: {script_timeout}")
-    return driver
-
 
 class SeleniumBrowser():
     def __init__(self, app_config, config, mature, driver=None):
@@ -89,10 +51,10 @@ class SeleniumBrowser():
             'prohibit',
             'on-demand-only'
         ]:
-            self.__driver = create_driver(self.__config)
+            self.__create_driver(self.__config)
         else:
             self.__driver = None
-
+            self.__browser = None
         # if self.__mature:
         #     self.__driver.get('https://deviantart.com')
         #     self.__driver.add_cookie({
@@ -106,22 +68,59 @@ class SeleniumBrowser():
         #         'Secure': False
         #     })
 
+    def __enter__(self):
+        if self.__driver is None:
+            if self.__create_driver_policy in ['prohibit']:
+                raise DagrException('Policy disallows creating driver')
+            self.__create_driver()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.__create_driver_policy in [None, 'keep']:
+            self.quit()
+
+    def __create_driver(self):
+        options = webdriver.ChromeOptions()
+        options.add_argument('--disable-web-security')
+        options.add_argument("--start-maximized")
+        # options.add_argument("--no-sandbox") #See: https://bugs.chromium.org/p/chromedriver/issues/detail?id=2473
+        # options.add_argument("--disable-dev-shm-usage")
+        # options.add_argument("--remote-debugging-port=9222")
+        capabilities = {**options.to_capabilities(), **
+                        self.__config.get('capabilities', {})}
+        ce_url = self.__config.get('webdriver_url', None)
+        webdriver_mode = self.__config.get('webdriver_mode')
+        if webdriver_mode == 'local':
+            logger.info('Starting selenium in local mode')
+            driver_path = self.__config.get('driver_path', None)
+            params = {'desired_capabilities': capabilities}
+            if driver_path:
+                params['executable_path'] = driver_path
+            self.__driver = webdriver.Chrome(**params)
+        elif webdriver_mode == 'remote':
+            max_tries = self.__config.get('webdriver_max_tries', 1)
+            logger.info('Starting selenium in remote mode')
+            tries = 0
+            while self.__driver is None:
+                try:
+                    self.__driver = webdriver.Remote(
+                        command_executor=ce_url,
+                        desired_capabilities=capabilities)
+                except:
+                    tries += 1
+                    if tries >= max_tries:
+                        raise
+                    sleep(5)
+        script_timeout = self.__config.get('script_timeout', 45)
+        self.__driver.set_script_timeout(script_timeout)
+        logger.info(f"Async script timeout: {script_timeout}")
+
         self.__browser = utils_create_browser(
             mature=self.__mature,
             user_agent=self.__driver.execute_script(
                 "return navigator.userAgent;")
         )
 
-    def __enter__(self):
-        if self.__driver is None:
-            if self.__create_driver_policy in ['prohibit']:
-                raise DagrException('Policy disallows creating driver')
-            self.__driver = create_driver(self.__config)
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if not self.__create_driver_policy in [None, 'keep']:
-            self.quit()
 
     @contextmanager
     def get_r_context(self):
@@ -131,7 +130,7 @@ class SeleniumBrowser():
 
         if self.__create_driver_policy in ['prohibit']:
                 raise DagrException('Policy disallows creating driver')
-        self.__driver = create_driver(self.__config)
+        self.__create_driver()
         try:
             yield
         finally:
