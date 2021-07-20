@@ -88,6 +88,8 @@ class SeleniumBrowser():
             'on-demand-only'
         ]:
             self.__driver = create_driver(self.__config)
+        else:
+            self.__driver = None
 
         # if self.__mature:
         #     self.__driver.get('https://deviantart.com')
