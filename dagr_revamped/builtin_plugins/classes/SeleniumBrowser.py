@@ -51,7 +51,7 @@ class SeleniumBrowser():
             'prohibit',
             'on-demand-only'
         ]:
-            self.__create_driver(self.__config)
+            self.__create_driver()
         else:
             self.__driver = None
             self.__browser = None
@@ -294,8 +294,9 @@ class SeleniumBrowser():
 
     def quit(self):
         try:
-            self.__driver.quit()
-            self.__driver = None
+            if self.__driver is not None:
+                self.__driver.quit()
+                self.__driver = None
         except WebDriverException:
             logger.exception('Unable to close browser session')
 
