@@ -11,4 +11,5 @@ ports:
     visibility: private
 tasks:
 - command: >
-    pip install -e .
+    pip install -e . \
+    && source scripts/aliases.sh
