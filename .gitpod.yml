@@ -14,4 +14,5 @@ tasks:
     command: >
       pip install -r dev-requirements.txt &&
       pip install -e .
-  - command: source scripts/aliases.sh
+  - command: >
+      source scripts/aliases.sh
