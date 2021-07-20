@@ -10,7 +10,8 @@ ports:
     onOpen: ignore
     visibility: private
 tasks:
-- command: >
-    pip install -r dev-requirements.txt \
-    && pip install -e . \
-    && source scripts/aliases.sh
+  - init: install deps
+    command: >
+      pip install -r dev-requirements.txt &&
+      pip install -e .
+  - command: source scripts/aliases.sh
