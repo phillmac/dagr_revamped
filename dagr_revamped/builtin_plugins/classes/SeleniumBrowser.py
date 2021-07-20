@@ -58,7 +58,9 @@ def create_driver(config):
                 if tries >= max_tries:
                     raise
                 sleep(5)
-
+    script_timeout = config.get('script_timeout', 45)
+    driver.set_script_timeout(script_timeout)
+    logger.info(f"Async script timeout: {script_timeout}")
     return driver
 
 
@@ -103,10 +105,6 @@ class SeleniumBrowser():
         #         'HostOnly': False,
         #         'Secure': False
         #     })
-
-        self.__script_timeout = self.__config.get('script_timeout', 45)
-        self.__driver.set_script_timeout(self.__script_timeout)
-        logger.info(f"Async script timeout: {self.__script_timeout}")
 
         self.__browser = utils_create_browser(
             mature=self.__mature,
