@@ -256,7 +256,7 @@ class DAGRCache():
                 except:
                     logger.warn(
                         'Unable to fetch filenames preload list', exc_info=True)
-
+        logger.log(level=15, msg='Loading filenames')
         files_in_dir.update(next(self.__load_cache(
             filenames=self.fn_name,
             warn_not_found=True if self.__warn_not_found is None else self.__warn_not_found,
@@ -265,19 +265,19 @@ class DAGRCache():
         return files_in_dir
 
     def __load_artists(self):
-        logger.log(level=4, msg='Loading artists')
+        logger.log(level=15, msg='Loading artists')
         return next(self.__load_cache(
             artists=self.artists_name,
             warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
 
     def __load_httperrors(self):
-        logger.log(level=4, msg='Loading http errors')
+        logger.log(level=15, msg='Loading http errors')
         return next(self.__load_cache(
             httperrors=self.httperrors_name,
             warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
 
     def __load_lastcrawled(self):
-        logger.log(level=4, msg='Loading last crawled')
+        logger.log(level=15, msg='Loading last crawled')
         return next(self.__load_cache(
             last_crawled=self.crawled_name,
             warn_not_found=False if self.__warn_not_found is None else self.__warn_not_found))
