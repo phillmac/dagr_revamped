@@ -31,6 +31,8 @@ class SeleniumBrowser():
         self.__app_config = app_config
         self.__config = config
         self.__mature = mature
+        self.__driver = None
+        self.__browser = None
         self.__login_policy = self.__config.get('login_policy')
         self.__login_url = self.__config.get(
             'login_url', [
@@ -52,9 +54,7 @@ class SeleniumBrowser():
             'on-demand-only'
         ]:
             self.__create_driver()
-        else:
-            self.__driver = None
-            self.__browser = None
+
         # if self.__mature:
         #     self.__driver.get('https://deviantart.com')
         #     self.__driver.add_cookie({
