@@ -188,7 +188,7 @@ class DAGRCache():
     def __load_cache(self, use_backup=True, warn_not_found=True, default=None, **kwargs):
         def filenames():
             logger.log(level=15, msg='Building filenames cache')
-            files_list_raw = self.base_dir.glob('*')
+            files_list_raw = self.__cache_io.list_dir()
             return [fn.name for fn in files_list_raw]
         cache_defaults = {
             'settings': lambda: self.dagr_config.get('dagr.cache'),
