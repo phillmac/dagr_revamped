@@ -189,7 +189,7 @@ class DAGRCache():
         def filenames():
             logger.log(level=15, msg='Building filenames cache')
             files_list_raw = self.__cache_io.list_dir()
-            return [fn.name for fn in files_list_raw]
+            return files_list_raw
         cache_defaults = {
             'settings': lambda: self.dagr_config.get('dagr.cache'),
             'filenames': filenames,
@@ -257,11 +257,11 @@ class DAGRCache():
                     logger.warn(
                         'Unable to fetch filenames preload list', exc_info=True)
         logger.log(level=15, msg='Loading filenames')
-        files_in_dir.update(next(self.__load_cache(
+        files_in_dir.update(fn for fn in next(self.__load_cache(
             filenames=self.fn_name,
             warn_not_found=True if self.__warn_not_found is None else self.__warn_not_found,
             default=filenames_default
-        )))
+        )) if not fn in self.__excluded_fnames)
         return files_in_dir
 
     def __load_artists(self):
