@@ -83,6 +83,7 @@ class SeleniumBrowser():
         options = webdriver.ChromeOptions()
         options.add_argument('--disable-web-security')
         options.add_argument("--start-maximized")
+        options.add_argument("--disable-gpu")
         # options.add_argument("--no-sandbox") #See: https://bugs.chromium.org/p/chromedriver/issues/detail?id=2473
         # options.add_argument("--disable-dev-shm-usage")
         # options.add_argument("--remote-debugging-port=9222")
