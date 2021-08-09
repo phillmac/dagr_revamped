@@ -446,8 +446,10 @@ def http_post_raw(session, endpoint, **kwargs):
     except:
         logger.error(resp_json or resp.text)
         raise
-    if resp_json == 'ok':
+    if isinstance(resp_json, str) and resp_json == 'ok':
         return True
+    if isinstance(resp_json, dict) and resp_json['status'] == 'ok':
+        return resp_json.get('result', None)
     raise DAGRException(resp_json or resp.text)
 
 
