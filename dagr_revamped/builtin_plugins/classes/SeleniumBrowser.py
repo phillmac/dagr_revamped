@@ -164,8 +164,8 @@ class SeleniumBrowser():
         if (not user) or (not passwd):
             raise Exception('Username or password not configured')
         try:
-            self.__driver.find_element_by_id('username').send_keys(user)
-            self.__driver.find_element_by_id('password').send_keys(passwd)
+            self.__driver.find_element_by_name('username').send_keys(user)
+            self.__driver.find_element_by_name('password').send_keys(passwd)
             self.__driver.find_element_by_id(
                 'loginbutton').send_keys(Keys.RETURN)
         except NoSuchElementException:
