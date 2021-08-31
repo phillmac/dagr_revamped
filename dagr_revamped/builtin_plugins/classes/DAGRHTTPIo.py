@@ -99,7 +99,7 @@ class DAGRHTTPIo(DAGRIo):
             self.write = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
                 session, self.__write_file_ep,  self.get_rel_path(subdir=subdir), get_fname(fname, dest), content)
             self.write_bytes = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
-                session, self.__write_file_ep,  self.get_rel_path(subdir=subdir), get_fname(fname, dest), content)
+                session, self.__write_file_ep,  self.get_rel_path(subdir=subdir), get_fname(fname, dest), content).get('size')
 
         if self.__utime_ep is None:
             logger.warning('No utime endpoint configured')
