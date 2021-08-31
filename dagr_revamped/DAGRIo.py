@@ -66,6 +66,13 @@ class DAGRIo():
     def rel_dir_name(self):
         return self.__rel_dir_name
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, tb):
+        if self.__lock:
+            self.release_lock()
+
     def list_dir(self):
         return (i.name for i in scandir(self.__base_dir))
 
@@ -170,13 +177,14 @@ class DAGRIo():
 
         old_dir_item.rename(new_dir_item)
         return True
+
     def lock(self):
         try:
-            if not self.__lock:
+            if not self.__lock_path:
                 self.__lock_path = self.__base_dir.joinpath('.lock')
-                self.__lock = portalocker.RLock(
-                    self.__lock_path, fail_when_locked=True)
-                self.__lock.acquire()
+            self.__lock = portalocker.RLock(
+                self.__lock_path, flags=portalocker.LOCK_EX)
+            self.__lock.acquire(timeout=15, fail_when_locked=True)
         except (portalocker.exceptions.LockException, portalocker.exceptions.AlreadyLocked, OSError) as ex:
             logger.warning(f"Skipping locked directory {self.base_dir}")
             raise DagrCacheLockException(ex)
@@ -185,6 +193,7 @@ class DAGRIo():
         self.__lock.release()
         if self.__lock._acquire_count == 0:
             unlink_lockfile(self.__lock_path)
+        self.__lock = None
 
     def __get_dest(self, fname=None, dest=None, subdir=None):
         fname = get_fname(fname, dest)
