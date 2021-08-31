@@ -113,5 +113,6 @@ debug/
 # Logs
 *.log.txt
 
+tests/test_results/
 tests/intergration/test_results/
 tests/intergration/dagr_selenium
