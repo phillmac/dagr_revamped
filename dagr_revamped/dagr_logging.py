@@ -75,6 +75,8 @@ def init_logging(config, level=None, host_mode=None):
                                 )
         if ll is not None:
             fh.setLevel(ll)
+            log(lname=__name__, level=logging.INFO,
+                msg=f"set file logger {fp} level to {ll}")
         fh.setFormatter(logging.Formatter(frmt))
         logging.getLogger().addHandler(fh)
 
