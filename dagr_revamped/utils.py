@@ -479,7 +479,10 @@ def http_send_json(session, endpoint, method='POST', **kwargs):
 
 def http_post_file_multipart(session, endpoint, dir_path, filename, content):
     m = http_encode_multipart(dir_path, filename, content)
-    return http_post_raw(session, endpoint, data=m, headers={'Content-Type': m.content_type})
+    result = http_post_raw(session, endpoint, data=m, headers={'Content-Type': m.content_type})
+    if result is True:
+        return -1
+    return result
 
 
 def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=True, log_errors=False):
