@@ -46,7 +46,13 @@ def determine_path(config, lname, lvalue):
 
 
 def get_logging_paths(config):
-    return set([determine_path(config, k, v) for k, v in config.get('logging.files.locations').items() if not v == ''])
+    logging_paths = set()
+    for k, v in config.get('logging.files.locations').items():
+        if not v == '':
+            logging_paths.add((determine_path(config, k, v),
+                      config.get('logging.files.levels').get(k, None)))
+    return logging_paths
+
 
 
 def init_logging(config, level=None, host_mode=None):
@@ -58,7 +64,7 @@ def init_logging(config, level=None, host_mode=None):
     maxBytes = config.get('logging.files', 'maxbytes')
     backupCount = config.get('logging.files', 'backupcount')
 
-    for fp in get_logging_paths(config):
+    for fp, ll in get_logging_paths(config):
         log(lname=__name__, level=logging.INFO,
             msg=f"Creating logging file handler {fp}")
         fh = RobustRFileHandler(filename=fp,
@@ -67,6 +73,8 @@ def init_logging(config, level=None, host_mode=None):
                                 backupCount=config.get(
                                     'logging.files', 'backupcount')
                                 )
+        if ll is not None:
+            fh.setLevel(ll)
         fh.setFormatter(logging.Formatter(frmt))
         logging.getLogger().addHandler(fh)
 
@@ -153,9 +161,9 @@ class DagrHTTPHandler(logging.Handler):
             try:
                 resp = self.__session.post(
                     f"{self.__host}/logger/append", timeout=30, json={'hostMode': self.__host_mode, 'record':
-                                                          {
-                                                              kn: record.__dict__[kn] for kn in record.__dict__.keys() if not kn in self.__filtered_keys}
-                                                          })
+                                                                      {
+                                                                          kn: record.__dict__[kn] for kn in record.__dict__.keys() if not kn in self.__filtered_keys}
+                                                                      })
                 if resp.status_code == 400 and retry is False:
                     check_resp = self.__session.get(
                         f"{self.__host}/logger/exists", json={'hostMode': self.__host_mode})

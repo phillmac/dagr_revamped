@@ -349,6 +349,7 @@ class DAGRConfig(DAGRBaseConf):
         'Logging.Files.Locations': get_os_options('Logging.Files.Locations', ['Local', 'Remote']),
         'Logging.Files.Names': get_os_options('Logging.Files.Names', ['Local', 'Remote']),
         'Logging.Files.Names.Prefixes': get_os_options('Logging.Files.Names.Prefixes', ['Local', 'Remote']),
+        'Logging.Files.Levels': get_os_options('Logging.Files.Levels', ['Local', 'Remote']),
         'Dagr.Cache': get_os_options('Dagr.Cache', ['Fileslist_Preload_Threshold', 'Preload_HTTP_Endpoint']),
         'Dagr.DeviationProcessor': get_os_options('Dagr.DeviationProcessor', ['FNS_Address']),
         'Dagr.Logging':  get_os_options('Dagr.Logging', ['Level']),
