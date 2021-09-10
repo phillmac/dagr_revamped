@@ -481,7 +481,7 @@ def http_post_file_multipart(session, endpoint, dir_path, filename, content):
     m = http_encode_multipart(dir_path, filename, content)
     result = http_post_raw(session, endpoint, data=m, headers={'Content-Type': m.content_type})
     if result is True:
-        return -1
+        return {'size': -1}
     return result
 
 
