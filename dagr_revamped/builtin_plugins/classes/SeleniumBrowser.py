@@ -153,7 +153,9 @@ class SeleniumBrowser():
         if self.__login_policy == 'prohibit':
             raise LoginDisabledError('Login policy set to prohibit')
         if not self.__driver.current_url in self.__login_url:
-            self.__driver.get(next(iter(self.__login_url)))
+            url = next(iter(self.__login_url))
+            logger.info(f"Navigating to {url}")
+            self.__driver.get(url)
 
         user = self.__app_config.get(
             'deviantart', 'username', key_errors=False)
@@ -173,6 +175,7 @@ class SeleniumBrowser():
             ss_output=str(self.__app_config.output_dir.joinpath('login-fail.png'))
             logger.info(f"Dumping ss to {ss_output}")
             self.__driver.save_screenshot(ss_output)
+            logger.info(f"current url is {self.__driver.current_url}")
             raise
         while self.__driver.current_url in self.__login_url:
             self.wait_ready()
