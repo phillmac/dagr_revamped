@@ -170,6 +170,7 @@ class SeleniumBrowser():
                 'loginbutton').send_keys(Keys.RETURN)
         except NoSuchElementException:
             pprint(self.get_current_page().prettify())
+            self.__driver.save_screenshot('login-fail.png')
             raise
         while self.__driver.current_url in self.__login_url:
             self.wait_ready()
