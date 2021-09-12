@@ -170,7 +170,7 @@ class SeleniumBrowser():
                 'loginbutton').send_keys(Keys.RETURN)
         except NoSuchElementException:
             pprint(self.get_current_page().prettify())
-            ss_output=self.__config.output_dir.joinpath('login-fail.png')
+            ss_output=self.__app_config.output_dir.joinpath('login-fail.png')
             logger.info(f"Dumping ss to {ss_output}")
             self.__driver.save_screenshot(ss_output)
             raise
