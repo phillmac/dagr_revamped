@@ -173,7 +173,15 @@ class DagrHTTPHandler(logging.Handler):
                         self.create_remote()
                         self.post_record(record, retry=True)
             except ConnectionError:
+                disconnected = True
+                while disconnected:
+                    try:
+                        self.__session.get(
+                            f"{self.__host}/ping"
+                        )
+                        disconnected = False
+                    except ConnectionError:
+                        sleep(30)
                 if connection_retry:
                     raise
-                sleep(30)
                 self.post_record(record, connection_retry=True)
