@@ -11,6 +11,7 @@ from .config import DAGRConfig
 from .dagr_logging import init_logging
 from .dagr_logging import log as dagr_log
 from .DAGRCache import DAGRCache
+from .DAGRIo import DAGRIo
 from .DAGRManager import DAGRManager
 from .exceptions import DagrCacheLockException
 from .utils import (buffered_file_write, convert_queue, filter_deviants,
@@ -27,8 +28,8 @@ class DAGRUtilsCli():
 {} v{}
 
 Usage:
-dagr-utils.py renamedeviant OLD NEW [-v|-vv|--debug=DEBUGLVL] FILENAMES ...
-dagr-utils.py shortenurlcache [-v|-vv|--debug=DEBUGLVL] FILENAMES ...
+dagr-utils.py renamedeviant OLD NEW [-v|-vv|--debug=DEBUGLVL] FILENAMES...
+dagr-utils.py shortenurlcache [-v|-vv|--debug=DEBUGLVL] FILENAMES...
 dagr-utils.py finddupes [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py updatedirscache [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py findnolinks [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
@@ -38,11 +39,7 @@ dagr-utils.py processqueue [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] FILENAMES
 dagr-utils.py extractdeviant [--filter=FILTER] [-v|-vv|--debug=DEBUGLVL] DEVIANT FILENAMES
 dagr-utils.py updatebulk [--forcesave] [-v|-vv|--debug=DEBUGLVL]
 dagr-utils.py updatebulk [--forcesave] [-v|-vv|--debug=DEBUGLVL]
-
-
-
-
-
+dagr-utils.py mergefolders [--deleteafter] [-v|-vv|--debug=DEBUGLVL] FOLDERNAMES...
 
 Options:
     -v --verbose                            Show more detail, -vv for debug
@@ -77,6 +74,7 @@ Options:
             'updatebulk': arguments.get('updatebulk'),
             'deviant': arguments.get('DEVIANT'),
             'filenames': arguments.get('FILENAMES'),
+            'foldernames': arguments.get('FOLDERNAMES'),
             'filter': arguments.get('--filter'),
             'forcesave': arguments.get('--forcesave'),
             'old': arguments.get('OLD'),
@@ -97,7 +95,8 @@ class DAGRUtils():
             'fixartists': self.fix_artists,
             'processqueue': self.process_queue,
             'extractdeviant': self.extract_deviant,
-            'updatebulk': self.update_bulk
+            'updatebulk': self.update_bulk,
+            'mergefolders': self.merge_folders
         }
         self.__utils_cmd = next(
             (cmd for cmd in self.__utils_cmd_maping.keys() if kwargs.get(cmd)), None)
@@ -105,6 +104,7 @@ class DAGRUtils():
         self.__manager = DAGRManager(self.__config)
         self.__cache = kwargs.get('cache') or DAGRCache
         self.__filenames = kwargs.get('filenames')
+        self.__foldernames = kwargs.get('foldernames')
         self.__deviant = kwargs.get('deviant')
         self.__force_save = kwargs.get('forcesave')
         self.__deviant_gallery_cache = self.__cache.get_cache(
@@ -154,7 +154,6 @@ class DAGRUtils():
 
     def shorten_url_cache(self):
         wq = self.build_queue()
-
 
     def update_bulk(self):
         dirs_cache = self.__global_deviant_dirs_cache
@@ -213,6 +212,26 @@ class DAGRUtils():
                                     "Unable to find cache filename for page link {}".format(link))
         except DagrCacheLockException:
             pass
+
+    def merge_folders(self):
+        dirs_iter = iter(self.__foldernames)
+        dest_dir = next(dirs_iter)
+        dest_io = DAGRIo.create(
+            Path.cwd().joinpath(dest_dir), dest_dir, self.__config)
+        link_count = 0
+        with DAGRCache.get_cache(self.__config,) as dest_cache:
+
+            while src_dir := next(dirs_iter):
+                src_io = DAGRIo.create(
+                    Path.cwd().joinpath(src_dir), src_dir, self.__config)
+                with DAGRCache.get_cache(self.__config,) as src_cache:
+                    dest_cache.add_queue(src_cache.get_queue())
+
+                    for l in dest_cache.filter_links(src_cache.existing_pages):
+                        dest_cache.add_link(l)
+                        link_count += 1
+
+                    dest_cache.add_filename(src_cache.files_list())
 
     def rename_deviant(self):
         old = self.__kwargs.get('old').lower()

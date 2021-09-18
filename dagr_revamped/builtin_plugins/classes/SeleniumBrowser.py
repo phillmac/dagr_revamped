@@ -171,7 +171,7 @@ class SeleniumBrowser():
             self.__driver.find_element_by_id(
                 'loginbutton').send_keys(Keys.RETURN)
         except NoSuchElementException:
-            pprint(self.get_current_page().prettify())
+            logger.debug(self.get_current_page().prettify())
             ss_output=str(self.__app_config.output_dir.joinpath('login-fail.png'))
             logger.info(f"Dumping ss to {ss_output}")
             self.__driver.save_screenshot(ss_output)
