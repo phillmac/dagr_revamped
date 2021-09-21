@@ -23,6 +23,7 @@ Usage:
     dagr.py (-k CATEGORY) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
     dagr.py (--page PAGE) [options] [-v|-vv|--debug=DEBUGLVL] DEVIANT
     dagr.py (--search SEARCH) [options] [-v|-vv|--debug=DEBUGLVL]
+    dagr.py [options]
 
 Options:
     -a ALBUM --album=ALBUM                  Rip deviations in album
