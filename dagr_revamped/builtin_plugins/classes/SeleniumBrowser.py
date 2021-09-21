@@ -229,7 +229,7 @@ class SeleniumBrowser():
     def open_do_login(self, url):
         self.__open(url)
         found = self.get_current_page().find('a', {'href': self.__login_url})
-        if found:
+        if found and found.text.lower() == 'sign in':
             if self.__login_policy not in ['disable', 'prohibit']:
                 logger.info('Detected login required. reason: hyperlink')
                 logger.info(found.prettify())
