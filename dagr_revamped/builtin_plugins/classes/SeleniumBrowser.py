@@ -232,7 +232,7 @@ class SeleniumBrowser():
         if found:
             if self.__login_policy not in ['disable', 'prohibit']:
                 logger.info('Detected login required. reason: hyperlink')
-                logger.info(found)
+                logger.info(found.prettify())
                 self.do_login()
         if self.__driver.current_url != url:
             self.__driver.get(url)
