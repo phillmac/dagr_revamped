@@ -220,7 +220,8 @@ class SeleniumBrowser():
         if self.__driver.current_url in self.__login_url:
             if self.__login_policy in ['disable', 'prohibit']:
                 raise LoginDisabledError('Automatic login disabled')
-            logger.info('Detected login required')
+            logger.info('Detected login required. Reason: current url')
+            logger.info(f"Cuurent url: {self.__driver.current_url}")
             self.do_login()
             if self.__driver.current_url != url:
                 self.__driver.get(url)
@@ -230,7 +231,8 @@ class SeleniumBrowser():
         found = self.get_current_page().find('a', {'href': self.__login_url})
         if found:
             if self.__login_policy not in ['disable', 'prohibit']:
-                logger.info('Detected login required')
+                logger.info('Detected login required. reason: hyperlink')
+                logger.info(found)
                 self.do_login()
         if self.__driver.current_url != url:
             self.__driver.get(url)
