@@ -181,7 +181,8 @@ collect_links(arguments[0])
             'favs_featured': f"https://www.deviantart.com/{deviant_lower}/favourites",
             'gallery_featured': f"https://www.deviantart.com/{deviant_lower}/gallery",
             'search': f"https://www.deviantart.com/search?q={mval}",
-            'tag': f"https://www.deviantart.com/tag/{mval}?order=most-recent"
+            'tag': f"https://www.deviantart.com/tag/{mval}?order=most-recent",
+            'query': f"https://www.deviantart.com/{deviant_lower}/gallery?q={mval}"
         }.get(mode)
 
         if not url:
