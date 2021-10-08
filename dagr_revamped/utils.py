@@ -477,15 +477,15 @@ def http_send_json(session, endpoint, method='POST', **kwargs):
                          endpoint, method=method, json=kwargs)
 
 
-def http_post_file_multipart(session, endpoint, dir_path, filename, content):
+def http_post_file_multipart(session, endpoint, dir_path, filename, content, timeout=900):
     m = http_encode_multipart(dir_path, filename, content)
-    result = http_post_raw(session, endpoint, data=m, headers={'Content-Type': m.content_type})
+    result = http_post_raw(session, endpoint, data=m, headers={'Content-Type': m.content_type}, timeout=timeout)
     if result is True:
         return {'size': -1}
     return result
 
 
-def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=True, log_errors=False):
+def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=True, log_errors=False, timeout=900):
     if isinstance(content, set):
         content = list(content)
     buffer = BytesIO()
@@ -495,7 +495,7 @@ def http_post_file_json(session, endpoint, dir_path, fname, content, do_backup=T
     buffer.seek(0)
     headers = {'Content-Type': 'application/gzip'}
     try:
-        return http_post_raw(session, endpoint, headers=headers, data=buffer)
+        return http_post_raw(session, endpoint, headers=headers, data=buffer, timeout=timeout)
     except:
         if log_errors:
             logger.exception('Error while posting json')
