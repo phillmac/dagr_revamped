@@ -360,6 +360,10 @@ class DAGRConfig(DAGRBaseConf):
             'Page_Sleep_Time', 'Collect_Sleep_Time_Long', 'Collect_Sleep_Time_Short'  'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Cache_Type', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout',
             'Unload_Cache_Policy', 'QueueMan_Fetch_Url', 'QueueMan_Enqueue_Url', 'Create_Driver_Policy'
         ]),
+        'Dagr.Io.HTTP.Endpoints': get_os_options('Dagr.Io.HTTP.Endpoints', [
+            'Exists', 'Dir_Exists', 'List_Dir', 'Load_Json', 'Save_Json', 'Write_File', 'Utime',
+            'Replace', 'Mkdir', 'Rename_Dir', 'Dir_Lock', 'Update_FN_Cache'
+        ]),
         'DeviantArt': get_os_options('DeviantArt', ['Username', 'Password'])
     })
     SETTINGS_MAP = normalize_dict({
