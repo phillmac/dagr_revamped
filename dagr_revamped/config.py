@@ -137,7 +137,7 @@ def get_os_section(base_key):
         if base_key.lower() in var_name:
             dagr_log(__name__, 5, f'var_name {var_name}')
             value = os.environ.get(k)
-            option_name = '.'.split(var_name.replace(base_key.lower(), ''))[-1]
+            option_name = var_name.replace(base_key.lower(), '').split('.')[-1]
             dagr_log(__name__, 5, f'value {value}')
             if not value is None:
                 options[option_name] = value
