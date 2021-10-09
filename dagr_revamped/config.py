@@ -128,6 +128,7 @@ def get_os_options(base_key, keys, defaults=None):
     dagr_log(__name__, 5, f'options {options}')
     return options
 
+
 def get_os_section(base_key):
     options = {}
     dagr_log(__name__, 5, f'Base key {base_key}')
@@ -135,14 +136,13 @@ def get_os_section(base_key):
         var_name = k.lower()
         if base_key.lower() in var_name:
             dagr_log(__name__, 5, f'var_name {var_name}')
-            value = os.environ.get(var_name, None)
+            value = os.environ.get(k)
+            option_name = '.'.split(var_name.replace(base_key.lower(), ''))[-1]
             dagr_log(__name__, 5, f'value {value}')
             if not value is None:
-                options[var_name.replace(base_key.lower(), '')] = value
+                options[option_name] = value
     dagr_log(__name__, 5, f'options {options}')
     return options
-
-
 
 
 class DAGRConfig(DAGRBaseConf):
