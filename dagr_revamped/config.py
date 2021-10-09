@@ -128,6 +128,22 @@ def get_os_options(base_key, keys, defaults=None):
     dagr_log(__name__, 5, f'options {options}')
     return options
 
+def get_os_section(base_key):
+    options = {}
+    dagr_log(__name__, 5, f'Base key {base_key}')
+    for k in os.environ:
+        var_name = k.lower()
+        if base_key.lower() in var_name:
+            dagr_log(__name__, 5, f'var_name {var_name}')
+            value = os.environ.get(var_name, None)
+            dagr_log(__name__, 5, f'value {value}')
+            if not value is None:
+                options[var_name] = value
+    dagr_log(__name__, 5, f'options {options}')
+    return options
+
+
+
 
 class DAGRConfig(DAGRBaseConf):
     DEFAULTS = normalize_dict({
@@ -351,13 +367,14 @@ class DAGRConfig(DAGRBaseConf):
         'Logging.Files.Names': get_os_options('Logging.Files.Names', ['Local', 'Remote']),
         'Logging.Files.Names.Prefixes': get_os_options('Logging.Files.Names.Prefixes', ['Local', 'Remote']),
         'Logging.Files.Levels': get_os_options('Logging.Files.Levels', ['Local', 'Remote']),
+        'Logging.HTTP.Hosts': get_os_section('Logging.HTTP.Hosts'),
         'Dagr.Cache': get_os_options('Dagr.Cache', ['Fileslist_Preload_Threshold', 'Preload_HTTP_Endpoint']),
         'Dagr.DeviationProcessor': get_os_options('Dagr.DeviationProcessor', ['FNS_Address']),
         'Dagr.Logging':  get_os_options('Dagr.Logging', ['Level']),
         'Dagr.Plugins.Classes': get_os_options('Dagr.Plugins.Classes', ['Browser', 'Resolver', 'Crawler', 'Processor', 'Crawler_Cache', 'Io']),
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_Mode', 'Webdriver_URL', 'Webdriver_Max_Tries', 'Driver_Path', 'Full_Crawl', 'Login_Policy', 'OOM_Max_Pages',
-            'Page_Sleep_Time', 'Collect_Sleep_Time_Long', 'Collect_Sleep_Time_Short'  'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Cache_Type', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout',
+            'Page_Sleep_Time', 'Collect_Sleep_Time_Long', 'Collect_Sleep_Time_Short',  'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Cache_Type', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout',
             'Unload_Cache_Policy', 'QueueMan_Fetch_Url', 'QueueMan_Enqueue_Url', 'Create_Driver_Policy'
         ]),
         'Dagr.Io.HTTP.Endpoints': get_os_options('Dagr.Io.HTTP.Endpoints', [
