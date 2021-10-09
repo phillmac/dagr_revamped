@@ -101,7 +101,7 @@ class DAGRIo():
             except JSONDecodeError:
                 logger.warning(
                     f"Unable to decode primary {fname} cache:", exc_info=True)
-                self.replace(fname, fpath.with_suffix('.bad')).name
+                self.replace(fname, fpath.with_suffix('.bad').name)
             except:
                 logger.warning(
                     f"Unable to load primary {fname} cache:", exc_info=True)
