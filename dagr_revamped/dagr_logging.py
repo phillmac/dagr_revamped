@@ -84,9 +84,9 @@ def init_logging(config, level=None, host_mode=None):
     filtered_modules = config.get('logging.http', 'filteredmodules').split(',')
     filtered_keys = config.get('logging.http', 'filteredkeys').split(',')
     if len(http_handler_hosts) > 0 and not host_mode is None:
-        for _n, h in http_handler_hosts:
+        for n, h in http_handler_hosts:
             log(lname=__name__, level=logging.INFO,
-                msg=f"Creating logging http handler {h}")
+                msg=f"Creating logging http handler {n} {h}")
             httphandler = DagrHTTPHandler(
                 h, host_mode, maxBytes, backupCount, frmt, filtered_modules, filtered_keys)
             logging.getLogger().addHandler(httphandler)
