@@ -231,15 +231,21 @@ class SeleniumBrowser():
 
         if self.__login_policy not in ['disable', 'prohibit']:
             current_page = self.get_current_page()
+            data_username = None
+            user_link = current_page.find('a', {'data-hook': 'user_link'})
 
-        if current_page.find('a', {'data-hook': 'user_link'}):
-            logger.info('Detected user link')
-        else:
-            found = current_page.find('a', {'href': self.__login_url})
-            if found and found.text.lower() == 'sign in':
-                logger.info('Detected login required. reason: hyperlink')
-                logger.info(found.prettify())
-                self.do_login()
+            if user_link:
+                data_username = user_link.get('data-username')
+                logger.info(f'Detected data-username "{data_username}"')
+            if  data_username and data_username.lower() == self.__app_config.get(
+            'deviantart', 'username').lower():
+                logger.info('Detected already logged in: user link')
+            else:
+                found = current_page.find('a', {'href': self.__login_url})
+                if found and found.text.lower() == 'sign in':
+                    logger.info('Detected login required. reason: hyperlink')
+                    logger.info(found.prettify())
+                    self.do_login()
 
         if self.__driver.current_url != url:
             self.__driver.get(url)
