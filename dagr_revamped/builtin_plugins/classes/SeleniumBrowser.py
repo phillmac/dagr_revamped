@@ -229,10 +229,10 @@ class SeleniumBrowser():
     def open_do_login(self, url):
         self.__open(url)
 
-    if self.__login_policy not in ['disable', 'prohibit']:
-        current_page = self.get_current_page()
+        if self.__login_policy not in ['disable', 'prohibit']:
+            current_page = self.get_current_page()
 
-        if current_page.find('a', {'data-hook': 'user_link'})
+        if current_page.find('a', {'data-hook': 'user_link'}):
             logger.info('Detected user link')
         else:
             found = current_page.find('a', {'href': self.__login_url})
