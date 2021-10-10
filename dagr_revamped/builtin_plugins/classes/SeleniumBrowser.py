@@ -232,14 +232,17 @@ class SeleniumBrowser():
         if self.__login_policy not in ['disable', 'prohibit']:
             current_page = self.get_current_page()
             data_username = None
-            user_link = current_page.find('a', {'data-hook': 'user_link'})
+
+            top_nav = current_page.find('header', {'data-hook': 'top_nav'})
+            if top_nav:
+                user_link = top_nav.find('a', {'data-hook': 'user_link'})
 
             if user_link:
                 data_username = user_link.get('data-username')
-                logger.info(f'Detected data-username "{data_username}"')
-            if  data_username and data_username.lower() == self.__app_config.get(
+                logger.log(level=15, msg=f'Detected data-username "{data_username}"')
+            if data_username and data_username.lower() == self.__app_config.get(
             'deviantart', 'username').lower():
-                logger.info('Detected already logged in: user link')
+                logger.log(level=15, msg='Detected already logged in: user link')
             else:
                 found = current_page.find('a', {'href': self.__login_url})
                 if found and found.text.lower() == 'sign in':
