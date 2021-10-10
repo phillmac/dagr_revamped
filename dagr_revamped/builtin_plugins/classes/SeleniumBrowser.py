@@ -235,6 +235,7 @@ class SeleniumBrowser():
 
             top_nav = current_page.find('header', {'data-hook': 'top_nav'})
             if top_nav:
+                logger.log(level=15, msg='Found top_nav')
                 user_link = top_nav.find('a', {'data-hook': 'user_link'})
 
             if user_link:
