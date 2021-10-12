@@ -489,8 +489,8 @@ class DAGR():
         else:
             logger.log(level=5, msg=pformat({
                 'overwrite': overwrite,
-                'fixmissing': self.fixmissing,
-                'verifybest': self.verifybest,
+                'fixmissing': fix_missing,
+                'verifybest': verify_best,
                 'disable_filter': disable_filter
             }))
 
@@ -513,7 +513,7 @@ class DAGR():
         progress = self.progress()
         for count, link in enumerate(pages, start=1):
             pstart = time()
-            if not self.verifybest and progress > 0 and count % progress == 0:
+            if (not verify_best) and progress > 0 and count % progress == 0:
                 cache.save()
             if not self.keep_running(check_stop=count % progress == 0):
                 return
