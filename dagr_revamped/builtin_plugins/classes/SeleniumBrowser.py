@@ -231,6 +231,7 @@ class SeleniumBrowser():
 
         if self.__login_policy not in ['disable', 'prohibit']:
             current_page = self.get_current_page()
+            user_link = None
             data_username = None
 
             top_nav = current_page.find('header', {'data-hook': 'top_nav'})
