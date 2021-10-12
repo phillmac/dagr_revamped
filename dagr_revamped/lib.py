@@ -463,15 +463,27 @@ class DAGR():
         logger.info('Download delay: %s', dl_delay)
         disable_filter = kwargs.get('disable_filter', False)
         verify_exists = kwargs.get(
-            'verify_exists', None) is True or self.verifyexists is True
+            'verify_exists', False) is True or self.verifyexists is True
+        fix_missing = kwargs.get(
+            'fix_missing', False) is True or self.fixmissing is True
+        verify_best = kwargs.get(
+            'verify_best', False) is True or self.verifybest is True
+        overwrite = kwargs.get(
+            'overwrite', False) is True or self.overwrite() is True
+
         callback = kwargs.get('callback', None)
         if self.nocrawl:
             pages = cache.existing_pages
             if kwargs.get('reverse', False) is not True and self.reverse() is not True:
                 pages.reverse()
-        overwrite = self.overwrite()
 
-        if not (overwrite or self.fixmissing or self.verifybest or verify_exists or disable_filter):
+        if not any([
+            overwrite,
+            fix_missing,
+            verify_best,
+            verify_exists,
+            disable_filter
+        ]):
             logger.log(level=15, msg='Filtering links')
             pages = cache.filter_links(pages)
         else:
