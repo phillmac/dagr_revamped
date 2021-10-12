@@ -103,7 +103,7 @@ class DAGR():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.pl_manager.shutdown()
-        if self.browser and self.browser.quit:
+        if self.browser and hasattr(self.browser, 'quit'):
             self.browser.quit()
 
     def init_mimetypes(self):
@@ -462,15 +462,15 @@ class DAGR():
         dl_delay = self.download_delay()
         logger.info(f"Download delay: {dl_delay}")
         disable_filter = kwargs.get('disable_filter', False)
-        verify_exists = kwargs.get('verify_exists', None)
+        verify_exists = kwargs.get('verify_exists', None) is True or self.verifyexists is True
         callback = kwargs.get('callback', None)
         if self.nocrawl:
             pages = cache.existing_pages
-            if not self.reverse():
+            if kwargs.get('reverse', False) is not True and self.reverse() is not True:
                 pages.reverse()
         overwrite = self.overwrite()
 
-        if not (overwrite or self.fixmissing or self.verifybest or disable_filter):
+        if not (overwrite or self.fixmissing  or self.verifybest or verify_exists or disable_filter):
             logger.log(level=15, msg='Filtering links')
             pages = cache.filter_links(pages)
         else:
@@ -731,8 +731,9 @@ class DAGRDeviantResolver():
         try:
             resp = self.ripper.browser.open(
                 'https://www.deviantart.com/{}/'.format(deviant))
-            if not deviant.lower() in self.ripper.browser.title.lower():
-                raise DagrException('Unable to get deviant info')
+            if hasattr(self.ripper.browser, 'title'):
+                if not deviant.lower() in self.ripper.browser.title.lower():
+                    raise DagrException('Unable to get deviant info')
             if not resp.status_code == req_codes.ok:
                 raise DagrException(
                     'incorrect status code - {}'.format(resp.status_code))

@@ -6,23 +6,23 @@ from pathlib import Path
 
 from pluginbase import PluginBase
 
-here = os.path.abspath(os.path.dirname(__file__))
+HERE = os.path.abspath(os.path.dirname(__file__))
 
+logger = logging.getLogger(__name__)
 
 class PluginManager():
-    logger = logging.getLogger(__name__)
 
     def __init__(self, app):
         self.__app = app
         self.__locations = [v for k, v in app.config.get(
             'dagr.plugins.locations').items()]
         self.__config = app.config.get('dagr.plugins')
-        self.__disabled = self.__config.get('disabled') or []
+        self.__disabled = self.__config.get('disabled').split(',') or []
         self.__disabled.append('classes')
         self.__funcs = {}
         self.__loaded_plugins = {}
         plugin_base = PluginBase(package=f'{__package__}.plugins',
-                                 searchpath=[os.path.join(here, 'builtin_plugins')])
+                                 searchpath=[os.path.join(HERE, 'builtin_plugins')])
         if self.__locations:
             self.source = plugin_base.make_plugin_source(
                 searchpath=self.__locations,
@@ -31,6 +31,7 @@ class PluginManager():
                 pn for pn in self.source.list_plugins()
                     if not pn in self.__disabled):
                 try:
+                    logger.info(f"Loaing plugin {plugin_name}")
                     plugin = self.source.load_plugin(plugin_name)
                     enabled = plugin.setup(self)
                     self.__loaded_plugins[plugin_name] = {
