@@ -460,7 +460,7 @@ class DAGR():
     def process_deviations(self, cache, pages, **kwargs):
         logger.log(level=4, msg=pformat(kwargs))
         dl_delay = self.download_delay()
-        logger.info(f"Download delay: {dl_delay}")
+        logger.info('Download delay: %s', dl_delay)
         disable_filter = kwargs.get('disable_filter', False)
         verify_exists = kwargs.get('verify_exists', None) is True or self.verifyexists is True
         callback = kwargs.get('callback', None)
