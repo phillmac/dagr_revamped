@@ -518,7 +518,7 @@ class DAGR():
             if not self.keep_running(check_stop=count % progress == 0):
                 return
             logger.info(
-                'Processing deviation {} of {} ( {} )'.format(count, len(pages), link))
+                'Processing deviation %s of %s ( %s )', count, len(pages), link)
             dp = self.deviantion_pocessor(
                 self, cache, link, verify_exists=verify_exists)
             downloaded = dp.process_deviation()
