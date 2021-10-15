@@ -101,7 +101,7 @@ class DAGRUtils():
         self.__utils_cmd = next(
             (cmd for cmd in self.__utils_cmd_maping.keys() if kwargs.get(cmd)), None)
         self.__config = kwargs.get('config') or DAGRConfig()
-        self.__manager = DAGRManager(self.__config)
+        self.__manager = kwargs.get('manager') or DAGRManager(self.__config)
         self.__cache = kwargs.get('cache') or DAGRCache
         self.__filenames = kwargs.get('filenames')
         self.__foldernames = kwargs.get('foldernames')
@@ -112,11 +112,13 @@ class DAGRUtils():
         self.__filter = None if kwargs.get('filter') is None else [
             s.strip().lower() for s in kwargs.get('filter').split(',')]
         self.__exclude_dirs = []
-        self.__exclude_dirs.append(self.__config.get(
-            'dagr.plugins.selenium', 'cachepath').lower())
+        cachepath = self.__config.get(
+            'dagr.plugins.selenium', 'cachepath')
+        if cachepath:
+            self.__exclude_dirs.append(cachepath.lower())
         self.__global_files_mapping = {}
         self.__global_dirs_mapping = {}
-        self.__global_deviant_dirs_cache = dict((str(d.name).lower(), d) for d in (
+        self.__global_deviant_dirs_cache = dict((d.name.lower(), d) for d in (
             di for di in scandir(self.__config.output_dir) if di.is_dir() and not di.name.lower() in self.__exclude_dirs))
         self.__kwargs = kwargs
 
@@ -140,8 +142,10 @@ class DAGRUtils():
                 modes = wq.pop(deviant)
             except StopIteration:
                 break
-            deviant = str(self.__global_deviant_dirs_cache.get(
-                str(deviant).lower()))
+            cache_entry = self.__global_deviant_dirs_cache.get(
+                str(deviant).lower())
+            if cache_entry:
+                deviant = cache_entry.name
             for mode, mode_vals in modes.items():
                 try:
                     if mode_vals:
