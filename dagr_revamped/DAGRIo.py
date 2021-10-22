@@ -151,9 +151,10 @@ class DAGRIo():
         utime(self.__get_dest(fname, dest, subdir), (mod_time, mod_time))
 
     def dir_exists(self, dir_name=None):
-        dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(
-            PurePath(dir_name).name)
-        return (not dir_item.is_symlink()) and dir_item.is_dir()
+        dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(dir_name)
+        result =  (not dir_item.is_symlink()) and dir_item.is_dir()
+        logger.debug('Dir: %s Exists: %s', dir_item,  result)
+        return result
 
     def mkdir(self, dir_name=None):
         dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(
