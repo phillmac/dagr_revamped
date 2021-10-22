@@ -52,16 +52,17 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
         move = config.get('dagr.subdirs', 'move')
         old_path = rel_dir.joinpath(mval)
         new_path = rel_dir.joinpath(mval.name)
+        logger.debug('Old path: %s,  New Path: %s', old_path, new_path)
         tmp_io = dagr_io.create(rel_dir, str(rel_dir), config)
         if use_old:
             logger.debug('Old format subdirs enabled')
             rel_dir = old_path
-        elif not new_path == old_path and tmp_io.dir_exists(subdir=mval):
+        elif new_path != old_path and tmp_io.dir_exists(dir_name=mval):
             if move:
                 if tmp_io.dir_exists(dir_name=mval.name):
                     raise Exception(
                         f'Unable to move {old_path}: subfolder {new_path} already exists')
-                logger.log(level=25, msg=f"Moving {old_path} to {new_path}")
+                logger.warning("Moving %s to %s", old_path, new_path)
                 try:
                     parent = old_path.parent
                     tmp_io.rename_dir(old_path, new_path)
