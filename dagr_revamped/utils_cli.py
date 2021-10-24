@@ -190,32 +190,35 @@ class DAGRUtils():
 
     def _extract_deviant(self, mode, deviant, mval=None):
 
-        try:
-            with self.__deviant_gallery_cache:
-                with self.__cache.with_artists_only(self.__config, mode, deviant, mval, warn_not_found=False) as cache:
-                    print('Scanning {}'.format(cache.base_dir))
-                    artists = cache.artists
+        if self.__deviant.lower() == deviant.lower():
+            logger.info('Skipping %s', deviant)
+        else:
+            try:
+                with self.__deviant_gallery_cache:
+                    with self.__cache.with_artists_only(self.__config, mode, deviant, mval, warn_not_found=False) as cache:
+                        print('Scanning {}'.format(cache.base_dir))
+                        artists = cache.artists
 
-                    if self.__deviant in artists:
-                        artists_content = artists[self.__deviant]
-                        for link in artists_content['Artworks']:
-                            shortname = PurePosixPath(link).name
-                            try:
-                                fn = cache.real_filename(shortname)
-                                source = cache.base_dir.joinpath(fn)
-                                dest = self.__deviant_gallery_cache.base_dir.joinpath(
-                                    fn)
-                                if not dest.exists():
-                                    shutil.copy(source, dest)
-                                    self.__deviant_gallery_cache.add_filename(
+                        if self.__deviant in artists:
+                            artists_content = artists[self.__deviant]
+                            for link in artists_content['Artworks']:
+                                shortname = PurePosixPath(link).name
+                                try:
+                                    fn = cache.real_filename(shortname)
+                                    source = cache.base_dir.joinpath(fn)
+                                    dest = self.__deviant_gallery_cache.base_dir.joinpath(
                                         fn)
-                                    self.__deviant_gallery_cache.add_link(link)
-                                    print(fn)
-                            except StopIteration:
-                                logger.warning(
-                                    "Unable to find cache filename for page link {}".format(link))
-        except DagrCacheLockException:
-            pass
+                                    if not dest.exists():
+                                        shutil.copy(source, dest)
+                                        self.__deviant_gallery_cache.add_filename(
+                                            fn)
+                                        self.__deviant_gallery_cache.add_link(link)
+                                        print(fn)
+                                except StopIteration:
+                                    logger.warning(
+                                        'Unable to find cache filename for page link %s', link)
+            except DagrCacheLockException:
+                pass
 
     def merge_folders(self):
         dirs_iter = iter(self.__foldernames)
