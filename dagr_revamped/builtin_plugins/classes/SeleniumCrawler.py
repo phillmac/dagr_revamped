@@ -11,15 +11,18 @@ from selenium.common.exceptions import NoSuchElementException
 
 logger = logging.getLogger(__name__)
 
+
 class SeleniumCrawler():
     def __init__(self, app_config, config, browser, cache):
         self.__config = config
         self.__browser = browser
         self.__cache = cache
+        self.__page_count = 1
         self.__oom_max_pages = self.__config.get('oom_max_pages', 13000)
         self.__collect_mval_id = self.__config.get('collect_mval_id', True)
         logger.log(15, 'OOM max pages set to %s', self.__oom_max_pages)
-        logger.log(15, 'Collect using mvalid elem set to %s', self.__collect_mval_id)
+        logger.log(15, 'Collect using mvalid elem set to %s',
+                   self.__collect_mval_id)
 
     def collect_pages(self):
         collect_st = time()
@@ -66,7 +69,8 @@ const collect_links = async (mvalID) => {
 collect_links(arguments[0])
         """, mval_id))
             if(isinstance(result, dict) and result.get('iserror', False)):
-                logger.error('Error while collecting pages: %s', result.get('message'))
+                logger.error('Error while collecting pages: %s',
+                             result.get('message'))
             else:
                 pages.update(result)
         except:
@@ -95,8 +99,10 @@ collect_links(arguments[0])
             pass
 
         if next_page:
+            logger.log(15, 'Found next page element. Count: %s',
+                       self.__page_count)
+            self.__page_count += 1
             crawl_st = time()
-            logger.log(15, 'Found next page element')
             collected = self.collect_pages_mval_id(
                 mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
 
@@ -122,10 +128,12 @@ collect_links(arguments[0])
                 collected = self.collect_pages_mval_id(
                     mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
                 if len(collected - pages) > 0:
-                    sleep_time = self.__config.get('collect_sleep_time_long', 15)
+                    sleep_time = self.__config.get(
+                        'collect_sleep_time_long', 15)
                     pages.update(collected)
                 else:
-                    sleep_time = self.__config.get('collect_sleep_time_short', 5)
+                    sleep_time = self.__config.get(
+                        'collect_sleep_time_short', 5)
                 logger.info('URL count %s', len(pages))
                 pd_st = time()
                 try:
@@ -133,7 +141,8 @@ collect_links(arguments[0])
                 except:
                     logger.exception(
                         'Error while sending page down keypress')
-                logger.log(15, 'Sending page down keypress took %.4f seconds', time() - pd_st)
+                logger.log(
+                    15, 'Sending page down keypress took %.4f seconds', time() - pd_st)
 
                 self.update_history(slug, pages, history)
 
