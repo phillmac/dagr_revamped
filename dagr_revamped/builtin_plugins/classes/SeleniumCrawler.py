@@ -167,8 +167,10 @@ collect_links(arguments[0])
         return pages
 
     def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False, crawl_offset=None, no_crawl=None):
-        full_crawl = full_crawl or self.__config.get(
-            'full_crawl', '').lower() == 'force'
+        if not full_crawl:
+            conf_fc = self.__config.get('full_crawl', '')
+            if conf_fc is True or conf_fc.lower() == 'force':
+                full_crawl = True
         slug = None
         mval_id = None
         deviant_lower = deviant.lower() if deviant else None
