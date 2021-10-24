@@ -108,7 +108,7 @@ collect_links(arguments[0])
 
             pages.update(collected)
 
-            logger.info('URL count %s', {len(pages)})
+            logger.info('URL count %s', len(pages))
 
             self.update_history(slug, pages, history)
             sleep_time = self.__config.get('page_sleep_time', 7)
