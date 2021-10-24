@@ -97,7 +97,6 @@ collect_links(arguments[0])
         if next_page:
             crawl_st = time()
             logger.log(15, 'Found next page element')
-            self.__browser.click_element(next_page)
             collected = self.collect_pages_mval_id(
                 mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
 
@@ -108,9 +107,12 @@ collect_links(arguments[0])
             self.update_history(slug, pages, history)
             sleep_time = self.__config.get('page_sleep_time', 7)
             delay_needed = sleep_time - (time() - crawl_st)
+
             if delay_needed > 0:
                 logger.log(15, 'Need to sleep for %.2f seconds', delay_needed)
                 sleep(delay_needed)
+
+            self.__browser.click_element(next_page)
             return True
 
         else:
