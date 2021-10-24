@@ -9,19 +9,17 @@ from dagr_revamped.utils import sleep
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 
+logger = logging.getLogger(__name__)
 
 class SeleniumCrawler():
     def __init__(self, app_config, config, browser, cache):
-        self.__logger = logging.getLogger(__name__)
         self.__config = config
         self.__browser = browser
         self.__cache = cache
         self.__oom_max_pages = self.__config.get('oom_max_pages', 13000)
         self.__collect_mval_id = self.__config.get('collect_mval_id', True)
-        self.__logger.log(
-            level=15, msg=f"OOM max pages set to {self.__oom_max_pages}")
-        self.__logger.log(
-            level=15, msg=f"Collect using mvalid elem set to {self.__collect_mval_id}")
+        logger.log(15, 'OOM max pages set to %s', self.__oom_max_pages)
+        logger.log(15, 'Collect using mvalid elem set to %s', self.__collect_mval_id)
 
     def collect_pages(self):
         collect_st = time()
@@ -38,9 +36,8 @@ for (const l of links) {
 done([...pages])
         """))
         except:
-            self.__logger.exception('Error while collecting pages')
-        self.__logger.log(
-            level=15, msg=f"Collect pages took {'{:.4f}'.format(time() - collect_st)} seconds")
+            logger.exception('Error while collecting pages')
+        logger.log(15, 'Collect pages took %.4f seconds', time() - collect_st)
         return pages
 
     def collect_pages_mval_id(self, mval_id):
@@ -69,14 +66,12 @@ const collect_links = async (mvalID) => {
 collect_links(arguments[0])
         """, mval_id))
             if(isinstance(result, dict) and result.get('iserror', False)):
-                self.__logger.error(
-                    f"Error while collecting pages: {result.get('message')}")
+                logger.error('Error while collecting pages: %s', result.get('message'))
             else:
                 pages.update(result)
         except:
-            self.__logger.exception('Error while collecting pages')
-        self.__logger.log(
-            level=15, msg=f"Collect pages took {'{:.4f}'.format(time() - collect_st)} seconds")
+            logger.exception('Error while collecting pages')
+        logger.log(15, 'Collect pages took %.4f seconds', time() - collect_st)
         return pages
 
     def update_history(self, slug, pages, history):
@@ -88,9 +83,8 @@ collect_links(arguments[0])
             if len(history) > hlen:
                 self.__cache.update(slug, history)
             else:
-                self.__logger.info('History unchanged')
-            self.__logger.log(
-                level=15, msg=f"Save took {'{:.4f}'.format(time() - save_st)} seconds")
+                logger.info('History unchanged')
+            logger.log(15, "Save took %.4f seconds", time() - save_st)
 
     def load_more(self, slug, pages, history, mval_id=None):
         body = self.__browser.find_element_by_tag_name('body')
@@ -102,21 +96,20 @@ collect_links(arguments[0])
 
         if next_page:
             crawl_st = time()
-            self.__logger.log(level=15, msg="Found next page element")
+            logger.log(15, 'Found next page element')
             self.__browser.click_element(next_page)
             collected = self.collect_pages_mval_id(
                 mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
 
             pages.update(collected)
 
-            self.__logger.info(f"URL count {len(pages)}")
+            logger.info('URL count %s', {len(pages)})
 
             self.update_history(slug, pages, history)
             sleep_time = self.__config.get('page_sleep_time', 7)
             delay_needed = sleep_time - (time() - crawl_st)
             if delay_needed > 0:
-                self.__logger.log(
-                    level=15, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
+                logger.log(15, 'Need to sleep for %.2f seconds', delay_needed)
                 sleep(delay_needed)
             return True
 
@@ -131,22 +124,20 @@ collect_links(arguments[0])
                     pages.update(collected)
                 else:
                     sleep_time = self.__config.get('collect_sleep_time_short', 5)
-                self.__logger.info(f"URL count {len(pages)}")
+                logger.info('URL count %s', len(pages))
                 pd_st = time()
                 try:
                     body.send_keys(Keys.PAGE_DOWN)
                 except:
-                    self.__logger.exception(
+                    logger.exception(
                         'Error while sending page down keypress')
-                self.__logger.log(
-                    level=15, msg=f"Sending page down keypress took {'{:.4f}'.format(time() - pd_st)} seconds")
+                logger.log(15, 'Sending page down keypress took %.4f seconds', time() - pd_st)
 
                 self.update_history(slug, pages, history)
 
                 while time() - crawl_st < sleep_time:
                     sleep(1)
-                self.__logger.log(
-                    level=15, msg=f"Crawl took {'{:.4f}'.format(time() - crawl_st)} seconds")
+                logger.log(15, 'Crawl took %.4f seconds', time() - crawl_st)
         return False
 
     def crawl_action(self, slug, mval_id=None, pages=None, history=None):
@@ -200,19 +191,19 @@ collect_links(arguments[0])
         history = set()
         history.update(self.__cache.query(slug))
         if no_crawl:
-            self.__logger.info('Skiping crawl')
+            logger.info('Skiping crawl')
             pages.update(history)
             return pages
         if not full_crawl:
             pages.update(history)
         else:
-            self.__logger.info('Performing full crawl, no history loaded')
+            logger.info('Performing full crawl, no history loaded')
 
-        self.__logger.info(f"Crawl url: {url}")
+        logger.info('Crawl url: %s', url)
 
         self.__browser.open_do_login(url)
         result = self.crawl_action(slug, mval_id, pages=pages, history=history)
         if self.__config.get('unload_cache_policy', '') == 'always':
             self.__cache.unload(slug)
-            self.__logger.log(level=15, msg=f"Unloaded {slug} cache")
+            logger.log(15, 'Unloaded %s cache', slug)
         return result
