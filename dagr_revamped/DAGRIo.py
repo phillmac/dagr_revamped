@@ -80,7 +80,7 @@ class DAGRIo():
         return load_json(self.__base_dir.joinpath(fname))
 
     def save_json(self, fname, content, do_backup=True, log_errors=None):
-        return save_json(self.__base_dir.joinpath(fname), content)
+        return save_json(self.__base_dir.joinpath(fname), content, do_backup=do_backup)
 
     def exists(self, fname=None, dest=None, subdir=None, update_cache=None):
         return self.__get_dest(fname, dest, subdir).exists()
