@@ -24,14 +24,21 @@ class SlugCache():
         self.__filename = f"{self.__slug}.json"
         self.__load()
 
-    def __load(self):
+    def __load(self, ignore_breaker=False):
         update_local = self.__local_io.load_primary_or_backup(self.__filename, warn_not_found=False)
         if update_local:
             self.__local_values.update(i if isinstance(i, str) else deep_tuple(i) for i in update_local)
 
-        update_remote = self.__remote_io.load_primary_or_backup(self.__filename, warn_not_found=False)
-        if update_remote:
-            self.__remote_values.update(i if isinstance(i, str) else deep_tuple(i) for i in update_remote)
+        try:
+            if ignore_breaker:
+                update_remote = self.__remote_io.load_primary_or_backup(self.__filename, warn_not_found=False)
+            else:
+                update_remote = self.__remote_breaker.call(self.__remote_io.load_primary_or_backup, self.__filename, warn_not_found=False)
+
+            if update_remote:
+                self.__remote_values.update(i if isinstance(i, str) else deep_tuple(i) for i in update_remote)
+        except Exception:
+            logger.exception('Failed to load remote %s cache', self.__slug)
 
     @property
     def local_stale(self):
