@@ -421,7 +421,7 @@ def http_encode_multipart(dir_path, filename, content):
                 path=dir_path,
                 filename=filename,
                 integrity=dict(
-                    hexdigest=integrity.hexdigest,
+                    hexdigest=integrity.hexdigest(),
                     name=integrity.name)
                 )),
                 'content': content}
