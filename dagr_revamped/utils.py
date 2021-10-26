@@ -5,6 +5,7 @@ import logging
 import math
 import re
 from collections.abc import Iterable, Mapping
+from hashlib import md5
 from io import BytesIO, StringIO, TextIOWrapper
 from pathlib import Path, PurePath, PurePosixPath
 from pprint import pformat, pprint
@@ -409,10 +410,19 @@ def ensure_path(fpath, resolve=True):
 
 
 def http_encode_multipart(dir_path, filename, content):
+    
+    if isinstance(content, str):
+        integrity = md5(content.encode())
+    else:
+        integrity = md5(content)
+    
     return MultipartEncoder(
         fields={'params': json.dumps(dict(
                 path=dir_path,
-                filename=filename
+                filename=filename,
+                integrity=dict(
+                    hexdigest=integrity.hexdigest,
+                    name=integrity.name)
                 )),
                 'content': content}
     )
