@@ -153,7 +153,7 @@ class DAGRIo():
     def dir_exists(self, dir_name=None):
         dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(dir_name)
         result =  (not dir_item.is_symlink()) and dir_item.is_dir()
-        logger.debug('Dir: %s Exists: %s', dir_item,  result)
+        logger.debug('Dir: %s Exists: %s', str(dir_item),  result)
         return result
 
     def mkdir(self, dir_name=None):
