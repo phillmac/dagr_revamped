@@ -10,9 +10,11 @@ ports:
     onOpen: ignore
     visibility: private
 tasks:
-  - init: install deps
-    command: >
-      pip install -r dev-requirements.txt &&
+  - name: Install Deps
+    init: |
+      pip install -r dev-requirements.txt
       pip install -e .
-  - command: >
+  - name: Pull and setup env
+    command: |
+      git pull &&
       source scripts/aliases.sh
