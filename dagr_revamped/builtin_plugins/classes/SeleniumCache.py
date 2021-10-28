@@ -31,9 +31,9 @@ class SlugCache():
 
         try:
             if ignore_breaker:
-                update_remote = self.__remote_io.load_primary_or_backup(self.__filename, warn_not_found=False)
+                update_remote = self.__remote_io.load_json(self.__filename, log_errors=True)
             else:
-                update_remote = self.__remote_breaker.call(self.__remote_io.load_primary_or_backup, self.__filename, warn_not_found=False)
+                update_remote = self.__remote_breaker.call(self.__remote_io.load_json, self.__filename, log_errors=True)
 
             if update_remote:
                 self.__remote_values.update(i if isinstance(i, str) else deep_tuple(i) for i in update_remote)
