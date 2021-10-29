@@ -48,11 +48,11 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
         rel_dir = PurePosixPath(mode)
 
     if mval:
-        mval = PurePosixPath(mval)
+        mval_path = PurePosixPath(mval)
         use_old = config.get('dagr.subdirs', 'useoldformat')
         move = config.get('dagr.subdirs', 'move')
-        old_path = rel_dir.joinpath(mval)
-        new_path = rel_dir.joinpath(mval.name)
+        old_path = rel_dir.joinpath(mval_path)
+        new_path = rel_dir.joinpath(mval_path.name)
         logger.debug('Old path: %s,  New Path: %s', old_path, new_path)
         tmp_io = dagr_io.create(rel_dir, str(rel_dir), config)
         if use_old:
@@ -60,7 +60,7 @@ def get_remote_io(dagr_io, config, mode, deviant=None, mval=None):
             rel_dir = old_path
         elif new_path != old_path and tmp_io.dir_exists(dir_name=mval):
             if move:
-                if tmp_io.dir_exists(dir_name=mval.name):
+                if tmp_io.dir_exists(dir_name=mval_path.name):
                     raise Exception(
                         f'Unable to move {old_path}: subfolder {new_path} already exists')
                 logger.warning("Moving %s to %s", old_path, new_path)
