@@ -4,7 +4,7 @@ import threading
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-from requests.exceptions import ConnectionError, ReadTimeout
+from requests.exceptions import ConnectionError, ReadTimeout, RetryError
 
 from dagr_revamped.utils import sleep
 
@@ -180,7 +180,7 @@ class DagrHTTPHandler(logging.Handler):
                             f"{self.__host}/ping"
                         )
                         disconnected = False
-                    except (ConnectionError, ReadTimeout):
+                    except (ConnectionError, ReadTimeout, RetryError):
                         sleep(30)
                 if connection_retry:
                     raise
