@@ -168,11 +168,17 @@ collect_links(arguments[0])
         self.__cache.flush(slug)
         return pages
 
-    def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False, crawl_offset=None, no_crawl=None):
+    def crawl(self, url_fmt, mode, deviant, mval=None, msg=None, full_crawl=False, crawl_offset=None, no_crawl=None, run_async=False):
         if not full_crawl:
             conf_fc = self.__config.get('full_crawl', '')
-            if conf_fc is True or conf_fc.lower() == 'force':
+            if conf_fc is True or isinstance(conf_fc, str) and conf_fc.lower() == 'force':
                 full_crawl = True
+
+            if not crawl_offset:
+                conf_co = self.__config.get('crawl_offset', '')
+                if isinstance(conf_co, str) and conf_co != '':
+                    crawl_offset = conf_co
+
         slug = None
         mval_id = None
         deviant_lower = deviant.lower() if deviant else None
