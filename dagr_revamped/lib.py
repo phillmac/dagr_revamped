@@ -524,7 +524,7 @@ class DAGR():
             downloaded = dp.process_deviation()
             try:
                 if callback:
-                    callback(link, dp.get_page_content().content)
+                    callback((dp.found_type, link), dp.get_page_content().content)
             except DagrHTTPException as ex:
                 cache.add_httperror(link, ex)
                 self.handle_download_error(link, ex)
@@ -800,6 +800,10 @@ class DAGRDeviationProcessor():
     @property
     def force_verify_exists(self):
         return self.__force_verify_exists
+
+    @property
+    def found_type(self):
+        return self.__found_type
 
     def get_files_list(self):
         if self.__files_list is None:
