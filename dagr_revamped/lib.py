@@ -84,7 +84,7 @@ class DAGR():
         self.browser = None
         self.crawler_cache = None
         self.deviation_crawler = None
-        self.deviantion_pocessor = None
+        self.deviation_processor = None
         self.deviant_resolver = None
         self.cache = None
         self.io = None
@@ -158,8 +158,8 @@ class DAGR():
                 'ripper') or self.plugin_class_init('ripper', None)
 
     def processor_init(self):
-        if not self.deviantion_pocessor:
-            self.deviantion_pocessor = self.__kwargs.get(
+        if not self.deviation_processor:
+            self.deviation_processor = self.__kwargs.get(
                 'processor') or self.plugin_class_init('processor', DAGRDeviationProcessor)
 
     def resolver_init(self):
@@ -519,7 +519,7 @@ class DAGR():
                 return
             logger.info(
                 'Processing deviation %s of %s ( %s )', count, len(pages), link)
-            dp = self.deviantion_pocessor(
+            dp = self.deviation_processor(
                 self, cache, link, verify_exists=verify_exists)
             downloaded = dp.process_deviation()
             try:
