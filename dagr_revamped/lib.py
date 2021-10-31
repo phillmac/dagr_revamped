@@ -524,7 +524,8 @@ class DAGR():
             downloaded = dp.process_deviation()
             try:
                 if callback:
-                    callback((dp.found_type, link), dp.get_page_content().content)
+                    callback(page_type=dp.found_type, page_link=link, current_page=dp.get_current_page(
+                    ), page_content=dp.get_page_content().content)
             except DagrHTTPException as ex:
                 cache.add_httperror(link, ex)
                 self.handle_download_error(link, ex)
@@ -795,6 +796,7 @@ class DAGRDeviationProcessor():
         self.__content_type = None
         self.__mature_error = None
         self.__page_content = None
+        self.__current_page = None
         self.__files_list = None
 
     @property
@@ -809,6 +811,11 @@ class DAGRDeviationProcessor():
         if self.__files_list is None:
             self.__files_list = self.cache.files_list
         return self.__files_list
+
+    def get_current_page(self):
+        if self.__current_page is None:
+            self.__current_page = self.browser.get_current_page()
+        return self.__current_page
 
     def get_response(self):
         if self.__response:
@@ -1034,10 +1041,9 @@ class DAGRDeviationProcessor():
             return self.__file_link, self.__found_type
         self.__logger.log(level=4, msg='find_link no file_link')
         filelink = None
-        soup_config = self.config.get('dagr.bs4.config')
         resp = self.get_page_content()
         current_url = self.browser.get_url()
-        current_page = self.browser.get_current_page()
+        current_page = self.get_current_page()
         # Full image link (via download link)
         link_text = re.compile('Download( (Image|File))?')
         img_link = None
@@ -1138,22 +1144,21 @@ class DAGRDeviationProcessor():
             else:
                 self.__logger.log(level=5, msg='{} not found'.format(si))
 
-        for found, pl_func in [*self.ripper.pl_manager.get_funcs('findlink').items()]:
-            filelink = pl_func(BeautifulSoup(
-                deepcopy(resp.content), **soup_config))
+        for pl_name, pl_func in [*self.ripper.pl_manager.get_funcs('findlink').items()]:
+            filelink = pl_func(current_page)
             if filelink:
-                self.__logger.log(level=5, msg='Found {}'.format(found))
-                self.__file_link, self.__found_type = filelink, found
+                self.__logger.log(5, 'Found %s', pl_name)
+                self.__file_link, self.__found_type = filelink, pl_name
                 return self.__file_link, self.__found_type
-        for found, pl_func in [*self.ripper.pl_manager.get_funcs('findlink_b').items()]:
+        for pl_name, pl_func in [*self.ripper.pl_manager.get_funcs('findlink_b').items()]:
             temp_browser = StatefulBrowser(
                 session=deepcopy(self.browser.session))
             temp_browser.open_fake_page(
                 deepcopy(resp.content), current_url)
             filelink = pl_func(temp_browser)
             if filelink:
-                self.__logger.log(level=5, msg='Found {}'.format(found))
-                self.__file_link, self.__found_type = filelink, found
+                self.__logger.log(5, 'Found %s', pl_name)
+                self.__file_link, self.__found_type = filelink, pl_name
                 return self.__file_link, self.__found_type
         self.cache.add_nolink(self.page_link)
         # Check for antisocial
