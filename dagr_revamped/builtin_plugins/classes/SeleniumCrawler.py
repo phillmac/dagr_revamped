@@ -24,6 +24,41 @@ class SeleniumCrawler():
         logger.log(15, 'Collect using mvalid elem set to %s',
                    self.__collect_mval_id)
 
+    def scroll_page(self):
+        scroll_st = time()
+        try:
+            self.__browser.execute_async_script("""
+const done = arguments[0]
+window.scrollBy(0,75)
+done()
+        """)
+        except:
+            logger.exception('Error while scrolling page')
+        logger.log(15, 'Scrolling page took %.4f seconds', time() - scroll_st)
+
+    def has_next_link(self):
+        result = None
+        has_next_st = time()
+        try:
+            result = self.__browser.execute_script("""
+return Array.from(document.getElementsByTagName('a')).some(l=>l.text=='Next')
+            """)
+        except:
+            logger.exception('Error while searching for next link')
+        logger.log(15, 'Has next took %.4f seconds', time() - has_next_st)
+        return result
+
+    def click_next(self):
+        click_next_st = time()
+        try:
+            self.__browser.execute_script("""
+Array.from(document.getElementsByTagName('a')).find(l=>l.text=='Next').click()
+            """)
+        except:
+            logger.exception('Error while clicking next page')
+        logger.log(15, 'Clicking next took %.4f seconds', time() - click_next_st)
+
+
     def collect_pages(self):
         collect_st = time()
         pages = set()
@@ -92,23 +127,20 @@ collect_links(arguments[0])
 
     def load_more(self, slug, pages, history, mval_id=None):
         body = self.__browser.find_element_by_tag_name('body')
-        next_page = None
-        try:
-            next_page = body.find_element_by_link_text('Next')
-        except NoSuchElementException:
-            pass
 
-        if next_page:
+        if self.has_next_link():
             logger.log(15, 'Found next page element. Count: %s',
                        self.__page_count)
             self.__page_count += 1
             crawl_st = time()
-            collected = self.collect_pages_mval_id(
-                mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
+            for _pd in range(1, 30):
+                collected = self.collect_pages_mval_id(
+                    mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
+                pages.update(collected)
+                logger.info('URL count %s', len(pages))
+                sleep(0.2)
+                self.scroll_page()
 
-            pages.update(collected)
-
-            logger.info('URL count %s', len(pages))
 
             self.update_history(slug, pages, history)
             sleep_time = self.__config.get('page_sleep_time', 7)
@@ -118,7 +150,7 @@ collect_links(arguments[0])
                 logger.log(15, 'Need to sleep for %.2f seconds', delay_needed)
                 sleep(delay_needed)
 
-            self.__browser.click_element(next_page)
+            self.click_next()
             return True
 
         else:
