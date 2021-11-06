@@ -29,12 +29,15 @@ class SlugCache():
         if update_local:
             self.__local_values.update(i if isinstance(i, str) else deep_tuple(i) for i in update_local)
 
+        update_remote = None
         logger.log(15, 'loading remote %s', self.__filename)
         try:
             if ignore_breaker:
-                update_remote = self.__remote_io.load_json(self.__filename, log_errors=True)
+                    if  self.__remote_io.exists(fname=self.__filename):
+                        update_remote = self.__remote_io.load_json(self.__filename, log_errors=True)
             else:
-                update_remote = self.__remote_breaker.call(self.__remote_io.load_json, self.__filename, log_errors=True)
+                if self.__remote_breaker.call(self.__remote_io.exists, fname=self.__filename):
+                    update_remote = self.__remote_breaker.call(self.__remote_io.load_json, self.__filename, log_errors=True)
 
             if update_remote:
                 logger.log(15, 'Loaded %s items from remote %s', len(update_remote), self.__filename)
