@@ -156,7 +156,7 @@ class DagrHTTPHandler(logging.Handler):
     def emit(self, record):
         self.post_record(record)
 
-    def post_record(self, record, retry=False, connection_retry=False):
+    def post_record(self, record, retry=False, connection_retry=0):
         if not record.name in self.__filtered_modules:
             print(record.name, record.module)
             # print(record.__dict__)
@@ -182,6 +182,6 @@ class DagrHTTPHandler(logging.Handler):
                         disconnected = False
                     except (ConnectionError, ReadTimeout, RetryError):
                         sleep(30)
-                if connection_retry:
+                if connection_retry <= 3:
                     raise
-                self.post_record(record, connection_retry=True)
+                self.post_record(record, connection_retry=connection_retry+1)
