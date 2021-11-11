@@ -178,6 +178,9 @@ class DagrHTTPHandler(logging.Handler):
                     if check_resp.json()['exists'] is False:
                         self.create_remote()
                         self.post_record(record, retry=True)
+            except TypeError as ex:
+                print(ex, record.__dict__)
+
             except (ConnectionError, ReadTimeout):
                 disconnected = True
                 while disconnected:
