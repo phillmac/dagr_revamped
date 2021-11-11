@@ -3,7 +3,7 @@ import sys
 import threading
 from logging.handlers import QueueHandler, QueueListener, RotatingFileHandler
 from pathlib import Path
-from queue import Queue
+from queue import SimpleQueue
 
 from requests.exceptions import ConnectionError, ReadTimeout, RetryError
 
@@ -85,7 +85,7 @@ def init_logging(config, level=None, host_mode=None):
     filtered_keys = config.get('logging.http', 'filteredkeys').split(',')
     if len(http_handler_hosts) > 0 and not host_mode is None:
         http_handlers = []
-        queue = Queue()
+        queue = SimpleQueue()
         queuehandler = QueueHandler(queue)
         queuelistener = QueueListener(queue, handlers=http_handlers)
         for n, h in http_handler_hosts:
