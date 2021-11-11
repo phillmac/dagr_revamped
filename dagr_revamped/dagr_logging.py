@@ -1,8 +1,9 @@
 import logging
 import sys
 import threading
-from logging.handlers import RotatingFileHandler
+from logging.handlers import QueueHandler, QueueListener, RotatingFileHandler
 from pathlib import Path
+from queue import Queue
 
 from requests.exceptions import ConnectionError, ReadTimeout, RetryError
 
@@ -84,12 +85,17 @@ def init_logging(config, level=None, host_mode=None):
     filtered_modules = config.get('logging.http', 'filteredmodules').split(',')
     filtered_keys = config.get('logging.http', 'filteredkeys').split(',')
     if len(http_handler_hosts) > 0 and not host_mode is None:
+        http_handlers=[]
+        queue = Queue()
+        queuehandler = QueueHandler(queue)
+        queuelistener = QueueListener(queue,handlers=http_handlers)
         for n, h in http_handler_hosts:
             log(lname=__name__, level=logging.INFO,
                 msg=f"Creating logging http handler {n} {h}")
-            httphandler = DagrHTTPHandler(
-                h, host_mode, maxBytes, backupCount, frmt, filtered_modules, filtered_keys)
-            logging.getLogger().addHandler(httphandler)
+            http_handlers.append(DagrHTTPHandler(
+                h, host_mode, maxBytes, backupCount, frmt, filtered_modules, filtered_keys))
+        queuelistener.start()
+        logging.getLogger().addHandler(queuehandler)
     else:
         log(lname=__name__, level=logging.WARN,
             msg='Skipping http handlers: missing host_mode param')
@@ -156,7 +162,7 @@ class DagrHTTPHandler(logging.Handler):
     def emit(self, record):
         self.post_record(record)
 
-    def post_record(self, record, retry=False, connection_retry=0):
+    def post_record(self, record, retry=False, connection_retries=0):
         if not record.name in self.__filtered_modules:
             print(record.name, record.module)
             # print(record.__dict__)
@@ -182,6 +188,8 @@ class DagrHTTPHandler(logging.Handler):
                         disconnected = False
                     except (ConnectionError, ReadTimeout, RetryError):
                         sleep(30)
-                if connection_retry <= 3:
+                if connection_retries <= 10:
                     raise
-                self.post_record(record, connection_retry=connection_retry+1)
+                sleep(30)
+                print(f"HTTP logger connection retries {connection_retries}")
+                self.post_record(record, connection_retries=connection_retries+1)
