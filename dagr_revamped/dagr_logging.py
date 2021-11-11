@@ -165,7 +165,7 @@ class DagrHTTPHandler(logging.Handler):
 
     def post_record(self, record, retry=False, connection_retries=0):
         if not record.name in self.__filtered_modules:
-            print(record.name, record.module)
+            # print(record.name, record.module)
             # print(record.__dict__)
             try:
                 resp = self.__session.post(
