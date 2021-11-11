@@ -51,9 +51,8 @@ def get_logging_paths(config):
     for k, v in config.get('logging.files.locations').items():
         if not v == '':
             logging_paths.add((determine_path(config, k, v),
-                      config.get('logging.files.levels').get(k, None)))
+                               config.get('logging.files.levels').get(k, None)))
     return logging_paths
-
 
 
 def init_logging(config, level=None, host_mode=None):
@@ -85,10 +84,10 @@ def init_logging(config, level=None, host_mode=None):
     filtered_modules = config.get('logging.http', 'filteredmodules').split(',')
     filtered_keys = config.get('logging.http', 'filteredkeys').split(',')
     if len(http_handler_hosts) > 0 and not host_mode is None:
-        http_handlers=[]
+        http_handlers = []
         queue = Queue()
         queuehandler = QueueHandler(queue)
-        queuelistener = QueueListener(queue,handlers=http_handlers)
+        queuelistener = QueueListener(queue, handlers=http_handlers)
         for n, h in http_handler_hosts:
             log(lname=__name__, level=logging.INFO,
                 msg=f"Creating logging http handler {n} {h}")
@@ -195,4 +194,5 @@ class DagrHTTPHandler(logging.Handler):
                     raise
                 sleep(30)
                 print(f"HTTP logger connection retries {connection_retries}")
-                self.post_record(record, connection_retries=connection_retries+1)
+                self.post_record(
+                    record, connection_retries=connection_retries+1)
