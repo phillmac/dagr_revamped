@@ -87,13 +87,15 @@ def init_logging(config, level=None, host_mode=None):
         http_handlers = []
         queue = SimpleQueue()
         queuehandler = QueueHandler(queue)
-        queuelistener = QueueListener(queue, handlers=http_handlers)
         for n, h in http_handler_hosts:
             log(lname=__name__, level=logging.INFO,
                 msg=f"Creating logging http handler {n} {h}")
             http_handlers.append(DagrHTTPHandler(
                 h, host_mode, maxBytes, backupCount, frmt, filtered_modules, filtered_keys))
+
+        queuelistener = QueueListener(queue, *http_handlers)
         queuelistener.start()
+
         logging.getLogger().addHandler(queuehandler)
     else:
         log(lname=__name__, level=logging.WARN,
