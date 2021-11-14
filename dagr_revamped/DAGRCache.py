@@ -578,7 +578,7 @@ class DAGRCache():
             self.downloaded_pages.append(page)
             self.existing_pages.append(page)
             if page in self.__queue:
-                self.__queue.re
+                self.__queue.remove(page)
         elif self.dagr_config.get('dagr', 'overwrite'):
             self.downloaded_pages.append(page)
 
