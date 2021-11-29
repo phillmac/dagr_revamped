@@ -81,16 +81,16 @@ class DAGRBaseConf():
     def get_json_section(self, section):
         return copy(self.__json_config.get(section))
 
-    def get(self, section, key=None, key_errors=True):
+    def get(self, section, key=None, key_errors=True, default=None):
         section = str(section).lower()
         if section in self.__settings:
             if key is None:
                 return self.__settings.get(section)
             key = str(key).lower()
             return convert_val(self.__settings.get(section).get(key))
-        if key_errors:
+        if key_errors and default is None:
             raise KeyError('Section {} does not exist'.format(section))
-        return None
+        return default
 
     def set_key(self, section, key, value):
         section = str(section).lower()
@@ -184,7 +184,8 @@ class DAGRConfig(DAGRBaseConf):
         'Logging.Files.Levels': {},
         'Logging.HTTP': {
             'FilteredModules': 'urllib3.connectionpool,urllib3.util.retry,selenium.webdriver.remote.remote_connection',
-            'FilteredKeys': 'exc_info'
+            'FilteredKeys': 'exc_info',
+            'MaxConnectionRetries': -1
         },
         'Logging.HTTP.Hosts': {
         },
@@ -367,6 +368,7 @@ class DAGRConfig(DAGRBaseConf):
         'Logging.Files.Names': get_os_options('Logging.Files.Names', ['Local', 'Remote']),
         'Logging.Files.Names.Prefixes': get_os_options('Logging.Files.Names.Prefixes', ['Local', 'Remote']),
         'Logging.Files.Levels': get_os_options('Logging.Files.Levels', ['Local', 'Remote']),
+        'Logging.HTTP': get_os_options('Logging.HTTP', ['MaxConnectionRetries']),
         'Logging.HTTP.Hosts': get_os_section('Logging.HTTP.Hosts'),
         'Dagr.Cache': get_os_options('Dagr.Cache', ['Fileslist_Preload_Threshold', 'Preload_HTTP_Endpoint']),
         'Dagr.DeviationProcessor': get_os_options('Dagr.DeviationProcessor', ['FNS_Address']),

@@ -83,15 +83,18 @@ def init_logging(config, level=None, host_mode=None):
     http_handler_hosts = config.get('logging.http.hosts').items()
     filtered_modules = config.get('logging.http', 'filteredmodules').split(',')
     filtered_keys = config.get('logging.http', 'filteredkeys').split(',')
+    max_connection_retries = config.get('logging.http', 'maxconnectionretries', default=-1)
     if len(http_handler_hosts) > 0 and not host_mode is None:
         http_handlers = []
         queue = SimpleQueue()
         queuehandler = QueueHandler(queue)
+        log(lname=__name__, level=logging.INFO,
+                msg=f"Max connection retries: {max_connection_retries}")
         for n, h in http_handler_hosts:
             log(lname=__name__, level=logging.INFO,
                 msg=f"Creating logging http handler {n} {h}")
             http_handlers.append(DagrHTTPHandler(
-                h, host_mode, maxBytes, backupCount, frmt, filtered_modules, filtered_keys))
+                h, host_mode, maxBytes, backupCount, frmt, filtered_modules, filtered_keys, max_connection_retries))
 
         queuelistener = QueueListener(queue, *http_handlers)
         queuelistener.start()
@@ -133,11 +136,12 @@ class RobustRFileHandler(RotatingFileHandler):
 
 
 class DagrHTTPHandler(logging.Handler):
-    def __init__(self, host, host_mode, max_bytes, backup_count, frmt, filtered_modules, filtered_keys):
+    def __init__(self, host, host_mode, max_bytes, backup_count, frmt, filtered_modules, filtered_keys, max_connection_retries):
         self.__host = host
         self.__host_mode = host_mode
         self.__max_bytes = max_bytes
         self.__backup_count = backup_count
+        self.__max_connection_retries = max_connection_retries
         self.__frmt = frmt
         self.MAX_POOLSIZE = 100
         self.__session = TCPKeepAliveSession()
@@ -192,7 +196,7 @@ class DagrHTTPHandler(logging.Handler):
                         disconnected = False
                     except (ConnectionError, ReadTimeout, RetryError):
                         sleep(30)
-                if connection_retries <= 10:
+                if self.__max_connection_retries == -1 or connection_retries <= self.__max_connection_retries:
                     raise
                 sleep(30)
                 print(f"HTTP logger connection retries {connection_retries}")
