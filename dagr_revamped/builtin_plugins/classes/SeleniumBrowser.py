@@ -141,19 +141,26 @@ class SeleniumBrowser():
         is_ready = False
         count = 0
         while not is_ready and count <= 6:
-            is_ready = self.__driver.execute_async_script(
+            count += 1
+            result = self.__driver.execute_async_script(
                 """
-const done = arguments[0]
+const done = arguments[0];
 (async () => {
-  count=1
+  var count=1;
   while(count <= 20 && document.readyState !== 'complete'){
-    count++
-    await new Promise(r => setTimeout(r, 500))
+    count++;
+    await new Promise(r => setTimeout(r, 500));
   }
-  done(document.readyState === 'complete')
-})()
-"""     )
-        logger.log(15, 'Got page ready result %s', is_ready)
+  return { readyState: document.readyState };
+})().then((result) => {
+    console.log({result, done});
+    done(result);
+    })
+""")
+            logger.log(15, 'Got page ready result %s', result)
+            is_ready = (result.get('readyState') == 'complete')
+        if not is_ready:
+            raise DagrException('Page ready timeout')
 
     def wait_stale(self, element, message='Timed out while waiting for staleness', delay=None):
         if delay is None:
