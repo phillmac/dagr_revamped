@@ -140,7 +140,15 @@ class SeleniumBrowser():
 
     def wait_ready(self):
         WebDriverWait(self.__driver, 60).until(
-            lambda d: d.execute_script('return document.readyState') == 'complete')
+            lambda d: d.execute_async_script("""
+const done = arguments[0]
+(async () => {
+  while(document.readyState') !== 'complete'){
+    await new Promise(r => setTimeout(r, 50))
+  }
+  done(true)
+})()
+"""
 
     def wait_stale(self, element, message='Timed out while waiting for staleness', delay=None):
         if delay is None:
