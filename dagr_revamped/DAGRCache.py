@@ -329,11 +329,12 @@ class DAGRCache():
             except StopIteration:
                 logger.error(err, exc_info=True)
                 raise
-            if not artist_name in self.artists:
-                self.artists[artist_name] = {
-                    'Home Page': '{}/{}'.format(base_url, artist_url_p), 'Artworks': {}}
-            self.artists[artist_name]['Artworks'][rfn] = page
-        self.__update_cache(self.artists_name, self.artists)
+            existing_artists = self.artists
+            if not artist_name in existing_artists:
+                existing_artists[artist_name] = {
+                    'Home Page': str(artist_url_p), 'Artworks': {}}
+            existing_artists[artist_name]['Artworks'][rfn] = page
+        self.__update_cache(self.artists_name, existing_artists)
 
     def rename_deviant(self, old, new):
         rn_count = 0
