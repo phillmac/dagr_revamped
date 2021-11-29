@@ -143,12 +143,14 @@ class SeleniumBrowser():
             lambda d: d.execute_async_script("""
 const done = arguments[0]
 (async () => {
-  while(document.readyState') !== 'complete'){
-    await new Promise(r => setTimeout(r, 50))
+  count=1
+  while(count <= 20 document.readyState' !== 'complete'){
+    count++
+    await new Promise(r => setTimeout(r, 500))
   }
-  done(true)
+  done(document.readyState === 'complete')
 })()
-"""
+"""))
 
     def wait_stale(self, element, message='Timed out while waiting for staleness', delay=None):
         if delay is None:
