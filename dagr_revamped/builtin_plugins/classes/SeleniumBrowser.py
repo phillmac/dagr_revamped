@@ -25,7 +25,6 @@ except ModuleNotFoundError:
 logger = logging.getLogger(__name__)
 
 
-
 class SeleniumBrowser():
     def __init__(self, app_config, config, mature, driver=None):
         self.__app_config = app_config
@@ -114,14 +113,14 @@ class SeleniumBrowser():
                         raise
                     sleep(5)
         self.__driver.set_script_timeout(self.__default_script_timeout)
-        logger.info('Default async script timeout: %s', self.__default_script_timeout)
+        logger.info('Default async script timeout: %s',
+                    self.__default_script_timeout)
 
         self.__browser = utils_create_browser(
             mature=self.__mature,
             user_agent=self.__driver.execute_script(
                 "return navigator.userAgent;")
         )
-
 
     @contextmanager
     def get_r_context(self):
@@ -130,7 +129,7 @@ class SeleniumBrowser():
             return
 
         if self.__create_driver_policy in ['prohibit']:
-                raise DagrException('Policy disallows creating driver')
+            raise DagrException('Policy disallows creating driver')
         self.__create_driver()
         try:
             yield
@@ -139,8 +138,11 @@ class SeleniumBrowser():
                 self.quit()
 
     def wait_ready(self):
-        WebDriverWait(self.__driver, 60).until(
-            lambda d: d.execute_async_script("""
+        is_ready = False
+        count = 0
+        while not is_ready and count <= 6:
+            is_ready = self.__driver.execute_async_script(
+                """
 const done = arguments[0]
 (async () => {
   count=1
@@ -150,7 +152,8 @@ const done = arguments[0]
   }
   done(document.readyState === 'complete')
 })()
-"""))
+"""     )
+        logger.log(15, 'Got page ready result %s', is_ready)
 
     def wait_stale(self, element, message='Timed out while waiting for staleness', delay=None):
         if delay is None:
@@ -182,7 +185,8 @@ const done = arguments[0]
                 'loginbutton').send_keys(Keys.RETURN)
         except NoSuchElementException:
             logger.debug(self.get_current_page().prettify())
-            ss_output=str(self.__app_config.output_dir.joinpath('login-fail.png'))
+            ss_output = str(
+                self.__app_config.output_dir.joinpath('login-fail.png'))
             logger.info(f"Dumping ss to {ss_output}")
             self.__driver.save_screenshot(ss_output)
             logger.info(f"current url is {self.__driver.current_url}")
@@ -251,10 +255,12 @@ const done = arguments[0]
 
             if user_link:
                 data_username = user_link.get('data-username')
-                logger.log(level=10, msg=f'Detected data-username "{data_username}"')
+                logger.log(
+                    level=10, msg=f'Detected data-username "{data_username}"')
             if data_username and data_username.lower() == self.__app_config.get(
-            'deviantart', 'username').lower():
-                logger.log(level=10, msg='Detected already logged in: user link')
+                    'deviantart', 'username').lower():
+                logger.log(
+                    level=10, msg='Detected already logged in: user link')
             else:
                 found = current_page.find('a', {'href': self.__login_url})
                 if found and found.text.lower() == 'sign in':
@@ -327,7 +333,6 @@ const done = arguments[0]
         finally:
             if timeout:
                 self.__driver.set_script_timeout(self.__default_script_timeout)
-
 
     def execute_script(self, *args, **kwargs):
         return self.__driver.execute_script(*args, **kwargs)
