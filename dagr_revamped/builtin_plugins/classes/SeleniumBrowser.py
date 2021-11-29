@@ -144,7 +144,7 @@ class SeleniumBrowser():
 const done = arguments[0]
 (async () => {
   count=1
-  while(count <= 20 && document.readyState' !== 'complete'){
+  while(count <= 20 && document.readyState !== 'complete'){
     count++
     await new Promise(r => setTimeout(r, 500))
   }
