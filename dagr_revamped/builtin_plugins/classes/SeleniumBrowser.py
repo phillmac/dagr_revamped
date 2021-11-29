@@ -319,11 +319,11 @@ const done = arguments[0]
     def find_element_by_link_text(self, *args, **kwargs):
         return self.__driver.find_element_by_link_text(*args, **kwargs)
 
-    def execute_async_script(self, *args, **kwargs, timeout=None):
+    def execute_async_script(self, *args, timeout=None, **kwargs):
         if timeout:
             self.__driver.set_script_timeout(timeout)
         try:
-            return = self.__driver.execute_async_script(*args, **kwargs)
+            return self.__driver.execute_async_script(*args, **kwargs)
         finally:
             if timeout:
                 self.__driver.set_script_timeout(self.__default_script_timeout)
