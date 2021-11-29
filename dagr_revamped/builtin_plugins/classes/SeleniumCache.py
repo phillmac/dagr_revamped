@@ -33,10 +33,10 @@ class SlugCache():
         logger.log(15, 'loading remote %s', self.__filename)
         try:
             if ignore_breaker:
-                    if  self.__remote_io.exists(fname=self.__filename):
+                    if  self.__remote_io.exists(fname=self.__filename, update_cache=False):
                         update_remote = self.__remote_io.load_json(self.__filename, log_errors=True)
             else:
-                if self.__remote_breaker.call(self.__remote_io.exists, fname=self.__filename):
+                if self.__remote_breaker.call(self.__remote_io.exists, fname=self.__filename, update_cache=False):
                     update_remote = self.__remote_breaker.call(self.__remote_io.load_json, self.__filename, log_errors=True)
 
             if update_remote:
