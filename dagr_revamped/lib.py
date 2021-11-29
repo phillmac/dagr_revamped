@@ -937,28 +937,26 @@ class DAGRDeviationProcessor():
     def verify_best(self):
         fullimg_ft = next(iter(self.ripper.fallbackorder()))
         best_res = ['download', 'art_stage', fullimg_ft]
-        self.__logger.log(level=15, msg='Verifying {}'.format(self.page_link))
+        logger.info('Verifying %s', self.page_link)
         _flink, ltype = self.find_link()
         if not ltype in best_res:
-            self.__logger.log(
-                level=15, msg=f"Not a full image, found type is {ltype}")
+            self.__logger.info('Not a full image, found type is %s', ltype)
             return False
-        if self.get_fext() == '.htm':
-            self.__logger.log(level=15, msg='Skipping htm file')
+
+        if self.get_fext() in ['.htm', 'html']:
+            self.__logger.info('Skipping html file')
             return False
-        dest = self.get_dest()
+        fname = self.get_fname()
         response = self.get_response()
-        if compare_size(dest, response.content):
-            self.__logger.log(
-                level=15, msg=f"Sizes match, found type is {ltype}"),
+        if compare_size(self.cache.cache_io, fname, response.content):
+            self.__logger.info('Sizes match, found type is %s', ltype)
             return False
         if self.__verify_debug_loc:
-            debug = self.base_dir.joinpath(
-                self.__verify_debug_loc)
-            make_dirs(debug)
-            debug_file = debug.joinpath(dest.name)
-            debug_file.write_bytes(dest.read_bytes())
-            self.__logger.debug('Debug file {}'.format(debug_file))
+            if not self.cache.cache_io.dir_exists(dir_name=self.__verify_debug_loc):
+                self.cache.cache_io.mkdir(dir_name=self.__verify_debug_loc)
+
+            self.cache.cache_io.replace(dest_fname=fname, dest_subdir=self.__verify_debug_loc, src_fname=fname)
+            self.__logger.debug('Debug file %s/%s/%s', self.cache.rel_dir, self.__verify_debug_loc, fname)
         return True
 
     def verify_exists(self, warn_on_existing=True):

@@ -292,17 +292,15 @@ def filter_deviants(dfilter, queue):
     return results
 
 
-def compare_size(dest, content):
-    if not isinstance(dest, Path):
-        dest = Path(dest)
-    if not dest.exists():
+def compare_size(cache_io, fname, content):
+    if not cache_io.exists(fname=fname, update_cache=False):
         return False
-    current_size = dest.stat().st_size
+    current_size = cache_io.stat(fname=fname).get('st_size')
     best_size = len(content)
-    if not current_size < best_size:
+    if current_size >= best_size:
         return True
-    logger.info('Current file {} is smaller by {} bytes'.format(
-        dest, best_size - current_size))
+    logger.info('Current file %s is smaller by %s bytes',
+        fname, best_size - current_size)
     return False
 
 
@@ -410,12 +408,12 @@ def ensure_path(fpath, resolve=True):
 
 
 def http_encode_multipart(dir_path, filename, content):
-    
+
     if isinstance(content, str):
         integrity = md5(content.encode())
     else:
         integrity = md5(content)
-    
+
     return MultipartEncoder(
         fields={'params': json.dumps(dict(
                 path=dir_path,
@@ -521,8 +519,8 @@ def http_list_dir(session, endpoint, dir_path):
     return http_fetch_json(session, endpoint, path=dir_path)
 
 
-def http_replace(session, endpoint, dir_path, fname, new_fname):
-    return http_post_json(session, endpoint, path=dir_path, filename=fname, new_filename=new_fname)
+def http_replace(session, endpoint, dest_subdir, dest_fname, src_subdir, src_fname):
+    return http_post_json(session, endpoint, dest_subdir=dest_subdir, dest_fname=dest_fname, src_subdir=src_subdir, src_fname=src_fname)
 
 
 def http_mkdir(session, endpoint, dir_path, dir_name=None):
