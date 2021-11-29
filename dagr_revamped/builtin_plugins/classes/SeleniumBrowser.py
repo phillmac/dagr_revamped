@@ -33,6 +33,7 @@ class SeleniumBrowser():
         self.__mature = mature
         self.__driver = None
         self.__browser = None
+        self.__default_script_timeout = self.__config.get('script_timeout', 45)
         self.__login_policy = self.__config.get('login_policy')
         self.__login_url = self.__config.get(
             'login_url', [
@@ -112,9 +113,8 @@ class SeleniumBrowser():
                     if tries >= max_tries:
                         raise
                     sleep(5)
-        script_timeout = self.__config.get('script_timeout', 45)
-        self.__driver.set_script_timeout(script_timeout)
-        logger.info(f"Async script timeout: {script_timeout}")
+        self.__driver.set_script_timeout(self.__default_script_timeout)
+        logger.info('Default async script timeout: %s', self.__default_script_timeout)
 
         self.__browser = utils_create_browser(
             mature=self.__mature,
@@ -317,8 +317,15 @@ const done = arguments[0]
     def find_element_by_link_text(self, *args, **kwargs):
         return self.__driver.find_element_by_link_text(*args, **kwargs)
 
-    def execute_async_script(self, *args, **kwargs):
-        return self.__driver.execute_async_script(*args, **kwargs)
+    def execute_async_script(self, *args, **kwargs, timeout=None):
+        if timeout:
+            self.__driver.set_script_timeout(timeout)
+        try:
+            return = self.__driver.execute_async_script(*args, **kwargs)
+        finally:
+            if timeout:
+                self.__driver.set_script_timeout(self.__default_script_timeout)
+
 
     def execute_script(self, *args, **kwargs):
         return self.__driver.execute_script(*args, **kwargs)
