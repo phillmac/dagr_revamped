@@ -32,9 +32,12 @@ class SeleniumBrowser():
         self.__mature = mature
         self.__driver = None
         self.__browser = None
+        self.__page_title = None
+        self.__page_source = None
+        self.__bs4 = None
         self.__default_script_timeout = self.__config.get('script_timeout', 45)
         self.__login_policy = self.__config.get('login_policy')
-        self.__login_url = self.__config.get(
+        self.__login_urls = self.__config.get(
             'login_url', [
                 'https://deviantart.com/users/login',
                 'https://www.deviantart.com/users/login'
@@ -54,19 +57,6 @@ class SeleniumBrowser():
             'on-demand-only'
         ]:
             self.__create_driver()
-
-        # if self.__mature:
-        #     self.__driver.get('https://deviantart.com')
-        #     self.__driver.add_cookie({
-        #         'name': 'agegate_state',
-        #         'value': '1',
-        #         "domain": 'deviantart.com',
-        #         "expires": '',
-        #         'path': '/',
-        #         'httpOnly': False,
-        #         'HostOnly': False,
-        #         'Secure': False
-        #     })
 
     def __enter__(self):
         if self.__driver is None:
@@ -172,10 +162,10 @@ const done = arguments[0];
     def do_login(self):
         if self.__login_policy == 'prohibit':
             raise LoginDisabledError('Login policy set to prohibit')
-        if not self.__driver.current_url in self.__login_url:
-            url = next(iter(self.__login_url))
+        if not self.get_url() in self.__login_urls:
+            url = next(iter(self.__login_urls))
             logger.info(f"Navigating to {url}")
-            self.__driver.get(url)
+            self.__driver_get(url)
 
         user = self.__app_config.get(
             'deviantart', 'username', key_errors=False)
@@ -194,11 +184,12 @@ const done = arguments[0];
             logger.debug(self.get_current_page().prettify())
             ss_output = str(
                 self.__app_config.output_dir.joinpath('login-fail.png'))
-            logger.info(f"Dumping ss to {ss_output}")
+            logger.info('Dumping ss to %s', ss_output)
             self.__driver.save_screenshot(ss_output)
-            logger.info(f"current url is {self.__driver.current_url}")
+            logger.info('current url is %s', self.get_url())
             raise
-        while self.__driver.current_url in self.__login_url:
+        while self.get_url() in self.__login_urls:
+            logger.debug('Waiting for page other than login')
             self.wait_ready()
 
     @property
@@ -223,29 +214,47 @@ const done = arguments[0];
 
     @property
     def title(self):
-        return self.__driver.title
+        if  self.__page_title is None:
+            self.__page_title = self.self.__driver.title
+
+        return self.__page_title
+
+    @property
+    def page_source(self):
+        if self.__page_source is None:
+            self.__page_source = self.__driver.page_source
+        return self.__page_source
 
     @property
     def current_url(self):
-        return self.__driver.current_url
+        return self.get_url()
 
     def absolute_url(self, url):
-        return urllib.parse.urljoin(self.__driver.current_url, url)
+        return urllib.parse.urljoin(self.get_url(), url)
 
     def get_url(self):
-        return self.__driver.current_url
+        logger.debug('Fetching url')
+        result = self.__driver.current_url
+        logger.debug('Url is %s', result)
+        return result
+
+    def __driver_get(self, url):
+        self.__page_title = None
+        self.__page_source = None
+        self.__driver.get(url)
 
     def __open(self, url):
-        self.__driver.get(url)
+        self.__driver_get(url)
         self.wait_ready()
-        if self.__driver.current_url in self.__login_url:
+
+        current_url = self.get_url()
+        if current_url in self.__login_urls:
             if self.__login_policy in ['disable', 'prohibit']:
                 raise LoginDisabledError('Automatic login disabled')
-            logger.info('Detected login required. Reason: current url')
-            logger.info(f"Cuurent url: {self.__driver.current_url}")
+            logger.info('Detected login required. Reason: current url: %s', current_url)
             self.do_login()
-            if self.__driver.current_url != url:
-                self.__driver.get(url)
+            if self.get_url() != url:
+                self.__driver_get(url)
 
     def open_do_login(self, url):
         self.__open(url)
@@ -269,33 +278,31 @@ const done = arguments[0];
                 logger.log(
                     level=10, msg='Detected already logged in: user link')
             else:
-                found = current_page.find('a', {'href': self.__login_url})
+                found = current_page.find('a', {'href': self.__login_urls})
                 if found and found.text.lower() == 'sign in':
                     logger.info('Detected login required. reason: hyperlink')
                     logger.info(found.prettify())
                     self.do_login()
 
-        if self.__driver.current_url != url:
-            self.__driver.get(url)
+        if self.get_url() != url:
+           self.__driver_get(url)
 
     def open(self, url):
+        self.__bs4 = None
         if self.__login_policy == 'force':
             self.open_do_login(url)
         else:
             self.__open(url)
-        page_title = self.title
-        page_source = self.__driver.page_source
 
-        if '404 Not Found' in page_title or 'DeviantArt: 404' in page_title:
-            return Response(content=page_source, status=404)
+        if '404 Not Found' in self.title or 'DeviantArt: 404' in self.title:
+            return Response(content=self.page_source, status=404)
 
-        if '403 ERROR' in page_source:
-            return Response(content=page_source, status=403)
+        if '403 ERROR' in self.page_source:
+            return Response(content=self.page_source, status=403)
 
-        if '504 Gateway Time-out' in page_source:
-            return Response(content=page_source, status=504)
-
-        return Response(content=page_source)
+        if '504 Gateway Time-out' in self.page_source:
+            return Response(content=self.page_source, status=504)
+        return Response(content=self.page_source)
 
     def get(self, url, timeout=30, *args, **kwargs):
         cookies = dict((c['name'], c['value'])
@@ -303,8 +310,10 @@ const done = arguments[0];
         return self.__browser.get(url, timeout=timeout, *args, **kwargs, cookies=cookies)
 
     def get_current_page(self):
-        soup_config = self.__app_config.get('dagr.bs4.config')
-        return BeautifulSoup(self.__driver.page_source, **soup_config)
+        if self.__bs4 is None:
+            soup_config = self.__app_config.get('dagr.bs4.config')
+            self.__bs4 = BeautifulSoup(self.page_source, **soup_config)
+        return self.__bs4
 
     def links(self, url_regex=None, link_text=None, *args, **kwargs):
         all_links = self.get_current_page().find_all(
