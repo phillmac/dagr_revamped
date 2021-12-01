@@ -196,7 +196,7 @@ class DagrHTTPHandler(logging.Handler):
                         disconnected = False
                     except (ConnectionError, ReadTimeout, RetryError):
                         sleep(30)
-                if self.__max_connection_retries == -1 or connection_retries <= self.__max_connection_retries:
+                if self.__max_connection_retries != -1 and connection_retries <= self.__max_connection_retries:
                     raise
                 sleep(30)
                 print(f"HTTP logger connection retries {connection_retries}")
