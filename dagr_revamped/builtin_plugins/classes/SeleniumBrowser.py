@@ -215,7 +215,7 @@ const done = arguments[0];
     @property
     def title(self):
         if  self.__page_title is None:
-            self.__page_title = self.self.__driver.title
+            self.__page_title = self.__driver.title
 
         return self.__page_title
 
