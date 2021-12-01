@@ -62,6 +62,9 @@ class DAGRIo():
     def __del__(self):
         logger.debug('Destroying DAGRIo %s', self.__id)
 
+    def close(self):
+        pass
+
     @ property
     def base_dir(self):
         return self.__base_dir

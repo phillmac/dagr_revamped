@@ -53,80 +53,81 @@ class DAGRHTTPIo(DAGRIo):
         self.__mkdir_ep = endpoints.get('mkdir', None)
         self.__rename_dir_ep = endpoints.get('rename_dir', None)
         self.__dir_lock_ep = endpoints.get('dir_lock', None)
-
-
-        session = TCPKeepAliveSession()
+        self.__session = TCPKeepAliveSession()
 
         if self.__exists_ep is None:
             logger.warning('No exists endpoint configured')
         else:
             self.exists = lambda fname=None, dest=None, subdir=None, update_cache=None: http_exists(
-                session, self.__exists_ep, dir_path=self.get_rel_path(subdir=subdir), itemname=get_fname(fname, dest), update_cache=update_cache)
+                self.__session, self.__exists_ep, dir_path=self.get_rel_path(subdir=subdir), itemname=get_fname(fname, dest), update_cache=update_cache)
 
         if self.__list_dir_ep is None:
             logger.warning('No list dir endpoint configured')
         else:
             self.list_dir = lambda: http_list_dir(
-                session, self.__list_dir_ep, self.rel_dir_name)
+                self.__session, self.__list_dir_ep, self.rel_dir_name)
 
         if self.__load_json_ep is None:
             logger.warning('No load json endpoint configured')
         else:
             self.load_json = lambda fname, log_errors=True: http_fetch_json(
-                session, self.__load_json_ep,  path=self.rel_dir_name, filename=fname, log_errors=log_errors)
+                self.__session, self.__load_json_ep,  path=self.rel_dir_name, filename=fname, log_errors=log_errors)
 
         if self.__save_json_ep is None:
             logger.warning('No save json endpoint configured')
         else:
             self.save_json = lambda fname, content, do_backup=True, log_errors=True: http_post_file_json(
-                session, self.__save_json_ep, self.rel_dir_name, fname, content, do_backup, log_errors=log_errors)
+                self.__session, self.__save_json_ep, self.rel_dir_name, fname, content, do_backup, log_errors=log_errors)
 
         if self.__replace_ep is None:
             logger.warning('No replace endpoint configured')
         else:
             self.replace = lambda fname, new_fname: http_replace(
-                session, self.__replace_ep, self.rel_dir_name, fname, new_fname)
+                self.__session, self.__replace_ep, self.rel_dir_name, fname, new_fname)
 
         if self.__update_fn_cache_ep is None:
             logger.warning('No update filename cache endpoint configured')
         else:
             self.update_fn_cache = lambda fname: http_post_json(
-                session, self.__update_fn_cache_ep, path=self.rel_dir_name, filenames=[fname])
+                self.__session, self.__update_fn_cache_ep, path=self.rel_dir_name, filenames=[fname])
 
         if self.__write_file_ep is None:
             logger.warning('No write file endpoint configured')
         else:
             self.write = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
-                session, self.__write_file_ep,  self.get_rel_path(subdir=subdir), get_fname(fname, dest), content)
+                self.__session, self.__write_file_ep,  self.get_rel_path(subdir=subdir), get_fname(fname, dest), content)
             self.write_bytes = lambda content, fname=None, dest=None, subdir=None: http_post_file_multipart(
-                session, self.__write_file_ep,  self.get_rel_path(subdir=subdir), get_fname(fname, dest), content).get('size')
+                self.__session, self.__write_file_ep,  self.get_rel_path(subdir=subdir), get_fname(fname, dest), content).get('size')
 
         if self.__utime_ep is None:
             logger.warning('No utime endpoint configured')
         else:
             self.utime = lambda mtime, fname=None, dest=None: http_post_json(
-                session, self.__utime_ep,  mtime=mtime, path=self.rel_dir_name, filename=get_fname(fname, dest))
+                self.__session, self.__utime_ep,  mtime=mtime, path=self.rel_dir_name, filename=get_fname(fname, dest))
 
         if self.__dir_exists_ep is None:
             logger.warning('No dir exists endpoint configured')
         else:
             self.dir_exists = lambda subdir=None, dir_name = None: http_exists(
-                session, self.__dir_exists_ep, dir_path=self.get_rel_path(subdir=subdir, dir_name=dir_name))
+                self.__session, self.__dir_exists_ep, dir_path=self.get_rel_path(subdir=subdir, dir_name=dir_name))
 
         if self.__mkdir_ep is None:
             logger.warning('No mkdir endpoint configured')
         else:
             self.mkdir = lambda subdir=None, dir_name = None: http_mkdir(
-                session, self.__mkdir_ep, dir_path=self.get_rel_path(subdir=subdir, dir_name=dir_name))
+                self.__session, self.__mkdir_ep, dir_path=self.get_rel_path(subdir=subdir, dir_name=dir_name))
 
         if self.__rename_dir_ep is None:
             logger.warning('No rename dir endpoint configured')
         else:
             self.rename_dir = lambda dir_name=None, src=None, new_dir_name=None, dest=None: http_rename_dir(
-                session, self.__rename_dir_ep, dir_path=self.rel_dir_name, dir_name=get_dir_name(dir_name, src), new_dir_name=get_new_dir_name(new_dir_name, dest))
+                self.__session, self.__rename_dir_ep, dir_path=self.rel_dir_name, dir_name=get_dir_name(dir_name, src), new_dir_name=get_new_dir_name(new_dir_name, dest))
 
         if self.__dir_lock_ep is None:
             logger.warning('No dir lock endpoint configured')
         else:
             self.lock = lambda : http_lock_dir(session, self.__dir_lock_ep, dir_path=self.rel_dir_name)
-            self.release_lock = lambda : http_release_lock(session, self.__dir_lock_ep, dir_path=self.rel_dir_name)
+            self.release_lock = lambda : http_release_lock(self.__session, self.__dir_lock_ep, dir_path=self.rel_dir_name)
+
+    def close(self):
+        self.__session.close()
