@@ -37,7 +37,6 @@ logger = logging.getLogger(__name__)
 
 class DAGR():
     def __init__(self, **kwargs):
-        self.__logger = logging.getLogger(__name__)
         self.__work_queue = {}
         self.error_report = []
         self.__kwargs = kwargs
@@ -124,14 +123,14 @@ class DAGR():
     def plugin_class_init(self, class_name, default=None):
         plugin_name = self.config.get('dagr.plugins.classes', class_name)
         if (plugin_name is None) or (plugin_name.lower() == 'default'):
-            self.__logger.info(f"Using default {class_name}")
+            logger.info('Using default %s', class_name)
             return default
 
         funcs = self.pl_manager.get_funcs(class_name)
         if not plugin_name in funcs:
             raise Exception(
                 f"Could not find {class_name} plugin {plugin_name}")
-        self.__logger.info(f"Using {plugin_name} {class_name} plugin")
+        logger.info('Using %s %s plugin', plugin_name, class_name)
         return funcs.get(plugin_name)
 
     def browser_init(self):
@@ -189,9 +188,9 @@ class DAGR():
             wq = self.find_refresh(wq)
         else:
             wq = {}
-            self.__logger.log(5, f'Deviants: {self.deviants}')
-            self.__logger.log(5, f'Modes: {self.modes}')
-            self.__logger.log(5, f'Mode vals: {self.mode_vals}')
+            logger.log(5, 'Deviants: %s', self.deviants)
+            logger.log(5, 'Modes: %s', self.modes)
+            logger.log(5, 'Mode vals: %s', self.mode_vals)
             if self.deviants:
                 for deviant in self.deviants:
                     for mode in self.modes:
@@ -205,8 +204,8 @@ class DAGR():
                         update_d(wq, {None: {mode: [self.mode_vals]}})
                     else:
                         update_d(wq, {None: {mode: []}})
-        self.__logger.log(level=logging.INFO if self.show_queue else 4,
-                          msg='Work queue: {}'.format(pformat(wq)))
+        logger.log(logging.INFO if self.show_queue else 4,
+                   'Work queue: %s', wq)
         return wq
 
     def find_refresh(self, queue):
@@ -221,10 +220,10 @@ class DAGR():
             refresh_ts = date_parse(self.refresh_only).timestamp()
             seconds = now - refresh_ts
         if not seconds > 0:
-            self.__logger.warning(
+            logger.warning(
                 'Refresh-only seconds must be greater then 0')
             return queue
-        self.__logger.info('Refresh seconds: {}'.format(seconds))
+        logger.info('Refresh seconds: %s', seconds)
         if None in sq.keys():
             sq.pop(None)
         while sq:
@@ -233,23 +232,21 @@ class DAGR():
                 modes = sq.pop(deviant)
                 deviant, group = self.resolve_deviant(deviant)
                 if group:
-                    self.__logger.info(
-                        'Skipping unsupported group {}'.format(deviant))
+                    logger.info('Skipping unsupported group %s', deviant)
                     continue
                 for mode, mode_vals in modes.items():
                     if mode_vals:
                         for mval in mode_vals:
-                            self.__logger.debug(
-                                'Checking {}: {}: {}'.format(deviant, mode, mval))
+                            logger.debug('Checking %s: %s: %s',
+                                         deviant, mode, mval)
                             if self.check_lastcrawl(seconds, mode, deviant, mval):
                                 return {deviant: {mode: [mval]}}
                     else:
-                        self.__logger.debug(
-                            'Checking {}: {}'.format(deviant, mode))
+                        logger.debug('Checking %s: %s', deviant, mode)
                         if self.check_lastcrawl(seconds, mode, deviant):
                             return {deviant: {mode: None}}
             except DagrException:
-                self.__logger.debug(
+                logger.debug(
                     'Exception while finding refresh: ', exc_info=True)
         return {}
 
@@ -261,15 +258,15 @@ class DAGR():
                 base_dir, rel_dir, self.config))
             last_crawled = cache.last_crawled.get(crawl_mode)
             if last_crawled == 'never':
-                self.__logger.debug('{}: never crawled'.format(base_dir))
+                logger.debug('%s: never crawled', base_dir)
                 return True
             compare_seconds = datetime.now().timestamp() - last_crawled
             if compare_seconds > seconds:
-                self.__logger.debug('{}: comp: {}, seconds: {}, compare_seconds > seconds:{}'.format(
-                    base_dir, compare_seconds, seconds, compare_seconds > seconds))
+                logger.debug('%s: comp: %s, seconds: %s, compare_seconds > seconds:%s',
+                             base_dir, compare_seconds, seconds, compare_seconds > seconds)
                 return True
         else:
-            self.__logger.warning('Skipping missing dir {}'.format(base_dir))
+            logger.warning('Skipping missing dir %s', base_dir)
         return False
 
     def save_queue(self, path='.queue'):
@@ -292,20 +289,20 @@ class DAGR():
         if not self.get_queue():
             raise ValueError('Empty work queue')
         wq = self.get_queue()
-        self.__logger.info('Mature mode: {}' .format(self.mature()))
-        self.__logger.info(f'Antisocial check enabled: {self.antisocial()}')
-        self.__logger.info('Fix missing mode: {}'.format(self.fixmissing))
-        self.__logger.info('Fix artists mode: {}'.format(self.fixartists))
-        self.__logger.info('No crawl mode: {}'.format(self.nocrawl))
-        self.__logger.info('Reverse mode: {}'.format(self.reverse()))
-        self.__logger.info('Test mode: {}'.format(self.test))
-        self.__logger.info('Verify mode: {}'.format(
-            self.verifybest or self.verifyexists))
-        self.__logger.info('Unfindable mode: {}'.format(self.unfindable))
-        self.__logger.info('Loaded plugins: {}'.format(
-            pformat(self.pl_manager.loaded_plugins)))
-        self.__logger.info('Enabled plugins: {}'.format(
-            pformat(self.pl_manager.enabled_plugins)))
+        logger.info('Mature mode: %s', self.mature())
+        logger.info('Antisocial check enabled: %s', self.antisocial())
+        logger.info('Fix missing mode: %s', self.fixmissing)
+        logger.info('Fix artists mode: %s', self.fixartists)
+        logger.info('No crawl mode: %s', self.nocrawl)
+        logger.info('Reverse mode: %s', self.reverse())
+        logger.info('Test mode: %s', self.test)
+        logger.info('Verify mode: %s',
+                    self.verifybest or self.verifyexists)
+        logger.info('Unfindable mode: %s', self.unfindable)
+        logger.info('Loaded plugins: %s',
+                    pformat(self.pl_manager.loaded_plugins))
+        logger.info('Enabled plugins: %s',
+                    pformat(self.pl_manager.enabled_plugins))
 
         while self.keep_running():
             if None in wq.keys():
@@ -317,7 +314,7 @@ class DAGR():
             except StopIteration:
                 break
             self.rip(modes, deviant)
-            self.__logger.info('Finished {}'.format(deviant))
+            logger.info('Finished %s', deviant)
 
     def rip(self, modes, deviant=None):
         group = None
@@ -325,19 +322,18 @@ class DAGR():
             try:
                 deviant, group = self.resolve_deviant(deviant)
             except DagrException as ex:
-                self.__logger.warning(
-                    'Deviant {} not found or deactivated!: {}'.format(deviant, ex))
+                logger.warning(
+                    'Deviant %s not found or deactivated!: %s', deviant, str(ex))
                 self.handle_download_error(deviant, ex)
                 return
-        self.__logger.log(
-            level=5, msg='Ripping {} : {}'.format(deviant or '', modes))
+        logger.log(5, 'Ripping %s : %s', deviant, modes)
         directory = self.outdir()
         if deviant:
             try:
                 make_dirs(directory.joinpath(deviant))
             except OSError:
-                self.__logger.warning(
-                    'Failed to create deviant directory {}'.format(deviant), exc_info=True)
+                logger.warning(
+                    'Failed to create deviant directory %s', deviant, exc_info=True)
                 return
         for mode, mode_vals in modes.items():
             if mode_vals:
@@ -349,12 +345,12 @@ class DAGR():
                 return
 
     def _rip(self, mode, deviant=None, mval=None, group=False):
-        mode_section = 'deviantart.modes.{}'.format(mode)
+        mode_section = f"deviantart.modes.{mode}"
         if group:
             group_url_fmt = self.config.get(mode_section, 'group_url_fmt')
             if not group_url_fmt:
-                self.__logger.warning(
-                    'Unsuported mode {} ignored for group {}'.format(mode, deviant))
+                logger.warning(
+                    'Unsuported mode %s ignored for group %s', mode, deviant)
                 return
             folder_url_fmt = self.config.get(mode_section, 'folder_url_fmt')
             folder_regex = self.config.get(mode_section, 'folder_regex')
@@ -369,33 +365,32 @@ class DAGR():
                 self.rip_pages(url_fmt, mode, deviant, mval)
 
     def rip_pages(self, url_fmt, mode, deviant=None, mval=None):
-        msg = ''
+        msg_formatted = ''
         if deviant:
-            msg += '{deviant} : '
-        msg += '{mode}'
+            msg_formatted += f"{deviant} : "
+        msg_formatted += mode
         if mval:
-            msg += ' : {mval}'
-        msg_formatted = msg.format(**locals())
-        self.__logger.log(level=15, msg='Ripping {}'.format(msg_formatted))
-        self.__logger.log(level=3, msg=pformat(locals()))
+            msg_formatted += f" : {mval}"
+        logger.log(15, 'Ripping %s', msg_formatted)
+        logger.log(3, pformat(locals()))
         if deviant:
             deviant_lower = deviant.lower()
         try:
             with self.cache.get_cache(self.config, mode, deviant, mval, dagr_io=self.io) as cache:
-                pages = self.crawl_pages(url_fmt, mode, deviant, mval, msg)
+                pages = self.crawl_pages(
+                    url_fmt, mode, deviant, mval, msg_formatted)
                 if not self.keep_running():
                     return
                 if not pages and not self.nocrawl:
-                    self.__logger.log(
-                        level=15, msg='{} had no deviations'.format(msg_formatted))
+                    logger.log(15, '%s had no deviations', msg_formatted)
                     if self.test:
                         return
                     cache.save_crawled(self.maxpages is None)
                     # cache.save_nolink()
                     # cache.save_queue()
                     return
-                self.__logger.log(level=15, msg='Total deviations in {} found: {}'.format(
-                    msg_formatted, len(pages)))
+                logger.log(15, 'Total deviations in %s found: %s',
+                           msg_formatted, len(pages))
                 self.process_deviations(cache, pages)
                 if not self.nocrawl and not self.test:
                     cache.save_extras(self.maxpages is None)
@@ -411,11 +406,11 @@ class DAGR():
         except DagrCacheLockException:
             pass
 
-    def crawl_pages(self, url_fmt, mode, deviant=None, mval=None, msg=None):
+    def crawl_pages(self, url_fmt, mode, deviant=None, mval=None, msg_formatted=None):
         if self.nocrawl:
-            self.__logger.debug('No crawl mode, skipping pages crawl')
+            logger.debug('No crawl mode, skipping pages crawl')
             return []
-        return self.deviation_crawler.crawl(url_fmt, mode, deviant, mval, msg)
+        return self.deviation_crawler.crawl(url_fmt, mode, deviant, mval, msg_formatted)
 
     def get_folders(self, url_fmt, folder_regex, deviant):
         deviant_lower = deviant.lower()
@@ -426,7 +421,7 @@ class DAGR():
         while True:
             url = url_fmt.format(**locals())
             html = self.get(url).text
-            self.__logger.log(level=4, msg='{}'.format(dict(**locals())))
+            logger.log(4, pformat(dict(**locals())))
             k = re.findall(regex, html, re.IGNORECASE)
             if k == []:
                 break
@@ -440,7 +435,7 @@ class DAGR():
             offset += self.config.get('deviantart.offsets', 'folder')
         if self.reverse():
             folders.reverse()
-        self.__logger.debug('Found folders {}'.format(pformat(folders)))
+        logger.debug('Found folders %s', pformat(folders))
         return folders
 
     def resolve_deviant(self, deviant):
@@ -448,8 +443,7 @@ class DAGR():
             delay_needed = self.resolve_rate_limit() - \
                 (time() - self.__last_resolved)
             if delay_needed > 0:
-                self.__logger.log(
-                    level=15, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
+                logger.log(15, 'Need to sleep for %.4f seconds', delay_needed)
                 sleep(delay_needed)
 
         resolver = self.deviant_resolver(self)
@@ -495,8 +489,7 @@ class DAGR():
             }))
 
         page_count = len(pages)
-        logger.log(
-            level=15, msg='Total deviations to download: {}'.format(page_count))
+        logger.log(15, 'Total deviations to download: %s', page_count)
         fileslist_preload_threshold = self.config.get(
             'dagr.cache', 'fileslist_preload_threshold')
         logger.log(
@@ -531,14 +524,12 @@ class DAGR():
                 self.handle_download_error(link, ex)
             delay_needed = dl_delay - (time() - pstart)
             if downloaded and delay_needed > 0:
-                self.__logger.log(
-                    level=15, msg=f"Need to sleep for {'{:.2f}'.format(delay_needed)} seconds")
+                logger.log(15, 'Need to sleep for %.4f seconds', delay_needed)
                 sleep(delay_needed)
         cache.save('force' if self.fixartists else True)
 
     def handle_download_error(self, link, link_error):
-        self.__logger.warning(
-            "Download error ({}) : {}".format(link, str(link_error)))
+        logger.warning('Download error (%s) : %s', link, str(link_error))
         self.error_report.append(link_error)
 
     def get(self, url):
@@ -561,12 +552,10 @@ class DAGR():
                     raise DagrException(
                         f'Failed to get url: {url} {except_name}')
                 else:
-                    # self.__logger.critical(f'Get exception: {except_name}')
                     raise DagrException(
                         f'Failed to get url: {url} {except_name}')
         if not response.status_code == req_codes.ok:
-            raise DagrException(
-                'incorrect status code - {}'.format(response.status_code))
+            raise DagrException(f"Incorrect status code : {response.status_code}")
         return response
 
     def get_response(self, url, *args, **kwargs):
@@ -576,7 +565,7 @@ class DAGR():
         return self.browser.session.get(url, *args, timeout=150, **kwargs)
 
     def print_dl_total(self):
-        self.__logger.info(f"Download total: {self.total_dl_count}")
+        logger.info(f"Download total: {self.total_dl_count}")
 
     def print_errors(self):
         errors_formatted = {}
@@ -587,9 +576,9 @@ class DAGR():
                     errors_formatted[error_string] += 1
                 else:
                     errors_formatted[error_string] = 1
-            self.__logger.warning("Download errors:")
+            logger.warning("Download errors:")
             for error_text, error_count in errors_formatted.items():
-                self.__logger.warning(
+                logger.warning(
                     f"* {error_text} : {error_count}")
 
     def report_http_errors(self):
@@ -610,13 +599,12 @@ class DAGR():
 class APIDeviantResolver():
     def __init__(self, ripper):
         self.ripper = ripper
-        self.__logger = logging.getLogger(__name__)
 
     def resolve(self, deviant):
         try:
             return self.ripper.da_api.get_user(deviant, True, True), False
         except:
-            self.__logger.log(
+            logger.log(
                 level=5, msg='Unable to get deviant info', exc_info=True)
         raise DagrException('Unable to get deviant info')
 
@@ -626,15 +614,14 @@ class APICrawler():
         self.ripper = ripper
         self.config = ripper.config
         self.da = self.ripper.da_api
-        self.__logger = logging.getLogger(__name__)
 
-    def crawl(self, url_fmt, mode, deviant=None, mval=None, msg=None):
+    def crawl(self, url_fmt, mode, deviant=None, mval=None, msg_formatted=None):
         mode_action = {
             'favs': self.fetch_favs_deviations,
             'gallery': self.fetch_gallery_deviations
         }.get(mode)
         if(mode_action is None):
-            raise DagrException(f'Unkown mode {mode}')
+            raise DagrException(f"Unkown mode {mode}")
         return mode_action(deviant)
 
     def fetch_gallery_deviations(self, deviant):
@@ -648,7 +635,7 @@ class APICrawler():
         collections = {}
         while has_more:
             try:
-                print('fetching {}'.format(offset))
+                logger.info('Fetching collections offset: %s', offset)
                 fetched_collections = self.da.get_collections(
                     username=deviant,
                     offset=offset,
@@ -671,7 +658,7 @@ class APICrawler():
         # while there are more deviations to fetch
         while has_more:
             try:
-                print('fetching {}'.format(offset))
+                logger.info('Fetching collection items offset: %s', offset)
             except deviantart.api.DeviantartError as e:
                 print(e)
 
@@ -688,9 +675,8 @@ class DAGRCrawler():
     def __init__(self, ripper):
         self.ripper = ripper
         self.config = ripper.config
-        self.__logger = logging.getLogger(__name__)
 
-    def crawl(self, url_fmt, mode, deviant=None, mval=None, msg=None):
+    def crawl(self, url_fmt, mode, deviant=None, mval=None, msg_formatted=None):
         base_url = self.ripper.base_url()
         pages = []
         pages_offset = (self.config.get('deviantart.offsets', 'search')
@@ -699,18 +685,18 @@ class DAGRCrawler():
         art_regex = self.config.get('deviantart.regexes', 'art')
         if deviant:
             deviant_lower = deviant.lower()
-        self.__logger.log(level=3, msg=pformat(locals()))
+        logger.log(level=3, msg=pformat(locals()))
         for page_no in range(0, self.config.get('deviantart', 'maxpages')):
             offset = page_no * pages_offset
             url = url_fmt.format(**locals())
             if msg:
-                self.__logger.log(level=15, msg='Crawling {} page {}'.format(
-                    msg.format(**locals()), page_no))
+                logger.log(15, 'Crawling %s page %s',
+                           msg_formatted, page_no)
             try:
                 html = self.ripper.get(url).text
             except DagrException:
-                self.__logger.warning(
-                    'Could not find {}'.format(msg.format(**locals())), exc_info=True)
+                logger.warning(
+                    'Could not find %s', url, exc_info=True)
                 return pages
             if self.ripper.unfindable:
                 return
@@ -733,8 +719,13 @@ class DAGRCrawler():
 
 class DAGRDeviantResolver():
     def __init__(self, ripper):
+        self.__id = ''.join(random.choices(
+            string.ascii_uppercase + string.digits, k=5))
+        logger.debug('Created DAGRDeviantResolver %s', self.__id)
         self.ripper = ripper
-        self.__logger = logging.getLogger(__name__)
+
+    def __del__(self):
+        logger.debug('Destroying DAGRDeviantResolver %s', self.__id)
 
     def resolve(self, deviant):
         if self.ripper.isdeviant:
@@ -744,13 +735,13 @@ class DAGRDeviantResolver():
         group = False
         try:
             resp = self.ripper.browser.open(
-                'https://www.deviantart.com/{}/'.format(deviant))
+                f"https://www.deviantart.com/{deviant}/")
             if hasattr(self.ripper.browser, 'title'):
                 if not deviant.lower() in self.ripper.browser.title.lower():
                     raise DagrException('Unable to get deviant info')
             if not resp.status_code == req_codes.ok:
                 raise DagrException(
-                    'incorrect status code - {}'.format(resp.status_code))
+                    f"Incorrect status code: {resp.status_code}")
             current_page = self.ripper.browser.get_current_page()
             page_title = re.search(
                 r'[A-Za-z0-9-]*', current_page.title.string).group(0)
@@ -760,14 +751,16 @@ class DAGRDeviantResolver():
                 group = True
             return deviant, group
         except:
-            self.__logger.log(
+            logger.log(
                 level=15, msg='Unable to get deviant info', exc_info=True)
         raise DagrException('Unable to get deviant info')
 
 
 class DAGRDeviationProcessor():
     def __init__(self, ripper, cache, page_link, **kwargs):
-        self.__logger = logging.getLogger(__name__)
+        self.__id = ''.join(random.choices(
+            string.ascii_uppercase + string.digits, k=5))
+        logger.debug('Created DAGRDeviationProcessor %s', self.__id)
         self.ripper = ripper
         self.config = ripper.config
         self.browser = ripper.browser
@@ -799,6 +792,9 @@ class DAGRDeviationProcessor():
         self.__current_page = None
         self.__files_list = None
 
+    def __del__(self):
+        logger.debug('Destroying DAGRDeviationProcessor %s', self.__id)
+
     @property
     def force_verify_exists(self):
         return self.__force_verify_exists
@@ -820,7 +816,7 @@ class DAGRDeviationProcessor():
     def get_response(self):
         if self.__response:
             return self.__response
-        self.__logger.log(level=4, msg='get_response no resonse')
+        logger.log(4, 'get_response no resonse')
         flink, _ltype = self.find_link()
         self.__response = self.ripper.get(flink)
         return self.__response
@@ -832,13 +828,13 @@ class DAGRDeviationProcessor():
     def get_fext(self):
         if self.__file_ext:
             return self.__file_ext
-        self.__logger.log(level=4, msg='get_fext no file_ext')
+        logger.log(4, 'get_fext no file_ext')
         try:
             content_type = self.response_content_type()
             self.__file_ext = guess_extension(content_type)
             if not self.__file_ext:
                 raise DagrException(
-                    'unknown content-type - {}'.format(content_type))
+                    f"Unknown content-type: {content_type}")
         except DagrHTTPException:
             raise
         except:
@@ -853,10 +849,10 @@ class DAGRDeviationProcessor():
     def get_fname(self):
         if self.__dest:
             return self.__dest.name
-        self.__logger.log(level=4, msg='get_fname no dest')
+        logger.log(4, 'get_fname no dest')
         if self.__filename:
             return self.__filename
-        self.__logger.log(level=4, msg='get_fname no filename')
+        logger.log(4, 'get_fname no filename')
         shortname = PurePosixPath(self.page_link).name
         try:
             self.__filename = self.cache.real_filename(shortname)
@@ -864,8 +860,7 @@ class DAGRDeviationProcessor():
                 return self.__filename
         except StopIteration:
             pass
-        self.__logger.log(
-            level=4, msg='{} not in filenames cache'.format(shortname))
+        logger.log(4, '%s not in filenames cache', shortname)
         fext = self.get_fext()
         self.__filename = Path(shortname).with_suffix(fext).name
         return self.__filename
@@ -883,7 +878,6 @@ class DAGRDeviationProcessor():
                 flink, _ltype = self.find_link()
                 print(flink)
                 return
-            #self.__logger.debug('File link: {}'.format(flink))
             if self.download_needed():
                 self.download_link()
         except KeyboardInterrupt:
@@ -930,27 +924,25 @@ class DAGRDeviationProcessor():
         if self.verify_exists(warn_on_existing=not self.ripper.verifybest):
             return True
         if self.ripper.verifybest and self.verify_best():
-            self.__logger.log(level=15, msg="Verify best fail")
+            logger.log(15, 'Verify best fail')
             return True
         return False
 
     def verify_best(self):
         fullimg_ft = next(iter(self.ripper.fallbackorder()))
         best_res = ['download', 'art_stage', fullimg_ft]
-        self.__logger.log(level=15, msg='Verifying {}'.format(self.page_link))
+        logger.log(15, 'Verifying %s', self.page_link)
         _flink, ltype = self.find_link()
         if not ltype in best_res:
-            self.__logger.log(
-                level=15, msg=f"Not a full image, found type is {ltype}")
+            logger.log(15, 'Not a full image, found type is %s', ltype)
             return False
         if self.get_fext() == '.htm':
-            self.__logger.log(level=15, msg='Skipping htm file')
+            logger.log(15, 'Skipping htm file')
             return False
         dest = self.get_dest()
         response = self.get_response()
         if compare_size(dest, response.content):
-            self.__logger.log(
-                level=15, msg=f"Sizes match, found type is {ltype}"),
+            logger.log(15, 'Sizes match, found type is %s', ltype)
             return False
         if self.__verify_debug_loc:
             debug = self.base_dir.joinpath(
@@ -958,7 +950,7 @@ class DAGRDeviationProcessor():
             make_dirs(debug)
             debug_file = debug.joinpath(dest.name)
             debug_file.write_bytes(dest.read_bytes())
-            self.__logger.debug('Debug file {}'.format(debug_file))
+            logger.debug('Debug file %s', debug_file)
         return True
 
     def verify_exists(self, warn_on_existing=True):
@@ -966,17 +958,14 @@ class DAGRDeviationProcessor():
         if not self.force_verify_exists:
             if fname in self.get_files_list():
                 if warn_on_existing:
-                    self.__logger.warning(
-                        "Cache entry {} exists - skipping".format(fname))
+                    logger.warning("Cache entry %s exists - skipping", fname)
                 return False
         #dest = self.get_dest()
         if self.force_verify_exists:
-            self.__logger.log(
-                level=5, msg='Verifying {} really exists'.format(fname))
+            logger.log(5, 'Verifying %s really exists', fname)
         if self.cache.cache_io.exists(fname=fname):
             self.cache.add_filename(fname)
-            self.__logger.warning(
-                "FS entry {} exists - skipping".format(fname))
+            logger.warning("FS entry %s exists - skipping", fname)
             return False
         return True
 
@@ -991,8 +980,7 @@ class DAGRDeviationProcessor():
                 break
             except Exception as ex:
                 except_name = type(ex).__name__.lower()
-                self.__logger.debug(
-                    'Exception while saving link', exc_info=True)
+                logger.debug('Exception while saving link', exc_info=True)
                 if [re for re in self.ripper.retry_exception_names() if except_name in re]:
                     if not except_name in tries:
                         tries[except_name] = 0
@@ -1001,11 +989,10 @@ class DAGRDeviationProcessor():
                         sleep(self.ripper.retry_sleep_duration())
                         continue
                     raise DagrException(
-                        f'Failed to save content: {except_name}')
+                        f"Failed to save content: {except_name}")
                 else:
-                    # self.__logger.error('Exception name {}'.format(except_name))
                     raise DagrException(
-                        f'Failed to save content: {except_name}')
+                        f"Failed to save content: {except_name}")
         if mtime := response.headers.get('last-modified'):
             # Set file dates to last modified time
             self.cache.cache_io.utime(mtime, dest=dest)
@@ -1017,29 +1004,25 @@ class DAGRDeviationProcessor():
         if "content-type" in rheaders:
             self.__content_type = next(
                 iter(rheaders.get("content-type").split(";")), None)
-        self.__logger.debug(self.__content_type)
+        logger.debug(self.__content_type)
         if not self.__content_type:
-            raise DagrException('missing content-type')
+            raise DagrException('Missing content-type')
         return self.__content_type
 
     def get_page_content(self):
         if self.__page_content:
             return self.__page_content
         self.__page_content = self.browser.open(self.page_link)
+
         if not self.__page_content.status_code == req_codes.ok:
             raise DagrHTTPException(self.__page_content.status_code)
-            # if self.__page_content.status_code == req_codes.forbidden:
-            #     raise Dagr403Exception()
-            # if self.__page_content.status_code == req_codes.not_found:
-            #     raise Dagr404Exception()
-            # raise DagrException(
-            #     'incorrect status code - {}'.format(self.__page_content.status_code))
+
         return self.__page_content
 
     def find_link(self):
         if self.__file_link:
             return self.__file_link, self.__found_type
-        self.__logger.log(level=4, msg='find_link no file_link')
+        logger.log(4, 'find_link no file_link')
         filelink = None
         resp = self.get_page_content()
         current_url = self.browser.get_url()
@@ -1052,24 +1035,24 @@ class DAGRDeviationProcessor():
                 img_link = candidate
                 break
         if img_link and img_link.get('data-download_url'):
-            self.__logger.log(level=5, msg='Found download button')
+            logger.log(5, 'Found download button')
             self.__file_link, self.__found_type = img_link, 'download'
             return self.__file_link, self.__found_type
         img_link = current_page.find(
             'a', {'href': re.compile('deviantart.com/download')})
         if img_link:
-            self.__logger.log(level=5, msg='Found eclipse download button')
+            logger.log(5, 'Found eclipse download button')
             self.__file_link, self.__found_type = img_link, 'download'
             return self.__file_link, self.__found_type
-        self.__logger.log(
-            level=15, msg='Download link not found, falling back to alternate methods')
+        logger.log(
+            15, 'Download link not found, falling back to alternate methods')
         stage = current_page.find('div', {'data-hook': 'art_stage'})
         if stage:
             if stage.find('div', string='Premium Deviation'):
                 raise DagrPremiumUnavailable()
             img_tag = stage.find('img')
             if img_tag and hasattr(img_tag, 'src'):
-                self.__logger.log(level=5, msg='Found eclipse art stage')
+                logger.log(5, 'Found eclipse art stage')
                 self.__file_link, self.__found_type = img_tag.get(
                     'src'), 'art_stage'
                 return self.__file_link, self.__found_type
@@ -1080,23 +1063,23 @@ class DAGRDeviationProcessor():
                 return self.__file_link, self.__found_type
         page_title = current_page.find('span', {'itemprop': 'title'})
         if page_title and page_title.text == 'Literature':
-            self.__logger.log(level=5, msg='Found literature')
+            logger.log(level=5, msg='Found literature')
             self.__file_link, self.__found_type = current_url, 'literature'
             return self.__file_link, self.__found_type
         lit_h2 = current_page.find('h2', string='Literature Text')
         if lit_h2:
-            self.__logger.log(level=5, msg='Found eclipse literature')
+            logger.log(level=5, msg='Found eclipse literature')
             self.__file_link, self.__found_type = current_url, 'literature'
             return self.__file_link, self.__found_type
 
         # lit_class = current_page.find('div', {'class': '_2JHSA'})
         # if lit_class and lit_class.text.lower() == 'literature':
-        #     self.__logger.log(level=5, msg='Found eclipse literature')
+        #     logger.log(level=5, msg='Found eclipse literature')
         #     self.__file_link, self.__found_type = current_url, 'literature'
         #     return self.__file_link, self.__found_type
         journal = current_page.find('div', {'class': 'journal-wrapper'})
         if 'journal' in current_url or journal:
-            self.__logger.log(level=5, msg='Found journal')
+            logger.log(level=5, msg='Found journal')
             self.__file_link, self.__found_type = current_url, 'journal'
             return self.__file_link, self.__found_type
         # Check for antisocial
@@ -1122,14 +1105,13 @@ class DAGRDeviationProcessor():
                 if Path(fl).name.startswith('noentrythumb-'):
                     self.__mature_error = True
                 elif 'st.deviantart.net' in fl:
-                    self.__logger.log(
-                        level=5, msg='ignoring static meta: {}'.format(fl))
+                    logger.log(5, 'Ignoring static meta: %s', fl)
                     return None
                 else:
                     return fl
         # Default: 'img full,meta,img normal'
         fbo = self.ripper.fallbackorder()
-        self.__logger.log(level=5, msg='Fallback order: {}'.format(fbo))
+        logger.log(5, 'Fallback order: %s', fbo)
         searches = {
             'img full': lambda tag: tag.get('src') if tag else None,
             'img normal': lambda tag: tag.get('src') if tag else None,
@@ -1138,16 +1120,16 @@ class DAGRDeviationProcessor():
         for si in fbo:
             filelink = searches.get(si)(search_tags.get(si))
             if filelink:
-                self.__logger.log(level=5, msg='Found {}'.format(si))
+                logger.log(5, 'Found %s', si)
                 self.__file_link, self.__found_type = filelink, si
                 return self.__file_link, self.__found_type
             else:
-                self.__logger.log(level=5, msg='{} not found'.format(si))
+                logger.log(5, '%s not found', si)
 
         for pl_name, pl_func in [*self.ripper.pl_manager.get_funcs('findlink').items()]:
             filelink = pl_func(current_page)
             if filelink:
-                self.__logger.log(5, 'Found %s', pl_name)
+                logger.log(5, 'Found %s', pl_name)
                 self.__file_link, self.__found_type = filelink, pl_name
                 return self.__file_link, self.__found_type
         for pl_name, pl_func in [*self.ripper.pl_manager.get_funcs('findlink_b').items()]:
@@ -1157,7 +1139,7 @@ class DAGRDeviationProcessor():
                 deepcopy(resp.content), current_url)
             filelink = pl_func(temp_browser)
             if filelink:
-                self.__logger.log(5, 'Found %s', pl_name)
+                logger.log(5, 'Found %s', pl_name)
                 self.__file_link, self.__found_type = filelink, pl_name
                 return self.__file_link, self.__found_type
         self.cache.add_nolink(self.page_link)

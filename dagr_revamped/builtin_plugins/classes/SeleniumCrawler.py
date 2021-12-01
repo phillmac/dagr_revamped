@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 
 class SeleniumCrawler():
     def __init__(self, app_config, config, browser, cache):
+        self.__id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        logger.debug('Created SeleniumCrawler %s', self.__id)
         self.__config = config
         self.__browser = browser
         self.__cache = cache
@@ -23,6 +25,9 @@ class SeleniumCrawler():
         logger.log(15, 'OOM max pages set to %s', self.__oom_max_pages)
         logger.log(15, 'Collect using mvalid elem set to %s',
                    self.__collect_mval_id)
+
+    def __del__(self):
+        logger.debug('Destroying SeleniumCrawler %s', self.__id)
 
     def scroll_page(self):
         scroll_st = time()

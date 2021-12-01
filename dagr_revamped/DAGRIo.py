@@ -48,11 +48,17 @@ class DAGRIo():
         return DAGRIo(base_dir, rel_dir)
 
     def __init__(self, base_dir, rel_dir):
+        self.__id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        logger.debug('Created DAGRIo %s', self.__id)
         self.__base_dir = base_dir
         self.__rel_dir = rel_dir
         self.__rel_dir_name = str(PurePosixPath(rel_dir))
         self.__lock = None
         self.__lock_path = None
+
+    def __del__(self):
+        logger.debug('Destroying DAGRIo %s', self.__id)
+
 
     @ property
     def base_dir(self):

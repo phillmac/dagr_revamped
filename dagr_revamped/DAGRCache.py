@@ -54,7 +54,11 @@ class DAGRCache():
         cache_io = get_remote_io(dagr_io if dagr_io is not None else DAGRIo, config, mode, deviant, mval)
         return DAGRCache(config, cache_io, load_files=load_files, warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
+
+
     def __init__(self, dagr_config, cache_io, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
+        self.__id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        logger.debug('Created DAGRCache %s', self.__id)
         self.dagr_config = dagr_config
         self.__cache_io = cache_io
         # self.__lock = None
@@ -127,6 +131,9 @@ class DAGRCache():
 
         if not self.__existing_pages is None and not self.__use_short_urls == self.dagr_config.get('dagr.cache', 'shorturls'):
             self.__convert_urls()
+
+    def __del__(self):
+        logger.debug('Destroying DAGRCache %s', self.__id)
 
     def __enter__(self):
         self.cache_io.lock()

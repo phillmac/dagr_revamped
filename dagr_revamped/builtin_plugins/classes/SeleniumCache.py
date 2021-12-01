@@ -15,6 +15,8 @@ def deep_tuple(x):
 
 class SlugCache():
     def __init__(self, slug, local_io, remote_io, remote_breaker):
+        self.__id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        logger.debug('Created SlugCache %s', self.__id)
         self.__slug = slug
         self.__local_io = local_io
         self.__remote_io = remote_io
@@ -24,24 +26,33 @@ class SlugCache():
         self.__filename = f"{self.__slug}.json"
         self.__load()
 
+    def __del__(self):
+        logger.debug('Destroying SlugCache %s', self.__id)
+
     def __load(self, ignore_breaker=False):
-        update_local = self.__local_io.load_primary_or_backup(self.__filename, warn_not_found=False)
+        update_local = self.__local_io.load_primary_or_backup(
+            self.__filename, warn_not_found=False)
         if update_local:
-            self.__local_values.update(i if isinstance(i, str) else deep_tuple(i) for i in update_local)
+            self.__local_values.update(i if isinstance(
+                i, str) else deep_tuple(i) for i in update_local)
 
         update_remote = None
         logger.log(15, 'loading remote %s', self.__filename)
         try:
             if ignore_breaker:
-                    if  self.__remote_io.exists(fname=self.__filename, update_cache=False):
-                        update_remote = self.__remote_io.load_json(self.__filename, log_errors=True)
+                if self.__remote_io.exists(fname=self.__filename, update_cache=False):
+                    update_remote = self.__remote_io.load_json(
+                        self.__filename, log_errors=True)
             else:
                 if self.__remote_breaker.call(self.__remote_io.exists, fname=self.__filename, update_cache=False):
-                    update_remote = self.__remote_breaker.call(self.__remote_io.load_json, self.__filename, log_errors=True)
+                    update_remote = self.__remote_breaker.call(
+                        self.__remote_io.load_json, self.__filename, log_errors=True)
 
             if update_remote:
-                logger.log(15, 'Loaded %s items from remote %s', len(update_remote), self.__filename)
-                self.__remote_values.update(i if isinstance(i, str) else deep_tuple(i) for i in update_remote)
+                logger.log(15, 'Loaded %s items from remote %s',
+                           len(update_remote), self.__filename)
+                self.__remote_values.update(i if isinstance(
+                    i, str) else deep_tuple(i) for i in update_remote)
         except Exception:
             logger.exception('Failed to load remote %s cache', self.__slug)
 
