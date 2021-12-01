@@ -1,11 +1,15 @@
+import logging
 import random
 import string
 from pprint import pprint
 
+logger = logging.getLogger(__name__)
+
 
 class Response():
     def __init__(self, content='', headers={}, status=200):
-        self.__id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        self.__id = ''.join(random.choices(
+            string.ascii_uppercase + string.digits, k=5))
         logger.debug('Created Reponse %s', self.__id)
         self.__status = status
         self.__headers = headers
