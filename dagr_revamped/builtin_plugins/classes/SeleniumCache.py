@@ -1,4 +1,6 @@
 import logging
+import random
+import string
 from pathlib import Path
 from time import time
 
@@ -15,7 +17,8 @@ def deep_tuple(x):
 
 class SlugCache():
     def __init__(self, slug, local_io, remote_io, remote_breaker):
-        self.__id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        self.__id = ''.join(random.choices(
+            string.ascii_uppercase + string.digits, k=5))
         logger.debug('Created SlugCache %s', self.__id)
         self.__slug = slug
         self.__local_io = local_io

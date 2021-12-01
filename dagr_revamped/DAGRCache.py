@@ -1,14 +1,15 @@
 import logging
+import random
 import re
+import string
 from copy import copy
 from pathlib import Path, PurePosixPath
+from platform import node as get_hostname
 from pprint import pformat
 from time import time
-from platform import node as get_hostname
 
-
-from .utils import artist_from_url, get_remote_io, shorten_url
 from .DAGRIo import DAGRIo
+from .utils import artist_from_url, get_remote_io, shorten_url
 
 logger = logging.getLogger(__name__)
 

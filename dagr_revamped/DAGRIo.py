@@ -1,4 +1,6 @@
 import logging
+import random
+import string
 from email.utils import parsedate
 from json import JSONDecodeError
 from os import scandir, utime
@@ -42,13 +44,14 @@ class DAGRIo():
     @staticmethod
     def create(base_dir, rel_dir, config):
         if isinstance(base_dir, PurePath):
-                base_dir=Path(base_dir)
+            base_dir = Path(base_dir)
         if not base_dir.is_absolute():
-            base_dir=config.output_dir.joinpath(base_dir)
+            base_dir = config.output_dir.joinpath(base_dir)
         return DAGRIo(base_dir, rel_dir)
 
     def __init__(self, base_dir, rel_dir):
-        self.__id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        self.__id = ''.join(random.choices(
+            string.ascii_uppercase + string.digits, k=5))
         logger.debug('Created DAGRIo %s', self.__id)
         self.__base_dir = base_dir
         self.__rel_dir = rel_dir
@@ -58,7 +61,6 @@ class DAGRIo():
 
     def __del__(self):
         logger.debug('Destroying DAGRIo %s', self.__id)
-
 
     @ property
     def base_dir(self):
@@ -157,8 +159,9 @@ class DAGRIo():
         utime(self.__get_dest(fname, dest, subdir), (mod_time, mod_time))
 
     def dir_exists(self, dir_name=None):
-        dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(dir_name)
-        result =  (not dir_item.is_symlink()) and dir_item.is_dir()
+        dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(
+            dir_name)
+        result = (not dir_item.is_symlink()) and dir_item.is_dir()
         logger.debug('Dir: %s Exists: %s', str(dir_item),  result)
         return result
 

@@ -1,6 +1,8 @@
 import json
 import logging
+import random
 import re
+import string
 import sys
 import threading
 from copy import deepcopy
@@ -18,8 +20,6 @@ from bs4.element import Tag
 from dateutil.parser import parse as date_parse
 from requests import codes as req_codes
 
-from .utils import sleep
-
 from .config import DAGRConfig
 from .DAGRCache import DAGRCache
 from .DAGRIo import DAGRIo
@@ -29,8 +29,7 @@ from .plugin import PluginManager
 from .utils import (StatefulBrowser, compare_size, convert_queue,
                     create_browser, dump_html, filter_deviants, get_base_dir,
                     get_html_name, load_bulk_files, make_dirs, shorten_url,
-                    update_d)
-
+                    sleep, update_d)
 
 logger = logging.getLogger(__name__)
 
@@ -555,7 +554,8 @@ class DAGR():
                     raise DagrException(
                         f'Failed to get url: {url} {except_name}')
         if not response.status_code == req_codes.ok:
-            raise DagrException(f"Incorrect status code : {response.status_code}")
+            raise DagrException(
+                f"Incorrect status code : {response.status_code}")
         return response
 
     def get_response(self, url, *args, **kwargs):
