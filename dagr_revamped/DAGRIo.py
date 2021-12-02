@@ -94,10 +94,11 @@ class DAGRIo():
         return save_json(self.__base_dir.joinpath(fname), content, do_backup=do_backup)
 
     def exists(self, fname=None, dest=None, subdir=None, update_cache=None):
-        return self.__get_dest(fname, dest, subdir).exists()
+        return self.__get_subpath(fname, dest, subdir).exists()
 
-    def replace(self, fname, new_fname):
-        return self.__base_dir.joinpath(fname).replace(new_fname)
+    def replace(self, dest_fname=None, src_fname=None, dest=None, src=None, dest_subdir=None, src_subdir=None):
+        return self.__get_subpath(dest_fname, dest, dest_subdir).replace(
+            self.__get_subpath(src_fname, src, src_subdir))
 
     def load_primary_or_backup(self, fname, use_backup=True, warn_not_found=True):
         if not isinstance(fname, str):
@@ -135,7 +136,7 @@ class DAGRIo():
 
     def write(self, content, fname=None, dest=None, subdir=None):
         written = None
-        dest = self.__get_dest(fname, dest, subdir)
+        dest = self.__get_subpath(fname, dest, subdir)
         tmp = dest.with_suffix('.tmp')
         logger.log(level=5, msg=f"Writing item to {dest}")
         with tmp.open('w') as f:
@@ -147,7 +148,7 @@ class DAGRIo():
 
     def write_bytes(self, content, fname=None, dest=None, subdir=None):
         written = None
-        dest = self.__get_dest(fname, dest, subdir)
+        dest = self.__get_subpath(fname, dest, subdir)
         tmp = dest.with_suffix('.tmp')
         logger.log(level=5, msg=f"Writing item to {dest}")
         written = tmp.write_bytes(content)
@@ -159,11 +160,13 @@ class DAGRIo():
     def utime(self, mtime, fname=None, dest=None, subdir=None):
         mod_time = mktime(parsedate(mtime))
         logger.log(level=4, msg=f"Updating file times to {mod_time}")
-        utime(self.__get_dest(fname, dest, subdir), (mod_time, mod_time))
+        utime(self.__get_subpath(fname, dest, subdir), (mod_time, mod_time))
 
-    def dir_exists(self, dir_name=None):
-        dir_item = self.__base_dir if dir_name is None else self.__base_dir.joinpath(
-            dir_name)
+    def dir_exists(self, subdir=None, dir_name=None):
+        dir_item = self.__base_dir if subdir is None else self.__base_dir.joinpath(
+            subdir)
+        if dir_name is not None:
+            dir_item = dir_item.joinpath(dir_name)
         result = (not dir_item.is_symlink()) and dir_item.is_dir()
         logger.debug('Dir: %s Exists: %s', str(dir_item),  result)
         return result
@@ -202,13 +205,18 @@ class DAGRIo():
             logger.warning(f"Skipping locked directory {self.base_dir}")
             raise DagrCacheLockException(ex)
 
+    def stat(self, fname):
+        statfp = self.__base_dir.joinpath(PurePosixPath(fname).name)
+        s_obj = statfp.stat()
+        return {k: getattr(s_obj, k) for k in dir(s_obj) if k.startswith('st_')}
+
     def release_lock(self):
         self.__lock.release()
         if self.__lock._acquire_count == 0:
             unlink_lockfile(self.__lock_path)
         self.__lock = None
 
-    def __get_dest(self, fname=None, dest=None, subdir=None):
+    def __get_subpath(self, fname=None, dest=None, subdir=None):
         fname = get_fname(fname, dest)
         if subdir:
             return self.__base_dir.joinpath(subdir, fname)
