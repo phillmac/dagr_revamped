@@ -262,21 +262,32 @@ const done = arguments[0];
         if self.__login_policy not in ['disable', 'prohibit']:
             sleep(0.500)
             current_page = self.get_current_page()
-            user_link = None
-            data_username = None
 
-            top_nav = current_page.find('header', {'data-hook': 'top_nav'})
-            if top_nav:
-                logger.log(10, 'Found top_nav')
-                user_link = top_nav.find('a', {'data-hook': 'user_link'})
-            else:
-                logger.log(10, 'Missing top_nav')
+            data_username = self.__driver.execute_async_script(
+                """
+const done = arguments[0];
+let dataUsername = '';
 
-            if user_link:
-                data_username = (user_link.get('data-username') or '').lower()
-                logger.log(10,'Detected data-username "{data_username}"')
-            else:
-                logger.log(10, 'Missing user_link')
+const getUsername = () => {
+    const topNav = document.querySelector('header[data-hook=top_nav]');
+    const userLink = topNav?.querySelector('a[data-hook=user_link]')
+    return userLink?.dataset?.username;;
+};
+
+(async () => {
+  var count=1;
+  while(count <= 20 && ! (dataUsername = getUsername())){
+    count++;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  return { dataUsername };
+})().then((result) => {
+    done(result);
+    })
+""").get('dataUsername')
+
+
+
 
             if data_username:
                 conf_uname = self.__app_config.get(
