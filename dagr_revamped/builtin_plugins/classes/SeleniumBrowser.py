@@ -281,9 +281,7 @@ const getUsername = () => {
 })().then((result) => {
     done(result);
     })
-""").get('dataUsername')
-
-
+""").get('dataUsername', '').lower()
 
 
             if data_username:
