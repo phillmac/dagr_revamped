@@ -62,6 +62,7 @@ class DAGRCache():
         logger.debug('Created DAGRCache %s', self.__id)
         self.dagr_config = dagr_config
         self.__cache_io = cache_io
+        self.__closed = False
         # self.__lock = None
         # self.__lock_path = None
         self.__warn_not_found = warn_not_found
@@ -135,8 +136,7 @@ class DAGRCache():
 
     def __del__(self):
         logger.debug('Destroying DAGRCache %s', self.__id)
-        self.cache_io.close()
-        self.__cache_io = None
+
 
     def __enter__(self):
         self.cache_io.lock()
@@ -144,6 +144,23 @@ class DAGRCache():
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.cache_io.release_lock()
+        self.close()
+
+    def close(self):
+        if not self.__closed:
+            self.__closed = True
+            self.cache_io.close()
+            self.__cache_io = None
+            self.__existing_pages = None
+            self.__no_link = None
+            self.__queue = None
+            self.__premium = None
+            self.__httperrors = None
+            self.__files_list = None
+            self.__artists = None
+            self.__last_crawled = None
+            self.__files_list_lower = None
+            self.downloaded_pages = None
 
 
     def files_gen(self):
