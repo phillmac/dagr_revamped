@@ -136,7 +136,7 @@ class DAGRCache():
     def __del__(self):
         logger.debug('Destroying DAGRCache %s', self.__id)
         self.cache_io.close()
-        self.cache_io = None
+        self.__cache_io = None
 
     def __enter__(self):
         self.cache_io.lock()
