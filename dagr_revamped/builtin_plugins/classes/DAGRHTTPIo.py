@@ -84,7 +84,7 @@ class DAGRHTTPIo(DAGRIo):
             logger.warning('No replace endpoint configured')
         else:
             self.replace = lambda dest_fname=None, src_fname=None, dest=None, src=None, dest_subdir=None, src_subdir=None: http_replace(
-                session, self.__replace_ep, dir_path=self.rel_dir_name, dest_subdir=dest_subdir, dest_fname=get_fname(dest_fname, dest), src_subdir=src_subdir, src_fname=get_fname(src_fname, src))
+                self.__session, self.__replace_ep, dir_path=self.rel_dir_name, dest_subdir=dest_subdir, dest_fname=get_fname(dest_fname, dest), src_subdir=src_subdir, src_fname=get_fname(src_fname, src))
 
         if self.__update_fn_cache_ep is None:
             logger.warning('No update filename cache endpoint configured')
@@ -127,8 +127,8 @@ class DAGRHTTPIo(DAGRIo):
         if self.__file_stat_ep is None:
             logger.warning('No file stat endpoint configured')
         else:
-            self.stat = lambda fname: http_fetch_json(
-                session, self.__file_stat_ep,  path=self.rel_dir_name, filename=fname).get('stat', {})
+            self.stat = lambda fname, subdir=None, dir_name = None: http_fetch_json(
+                self.__session, self.__file_stat_ep,  path=self.get_rel_path(subdir=subdir, dir_name=dir_name), itemname=fname).get('stat', {})
 
 
         if self.__dir_lock_ep is None:
