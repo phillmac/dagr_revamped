@@ -2,6 +2,7 @@ import logging
 import random
 import re
 import string
+import weakref
 from copy import copy
 from pathlib import Path, PurePosixPath
 from platform import node as get_hostname
@@ -139,11 +140,11 @@ class DAGRCache():
 
 
     def __enter__(self):
-        self.cache_io.lock()
+        self.__cache_io.lock()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.cache_io.release_lock()
+        self.__cache_io.release_lock()
         self.close()
 
     def close(self):
@@ -169,10 +170,10 @@ class DAGRCache():
         return (f for f in self.__files_list if not any(r.match(f) for r in self.__excluded_fnames_regex))
 
     @property
-    def base_dir(self): return self.cache_io.base_dir
+    def base_dir(self): return weakref.proxy(self.__cache_io.base_dir)
 
     @property
-    def rel_dir(self): return self.cache_io.rel_dir
+    def rel_dir(self): return weakref.proxy(self.__cache_io.rel_dir)
 
     @ property
     def files_list(self):
@@ -207,7 +208,7 @@ class DAGRCache():
 
     @ property
     def cache_io(self):
-        return self.__cache_io
+        return weakref.proxy(self.__cache_io)
 
     def __load_cache_file(self, cache_file, use_backup=True, warn_not_found=True):
         return self.__cache_io.load_primary_or_backup(cache_file, use_backup=use_backup, warn_not_found=warn_not_found)
