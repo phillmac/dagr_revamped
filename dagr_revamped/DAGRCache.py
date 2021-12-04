@@ -170,10 +170,10 @@ class DAGRCache():
         return (f for f in self.__files_list if not any(r.match(f) for r in self.__excluded_fnames_regex))
 
     @property
-    def base_dir(self): return weakref.proxy(self.__cache_io.base_dir)
+    def base_dir(self): return PurePosixPath(self.__cache_io.base_dir)
 
     @property
-    def rel_dir(self): return weakref.proxy(self.__cache_io.rel_dir)
+    def rel_dir(self): return self.__cache_io.rel_dir
 
     @ property
     def files_list(self):
