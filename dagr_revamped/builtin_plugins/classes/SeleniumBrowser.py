@@ -260,23 +260,33 @@ const done = arguments[0];
         self.__open(url)
 
         if self.__login_policy not in ['disable', 'prohibit']:
+            sleep(0.500)
             current_page = self.get_current_page()
             user_link = None
             data_username = None
 
             top_nav = current_page.find('header', {'data-hook': 'top_nav'})
             if top_nav:
-                logger.log(level=10, msg='Found top_nav')
+                logger.log(10, 'Found top_nav')
                 user_link = top_nav.find('a', {'data-hook': 'user_link'})
+            else:
+                logger.log(10, 'Missing top_nav')
 
             if user_link:
-                data_username = user_link.get('data-username')
-                logger.log(
-                    level=10, msg=f'Detected data-username "{data_username}"')
-            if data_username and data_username.lower() == self.__app_config.get(
-                    'deviantart', 'username').lower():
-                logger.log(
-                    level=10, msg='Detected already logged in: user link')
+                data_username = (user_link.get('data-username') or '').lower()
+                logger.log(10,'Detected data-username "{data_username}"')
+            else:
+                logger.log(10, 'Missing user_link')
+
+            if data_username:
+                conf_uname = self.__app_config.get(
+                    'deviantart', 'username').lower()
+                if data_username == conf_uname:
+                    logger.log(10, 'Detected already logged in: user link')
+                    return
+                else:
+                    logger.warning('data-username mismatch. %s != %s', data_username, conf_uname)
+
             else:
                 found = current_page.find('a', {'href': self.__login_urls})
                 if found and found.text.lower() == 'sign in':
