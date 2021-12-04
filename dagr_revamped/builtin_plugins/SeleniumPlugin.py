@@ -84,7 +84,10 @@ class SeleniumPlugin():
         return self.__crawler
 
     def shutdown(self):
-        self.__cache.flush()
+        self.__cache.close()
+        self.__cache = None
+        self.__crawler = None
+        self.__browser = None
 
 
 def setup(manager):

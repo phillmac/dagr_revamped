@@ -104,6 +104,15 @@ class DAGR():
         if self.browser and hasattr(self.browser, 'quit'):
             self.browser.quit()
 
+        self.cache = None
+        self.deviant_resolver = None
+        self.deviation_processor = None
+        self.ripper = None
+        self.deviation_crawler = None
+        self.crawler_cache = None
+        self.browser = None
+        self.io = None
+
     def init_mimetypes(self):
         mimetypes_init()
         for k, v in self.config.get('dagr.mimetypes').items():

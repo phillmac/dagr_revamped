@@ -146,10 +146,15 @@ class SeleniumCache():
 
     def __del__(self):
         logger.debug('Destroying SeleniumCache %s', self.__id)
-        self.__local_io.close()
-        self.__remote_io.close()
         self.__local_io = None
         self.__remote_io = None
+
+    def close(self):
+        self.flush()
+        self.__flushed.clear()
+        self.__caches.clear()
+        self.__local_io.close()
+        self.__remote_io.close()
 
     def flush(self, slug=None, force_overwrite=False):
         if slug is None:
