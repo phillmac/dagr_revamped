@@ -260,7 +260,6 @@ const done = arguments[0];
         self.__open(url)
 
         if self.__login_policy not in ['disable', 'prohibit']:
-
             data_username = self.__driver.execute_async_script(
                 """
 const done = arguments[0];
@@ -297,6 +296,7 @@ const getUsername = () => {
                     logger.warning('data-username mismatch. %s != %s', data_username, conf_uname)
 
             else:
+                current_page = self.get_current_page()
                 found = current_page.find('a', {'href': self.__login_urls})
                 if found and found.text.lower() == 'sign in':
                     logger.info('Detected login required. reason: hyperlink')
