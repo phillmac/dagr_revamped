@@ -31,10 +31,6 @@ class SlugCache():
 
     def __del__(self):
         logger.debug('Destroying SlugCache %s', self.__id)
-        self.__local_io.close()
-        self.__remote_io.close()
-        self.__local_io = None
-        self.__remote_io = None
 
     def __load(self, ignore_breaker=False):
         update_local = self.__local_io.load_primary_or_backup(
@@ -139,11 +135,21 @@ class SlugCache():
 
 class SeleniumCache():
     def __init__(self, local_io, remote_io, remote_breaker):
+        self.__id = ''.join(random.choices(
+            string.ascii_uppercase + string.digits, k=5))
         self.__local_io = local_io
         self.__remote_io = remote_io
         self.__remote_breaker = remote_breaker
         self.__caches = {}
         self.__flushed = {}
+        logger.debug('Created SeleniumCache %s', self.__id)
+
+    def __del__(self):
+        logger.debug('Destroying SeleniumCache %s', self.__id)
+        self.__local_io.close()
+        self.__remote_io.close()
+        self.__local_io = None
+        self.__remote_io = None
 
     def flush(self, slug=None, force_overwrite=False):
         if slug is None:
