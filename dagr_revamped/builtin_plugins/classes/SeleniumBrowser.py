@@ -260,7 +260,7 @@ const done = arguments[0];
         self.__open(url)
 
         if self.__login_policy not in ['disable', 'prohibit']:
-            data_username = self.__driver.execute_async_script(
+            data_username = (self.__driver.execute_async_script(
                 """
 const done = arguments[0];
 let dataUsername = '';
@@ -281,7 +281,7 @@ const getUsername = () => {
 })().then((result) => {
     done(result);
     })
-""").get('dataUsername', '').lower()
+""").get('dataUsername') or '').lower()
 
 
             if data_username:
