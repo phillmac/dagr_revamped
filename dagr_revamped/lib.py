@@ -946,7 +946,7 @@ class DAGRDeviationProcessor():
             self.__logger.info('Not a full image, found type is %s', ltype)
             return False
 
-        if self.get_fext() in ['.htm', 'html']:
+        if self.get_fext() in ['.htm', '.html']:
             self.__logger.info('Skipping html file')
             return False
         fname = self.get_fname()
