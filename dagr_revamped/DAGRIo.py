@@ -63,7 +63,7 @@ class DAGRIo():
         logger.debug('Destroying DAGRIo %s', self.__id)
 
     def close(self):
-        pass
+        self.__base_dir = None
 
     @ property
     def base_dir(self):

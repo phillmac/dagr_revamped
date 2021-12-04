@@ -142,3 +142,4 @@ class DAGRHTTPIo(DAGRIo):
 
     def close(self):
         self.__session.close()
+        super().close()
