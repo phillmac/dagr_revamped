@@ -467,7 +467,6 @@ def http_send_raw(session, endpoint, method='GET', **kwargs):
     req = Request(method, endpoint, **kwargs)
     prepped = session.prepare_request(req)
     resp = session.send(prepped)
-    resp.raise_for_status()
     try:
         resp_json = resp.json()
     except:
