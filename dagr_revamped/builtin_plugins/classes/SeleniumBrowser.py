@@ -260,8 +260,6 @@ const done = arguments[0];
         self.__open(url)
 
         if self.__login_policy not in ['disable', 'prohibit']:
-            sleep(0.500)
-            current_page = self.get_current_page()
 
             data_username = self.__driver.execute_async_script(
                 """
