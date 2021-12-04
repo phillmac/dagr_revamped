@@ -31,6 +31,10 @@ class SlugCache():
 
     def __del__(self):
         logger.debug('Destroying SlugCache %s', self.__id)
+        self.__local_io.close()
+        self.__remote_io.close()
+        self.__local_io = None
+        self.__remote_io = None
 
     def __load(self, ignore_breaker=False):
         update_local = self.__local_io.load_primary_or_backup(
