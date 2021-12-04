@@ -147,7 +147,7 @@ const done = arguments[0];
     done(result);
     })
 """)
-            logger.log(15, 'Got page ready result %s', result)
+            logger.debug('Got page ready result %s', result)
             is_ready = (result.get('readyState') == 'complete')
         if not is_ready:
             raise DagrException('Page ready timeout')
