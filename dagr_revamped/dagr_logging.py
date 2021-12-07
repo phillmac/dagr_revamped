@@ -13,7 +13,17 @@ from .TCPKeepAliveSession import TCPKeepAliveSession
 
 __logging_ready = threading.Event()
 __buffered_records = {}
+__shutdown_tasks = []
 
+def add_shutdown(task):
+    __shutdown_tasks.append(task)
+
+def do_shutdown_tasks():
+    while task := __shutdown_tasks.pop()
+        try:
+            task()
+        except ex:
+            print('Error while performing logging shutdown task', ex)
 
 def logging_ready():
     return __logging_ready.is_set()
@@ -98,6 +108,7 @@ def init_logging(config, level=None, host_mode=None):
 
         queuelistener = QueueListener(queue, *http_handlers)
         queuelistener.start()
+        add_shutdown(lambda: queuelistener.stop())
 
         logging.getLogger().addHandler(queuehandler)
     else:
