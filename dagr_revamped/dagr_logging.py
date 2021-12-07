@@ -19,7 +19,8 @@ def add_shutdown(task):
     __shutdown_tasks.append(task)
 
 def do_shutdown_tasks():
-    while task := __shutdown_tasks.pop()
+    while len(__shutdown_tasks) > 0:
+    task = __shutdown_tasks.pop()
         try:
             task()
         except ex:
