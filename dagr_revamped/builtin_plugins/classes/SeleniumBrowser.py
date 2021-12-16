@@ -164,7 +164,7 @@ const done = arguments[0];
             raise LoginDisabledError('Login policy set to prohibit')
         if not self.get_url() in self.__login_urls:
             url = next(iter(self.__login_urls))
-            logger.info(f"Navigating to {url}")
+            logger.info('Navigating to %s', url)
             self.__driver_get(url)
 
         user = self.__app_config.get(
@@ -296,7 +296,7 @@ const getUsername = () => {
             else:
                 current_page = self.get_current_page()
                 found = current_page.find('a', {'href': self.__login_urls})
-                if found and found.text.lower() == 'sign in':
+                if found and found.text.lower() =='log in':
                     logger.info('Detected login required. reason: hyperlink')
                     logger.info(found.prettify())
                     self.do_login()
