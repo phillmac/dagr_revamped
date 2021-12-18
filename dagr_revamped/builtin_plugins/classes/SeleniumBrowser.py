@@ -42,6 +42,8 @@ class SeleniumBrowser():
                 'https://deviantart.com/users/login',
                 'https://www.deviantart.com/users/login'
             ])
+        self.__deviantart_username = self.__app_config.get(
+                    'deviantart', 'username')
         self.__create_driver_policy = self.__config.get(
             'create_driver_policy', False)
 
@@ -167,8 +169,7 @@ const done = arguments[0];
             logger.info('Navigating to %s', url)
             self.__driver_get(url)
 
-        user = self.__app_config.get(
-            'deviantart', 'username', key_errors=False)
+        user = self.__deviantart_username
 
         passwd = self.__app_config.get(
             'deviantart', 'password', key_errors=False)
@@ -285,14 +286,14 @@ const getUsername = () => {
 
 
             if data_username:
-                conf_uname = self.__app_config.get(
-                    'deviantart', 'username').lower()
+                conf_uname = self.__deviantart_username.lower()
                 if data_username == conf_uname:
                     logger.log(10, 'Detected already logged in: user link')
                     return
                 else:
                     logger.warning('data-username mismatch. %s != %s', data_username, conf_uname)
-
+            elif self.__login_policy == 'force':
+                self.do_login()
             else:
                 current_page = self.get_current_page()
                 found = current_page.find('a', {'href': self.__login_urls})
