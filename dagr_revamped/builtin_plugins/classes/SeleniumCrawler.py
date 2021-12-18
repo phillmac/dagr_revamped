@@ -23,8 +23,8 @@ class SeleniumCrawler():
         self.__page_count = 1
         self.__oom_max_pages = self.__config.get('oom_max_pages', 13000)
         self.__collect_mval_id = self.__config.get('collect_mval_id', True)
-        logger.log(15, 'OOM max pages set to %s', self.__oom_max_pages)
-        logger.log(15, 'Collect using mvalid elem set to %s',
+        logger.debug('OOM max pages set to %s', self.__oom_max_pages)
+        logger.debug('Collect using mvalid elem set to %s',
                    self.__collect_mval_id)
 
     def __del__(self):
@@ -40,7 +40,7 @@ done()
         """)
         except:
             logger.exception('Error while scrolling page')
-        logger.log(15, 'Scrolling page took %.4f seconds', time() - scroll_st)
+        logger.debug('Scrolling page took %.4f seconds', time() - scroll_st)
 
     def has_next_link(self):
         result = None
@@ -51,7 +51,7 @@ return Array.from(document.getElementsByTagName('a')).some(l=>l.text=='Next')
             """)
         except:
             logger.exception('Error while searching for next link')
-        logger.log(15, 'Has next took %.4f seconds', time() - has_next_st)
+        logger.debug('Has next took %.4f seconds', time() - has_next_st)
         return result
 
     def click_next(self):
@@ -62,7 +62,7 @@ Array.from(document.getElementsByTagName('a')).find(l=>l.text=='Next').click()
             """)
         except:
             logger.exception('Error while clicking next page')
-        logger.log(15, 'Clicking next took %.4f seconds', time() - click_next_st)
+        logger.debug('Clicking next took %.4f seconds', time() - click_next_st)
 
 
     def collect_pages(self):
@@ -81,7 +81,7 @@ done([...pages])
         """))
         except:
             logger.exception('Error while collecting pages')
-        logger.log(15, 'Collect pages took %.4f seconds', time() - collect_st)
+        logger.debug('Collect pages took %.4f seconds', time() - collect_st)
         return pages
 
     def collect_pages_mval_id(self, mval_id):
@@ -116,7 +116,7 @@ collect_links(arguments[0])
                 pages.update(result)
         except:
             logger.exception('Error while collecting pages')
-        logger.log(15, 'Collect pages took %.4f seconds', time() - collect_st)
+        logger.debug('Collect pages took %.4f seconds', time() - collect_st)
         return pages
 
     def update_history(self, slug, pages, history):
@@ -129,31 +129,35 @@ collect_links(arguments[0])
                 self.__cache.update(slug, history)
             else:
                 logger.info('History unchanged')
-            logger.log(15, "Save took %.4f seconds", time() - save_st)
+            logger.debug("Save took %.4f seconds", time() - save_st)
 
     def load_more(self, slug, pages, history, mval_id=None):
         body = self.__browser.find_element_by_tag_name('body')
 
         if self.has_next_link():
-            logger.log(15, 'Found next page element. Count: %s',
+            logger.debug('Found next page element. Count: %s',
                        self.__page_count)
             self.__page_count += 1
             crawl_st = time()
-            for _pd in range(1, 30):
+            last_page_count = len(pages)
+            for _pd in range(1, 100):
                 collected = self.collect_pages_mval_id(
                     mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
                 pages.update(collected)
-                logger.info('URL count %s', len(pages))
+                page_count = len(pages)
+                logger.info('URL count %s', page_count)
+                if page_count % 24 == 0 and page_count > last_page_count:
+                    logger.info('Skipping scoll')
+                    break
                 sleep(0.2)
                 self.scroll_page()
-
 
             self.update_history(slug, pages, history)
             sleep_time = self.__config.get('page_sleep_time', 7)
             delay_needed = sleep_time - (time() - crawl_st)
 
             if delay_needed > 0:
-                logger.log(15, 'Need to sleep for %.2f seconds', delay_needed)
+                logger.debug('Need to sleep for %.2f seconds', delay_needed)
                 sleep(delay_needed)
 
             self.click_next()
@@ -161,7 +165,7 @@ collect_links(arguments[0])
 
         else:
             sleep_time = 0
-            for _pd in range(self.__config.get('page_down_count', 7)):
+            for _pd in range(self.__config.get('page_down_count', 10)):
                 crawl_st = time()
                 collected = self.collect_pages_mval_id(
                     mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
@@ -173,20 +177,17 @@ collect_links(arguments[0])
                     sleep_time = self.__config.get(
                         'collect_sleep_time_short', 5)
                 logger.info('URL count %s', len(pages))
-                pd_st = time()
                 try:
-                    body.send_keys(Keys.PAGE_DOWN)
+                    self.scroll_page()
                 except:
                     logger.exception(
-                        'Error while sending page down keypress')
-                logger.log(
-                    15, 'Sending page down keypress took %.4f seconds', time() - pd_st)
+                        'Error while scrolling page')
 
                 self.update_history(slug, pages, history)
 
                 while time() - crawl_st < sleep_time:
                     sleep(1)
-                logger.log(15, 'Crawl took %.4f seconds', time() - crawl_st)
+                logger.debug('Crawl took %.4f seconds', time() - crawl_st)
         return False
 
     def crawl_action(self, slug, mval_id=None, pages=None, history=None):
@@ -238,6 +239,7 @@ collect_links(arguments[0])
 
         if mval:
             mval_path = PurePosixPath(mval)
+            logger.debug('mval_path: %s', mval_path)
             slug = f"{deviant}_{mode}_{'_'.join(mval_path.parts)}"
             mval_id = mval_path.parent.name
         else:
@@ -260,5 +262,5 @@ collect_links(arguments[0])
         result = self.crawl_action(slug, mval_id, pages=pages, history=history)
         if self.__config.get('unload_cache_policy', '') == 'always':
             self.__cache.unload(slug)
-            logger.log(15, 'Unloaded %s cache', slug)
+            logger.debug('Unloaded %s cache', slug)
         return result
