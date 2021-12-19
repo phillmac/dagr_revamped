@@ -23,9 +23,11 @@ class SeleniumCrawler():
         self.__page_count = 1
         self.__oom_max_pages = self.__config.get('oom_max_pages', 13000)
         self.__collect_mval_id = self.__config.get('collect_mval_id', True)
+        self.__crawler_skip_count = self.__config.get('crawler_skip_count', 24)
         logger.debug('OOM max pages set to %s', self.__oom_max_pages)
         logger.debug('Collect using mvalid elem set to %s',
                    self.__collect_mval_id)
+        logger.debug('Crawler skip count set to %s', self.__crawler_skip_count)
 
     def __del__(self):
         logger.debug('Destroying SeleniumCrawler %s', self.__id)
@@ -144,7 +146,7 @@ collect_links(arguments[0])
                 pages.update(collected)
                 url_count = len(pages)
                 logger.info('URL count %s', url_count)
-                if url_count % 24 == 0 and url_count > last_url_count:
+                if url_count % self.__crawler_skip_count == 0 and url_count > last_url_count:
                     logger.info('Skipping scoll')
                     break
                 sleep(0.2)
