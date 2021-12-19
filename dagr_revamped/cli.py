@@ -44,6 +44,7 @@ Options:
     -r --reverse                            Rip deviations in reverse order
     -t --test                               Skip downloading deviations, just print the url instead
     --nocrawl                               Use downloaded pages cache instead of crawling deviant's pages
+    --fullcrawl                             Ignore crawler cache
     --fixartists                            Rebuild artists cache
     --fixmissing                            Fix deviations present in cache but missing from filesystem.
     --isdeviant                             Skip deviant/group check, force deviant mode
@@ -92,6 +93,7 @@ Options:
             'progress': arguments.get('--progress'),
             'fixartists': arguments.get('--fixartists'),
             'fixmissing': arguments.get('--fixmissing'),
+            'fullcrawl': arguments.get('--fullcrawl'),
             'nocrawl': arguments.get('--nocrawl'),
             'reverse': arguments.get('--reverse'),
             'test': arguments.get('--test'),

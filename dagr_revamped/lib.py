@@ -57,6 +57,7 @@ class DAGR():
         self.fixmissing = bool(kwargs.get('fixmissing'))
         self.fixartists = bool(kwargs.get('fixartists'))
         self.nocrawl = bool(kwargs.get('nocrawl'))
+        self.fullcrawl = bool(kwargs.get('fullcrawl'))
         self.verifybest = bool(kwargs.get('verifybest'))
         self.verifyexists = bool(kwargs.get('verifyexists'))
         self.unfindable = bool(kwargs.get('unfindable'))
@@ -418,7 +419,7 @@ class DAGR():
         if self.nocrawl:
             logger.debug('No crawl mode, skipping pages crawl')
             return []
-        return self.deviation_crawler.crawl(url_fmt, mode, deviant, mval, msg_formatted)
+        return self.deviation_crawler.crawl(url_fmt, mode, deviant, mval, msg_formatted, full_crawl=self.fullcrawl)
 
     def get_folders(self, url_fmt, folder_regex, deviant):
         deviant_lower = deviant.lower()
@@ -685,7 +686,7 @@ class DAGRCrawler():
         self.ripper = ripper
         self.config = ripper.config
 
-    def crawl(self, url_fmt, mode, deviant=None, mval=None, msg_formatted=None):
+    def crawl(self, url_fmt, mode, deviant=None, mval=None, msg_formatted=None, **kwargs):
         base_url = self.ripper.base_url()
         pages = []
         pages_offset = (self.config.get('deviantart.offsets', 'search')
