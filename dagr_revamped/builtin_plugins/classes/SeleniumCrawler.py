@@ -132,8 +132,6 @@ collect_links(arguments[0])
             logger.debug("Save took %.4f seconds", time() - save_st)
 
     def load_more(self, slug, pages, history, mval_id=None):
-        body = self.__browser.find_element_by_tag_name('body')
-
         if self.has_next_link():
             logger.log(15, 'Found next page element. Count: %s',
                        self.__page_count)
