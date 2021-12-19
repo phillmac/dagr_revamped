@@ -135,18 +135,18 @@ collect_links(arguments[0])
         body = self.__browser.find_element_by_tag_name('body')
 
         if self.has_next_link():
-            logger.debug('Found next page element. Count: %s',
+            logger.log(15, 'Found next page element. Count: %s',
                        self.__page_count)
             self.__page_count += 1
             crawl_st = time()
-            last_page_count = len(pages)
+            last_url_count = len(pages)
             for _pd in range(1, 100):
                 collected = self.collect_pages_mval_id(
                     mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
                 pages.update(collected)
-                page_count = len(pages)
-                logger.info('URL count %s', page_count)
-                if page_count % 24 == 0 and page_count > last_page_count:
+                url_count = len(pages)
+                logger.info('URL count %s', url_count)
+                if url_count % 24 == 0 and url_count > last_url_count:
                     logger.info('Skipping scoll')
                     break
                 sleep(0.2)
