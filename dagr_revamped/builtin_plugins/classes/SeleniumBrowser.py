@@ -10,7 +10,7 @@ from dagr_revamped.plugin import DagrImportError
 from dagr_revamped.utils import create_browser as utils_create_browser
 from dagr_revamped.utils import sleep
 
-from .Response import Response
+from ...Response import Response
 
 try:
     from selenium import webdriver
@@ -43,7 +43,7 @@ class SeleniumBrowser():
                 'https://www.deviantart.com/users/login'
             ])
         self.__deviantart_username = self.__app_config.get(
-                    'deviantart', 'username')
+            'deviantart', 'username')
         self.__create_driver_policy = self.__config.get(
             'create_driver_policy', False)
 
@@ -215,7 +215,7 @@ const done = arguments[0];
 
     @property
     def title(self):
-        if  self.__page_title is None:
+        if self.__page_title is None:
             self.__page_title = self.__driver.title
 
         return self.__page_title
@@ -227,8 +227,8 @@ const done = arguments[0];
         return self.__page_source
 
     @property
-    def page_source_unbuffered(self):
-        return self.__driver.page_source
+    def response_unbuffered(self):
+        return Response.create(self.__driver.title, self.__driver.page_source)
 
     @property
     def current_url(self):
@@ -256,7 +256,8 @@ const done = arguments[0];
         if current_url in self.__login_urls:
             if self.__login_policy in ['disable', 'prohibit']:
                 raise LoginDisabledError('Automatic login disabled')
-            logger.info('Detected login required. Reason: current url: %s', current_url)
+            logger.info(
+                'Detected login required. Reason: current url: %s', current_url)
             self.do_login()
             if self.get_url() != url:
                 self.__driver_get(url)
@@ -288,26 +289,26 @@ const getUsername = () => {
     })
 """).get('dataUsername') or '').lower()
 
-
             if data_username:
                 conf_uname = self.__deviantart_username.lower()
                 if data_username == conf_uname:
                     logger.log(10, 'Detected already logged in: user link')
                     return
                 else:
-                    logger.warning('data-username mismatch. %s != %s', data_username, conf_uname)
+                    logger.warning(
+                        'data-username mismatch. %s != %s', data_username, conf_uname)
             elif self.__login_policy == 'force':
                 self.do_login()
             else:
                 current_page = self.get_current_page()
                 found = current_page.find('a', {'href': self.__login_urls})
-                if found and found.text.lower() =='log in':
+                if found and found.text.lower() == 'log in':
                     logger.info('Detected login required. reason: hyperlink')
                     logger.info(found.prettify())
                     self.do_login()
 
         if self.get_url() != url:
-           self.__driver_get(url)
+            self.__driver_get(url)
 
     def open(self, url):
         self.__bs4 = None
@@ -316,15 +317,7 @@ const getUsername = () => {
         else:
             self.__open(url)
 
-        if '404 Not Found' in self.title or 'DeviantArt: 404' in self.title:
-            return Response(content=self.page_source, status=404)
-
-        if '403 ERROR' in self.page_source:
-            return Response(content=self.page_source, status=403)
-
-        if '504 Gateway Time-out' in self.page_source:
-            return Response(content=self.page_source, status=504)
-        return Response(content=self.page_source)
+        return Response.create(self.title, self.page_source)
 
     def get(self, url, timeout=30, *args, **kwargs):
         cookies = dict((c['name'], c['value'])
