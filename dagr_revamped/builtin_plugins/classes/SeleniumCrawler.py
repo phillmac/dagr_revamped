@@ -24,6 +24,7 @@ class SeleniumCrawler():
         self.__oom_max_pages = self.__config.get('oom_max_pages', 13000)
         self.__collect_mval_id = self.__config.get('collect_mval_id', True)
         self.__crawler_skip_count = self.__config.get('crawler_skip_count', 24)
+        self.__sleep_time = self.__config.get('page_sleep_time', 7)
         logger.debug('OOM max pages set to %s', self.__oom_max_pages)
         logger.debug('Collect using mvalid elem set to %s',
                    self.__collect_mval_id)
@@ -139,22 +140,21 @@ collect_links(arguments[0])
                        self.__page_count)
             self.__page_count += 1
             crawl_st = time()
-            last_url_count = len(pages)
+            collected = set()
             for _pd in range(1, 100):
-                collected = self.collect_pages_mval_id(
-                    mval_id) if mval_id and self.__collect_mval_id else self.collect_pages()
-                pages.update(collected)
-                url_count = len(pages)
+                collected.update(self.collect_pages_mval_id(
+                    mval_id) if mval_id and self.__collect_mval_id else self.collect_pages())
+                url_count = len(collected)
                 logger.info('URL count %s', url_count)
-                if url_count % self.__crawler_skip_count == 0 and url_count > last_url_count:
+                if url_count % self.__crawler_skip_count == 0 and url_count > 0:
                     logger.info('Skipping scoll')
                     break
                 sleep(0.2)
                 self.scroll_page()
 
+            pages.update(collected)
             self.update_history(slug, pages, history)
-            sleep_time = self.__config.get('page_sleep_time', 7)
-            delay_needed = sleep_time - (time() - crawl_st)
+            delay_needed = self.__sleep_time - (time() - crawl_st)
 
             if delay_needed > 0:
                 logger.debug('Need to sleep for %.2f seconds', delay_needed)
