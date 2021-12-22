@@ -138,5 +138,6 @@ class DAGRHTTPIo(DAGRIo):
             self.release_lock = lambda : http_release_lock(self.__session, self.__dir_lock_ep, dir_path=self.rel_dir_name)
 
     def close(self):
-        self.__session.close()
+        if self.__session:
+            self.__session.close()
         super().close()
