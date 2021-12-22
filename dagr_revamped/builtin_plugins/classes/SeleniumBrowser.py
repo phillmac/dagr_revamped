@@ -227,6 +227,10 @@ const done = arguments[0];
         return self.__page_source
 
     @property
+    def page_source_unbuffered(self):
+        return self.__driver.page_source
+
+    @property
     def current_url(self):
         return self.get_url()
 
