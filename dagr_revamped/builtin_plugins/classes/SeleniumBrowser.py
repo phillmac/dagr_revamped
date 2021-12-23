@@ -217,6 +217,7 @@ const done = arguments[0];
     def title(self):
         if self.__page_title is None:
             self.__page_title = self.__driver.title
+            logger.debug("Title is '%s'", self.__page_title)
 
         return self.__page_title
 
