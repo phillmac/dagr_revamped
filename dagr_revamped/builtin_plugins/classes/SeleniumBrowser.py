@@ -313,12 +313,13 @@ const getUsername = () => {
 
     def open(self, url):
         self.__bs4 = None
-        if self.__login_policy == 'force':
+        resp = Response.create(self.title, self.page_source)
+        if self.__login_policy == 'force' and resp.status == 200:
             self.open_do_login(url)
         else:
             self.__open(url)
 
-        return Response.create(self.title, self.page_source)
+        return resp
 
     def get(self, url, timeout=30, *args, **kwargs):
         cookies = dict((c['name'], c['value'])
