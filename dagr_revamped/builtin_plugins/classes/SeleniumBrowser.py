@@ -35,6 +35,7 @@ class SeleniumBrowser():
         self.__page_title = None
         self.__page_source = None
         self.__bs4 = None
+        self.__reponse = None
         self.__default_script_timeout = self.__config.get('script_timeout', 45)
         self.__login_policy = self.__config.get('login_policy')
         self.__login_urls = self.__config.get(
@@ -187,7 +188,7 @@ const done = arguments[0];
                 self.__app_config.output_dir.joinpath('login-fail.png'))
             logger.info('Dumping ss to %s', ss_output)
             self.__driver.save_screenshot(ss_output)
-            logger.info('current url is %s', self.get_url())
+            logger.info('Current url is %s', self.get_url())
             raise
         while self.get_url() in self.__login_urls:
             logger.debug('Waiting for page other than login')
@@ -217,7 +218,7 @@ const done = arguments[0];
     def title(self):
         if self.__page_title is None:
             self.__page_title = self.__driver.title
-            logger.debug("Title is '%s'", self.__page_title)
+            logger.debug("Page title is '%s'", self.__page_title)
 
         return self.__page_title
 
@@ -230,6 +231,12 @@ const done = arguments[0];
     @property
     def response_unbuffered(self):
         return Response.create(self.__driver.title, self.__driver.page_source)
+
+    @property
+    def reponse(self):
+        if self.__reponse is None:
+            self.__reponse = Response.create(self.title, self.page_source)
+        return self.__reponse
 
     @property
     def current_url(self):
@@ -247,11 +254,13 @@ const done = arguments[0];
     def __driver_get(self, url):
         self.__page_title = None
         self.__page_source = None
+        self.__bs4 = None
+        self.__reponse = None
         self.__driver.get(url)
+        self.wait_ready()
 
     def __open(self, url):
         self.__driver_get(url)
-        self.wait_ready()
 
         current_url = self.get_url()
         if current_url in self.__login_urls:
@@ -265,9 +274,12 @@ const done = arguments[0];
 
     def open_do_login(self, url):
         self.__open(url)
+        status_code = self.reponse.status_code
+        logger.debug("Reponse status is '%s'", status_code)
+        if status_code == 200:
 
-        if self.__login_policy not in ['disable', 'prohibit']:
-            data_username = (self.__driver.execute_async_script(
+            if self.__login_policy not in ['disable', 'prohibit']:
+                data_username = (self.__driver.execute_async_script(
                 """
 const done = arguments[0];
 let dataUsername = '';
@@ -290,38 +302,36 @@ const getUsername = () => {
     })
 """).get('dataUsername') or '').lower()
 
-            if data_username:
-                conf_uname = self.__deviantart_username.lower()
-                if data_username == conf_uname:
-                    logger.log(10, 'Detected already logged in: user link')
-                    return
-                else:
-                    logger.warning(
-                        'data-username mismatch. %s != %s', data_username, conf_uname)
-            elif self.__login_policy == 'force':
-                self.do_login()
-            else:
-                current_page = self.get_current_page()
-                found = current_page.find('a', {'href': self.__login_urls})
-                if found and found.text.lower() == 'log in':
-                    logger.info('Detected login required. reason: hyperlink')
-                    logger.info(found.prettify())
+                if data_username:
+                    conf_uname = self.__deviantart_username.lower()
+                    if data_username == conf_uname:
+                        logger.log(10, 'Detected already logged in: user link')
+                        return self.reponse
+                    else:
+                        logger.warning(
+                            'data-username mismatch. %s != %s', data_username, conf_uname)
+                elif self.__login_policy == 'force':
                     self.do_login()
+                else:
+                    current_page = self.get_current_page()
+                    found = current_page.find('a', {'href': self.__login_urls})
+                    if found and found.text.lower() == 'log in':
+                        logger.info('Detected login required. reason: hyperlink')
+                        logger.info(found.prettify())
+                        self.do_login()
 
         if self.get_url() != url:
             self.__driver_get(url)
 
+        return self.reponse
+
     def open(self, url):
-        self.__bs4 = None
-        resp = Response.create(self.title, self.page_source)
-        status_code = resp.status_code
-        logger.debug("Status is '%s'", status_code)
-        if status_code == 200 and self.__login_policy == 'force':
+        if self.__login_policy == 'force':
             self.open_do_login(url)
         else:
             self.__open(url)
 
-        return resp
+        return self.reponse
 
     def get(self, url, timeout=30, *args, **kwargs):
         cookies = dict((c['name'], c['value'])
@@ -346,7 +356,12 @@ const getUsername = () => {
         return all_links
 
     def refresh(self):
+        self.__page_title = None
+        self.__page_source = None
+        self.__bs4 = None
+        self.__reponse = None
         self.__driver.refresh()
+        self.wait_ready()
 
     def find_element_by_css_selector(self, *args, **kwargs):
         return self.__driver.find_element_by_css_selector(*args, **kwargs)
