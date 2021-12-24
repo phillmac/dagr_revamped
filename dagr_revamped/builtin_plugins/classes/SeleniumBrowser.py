@@ -276,8 +276,10 @@ const done = arguments[0];
         self.__open(url)
         status_code = self.reponse.status_code
         logger.debug("Reponse status is '%s'", status_code)
-        if status_code == 200:
-
+        if not status_code == 200:
+            logger.debug('Bad Reponse staus')
+        else:
+            logger.debug('Reponse staus ok')
             if self.__login_policy not in ['disable', 'prohibit']:
                 data_username = (self.__driver.execute_async_script(
                 """
