@@ -53,13 +53,13 @@ class DAGRCache():
     @staticmethod
     def get_cache(config, mode, deviant, mval=None, dagr_io=None,
                   load_files=None, warn_not_found=None, preload_fileslist_policy=None):
-        cache_io = get_remote_io(dagr_io if dagr_io is not None else DAGRIo, config, mode, deviant, mval)
+        cache_io = get_remote_io(
+            dagr_io if dagr_io is not None else DAGRIo, config, mode, deviant, mval)
         return DAGRCache(config, cache_io, load_files=load_files, warn_not_found=warn_not_found, preload_fileslist_policy=preload_fileslist_policy)
 
-
-
     def __init__(self, dagr_config, cache_io, load_files=None, warn_not_found=None, preload_fileslist_policy=None):
-        self.__id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        self.__id = ''.join(random.choices(
+            string.ascii_uppercase + string.digits, k=5))
         logger.debug('Created DAGRCache %s', self.__id)
         self.dagr_config = dagr_config
         self.__cache_io = cache_io
@@ -138,7 +138,6 @@ class DAGRCache():
     def __del__(self):
         logger.debug('Destroying DAGRCache %s', self.__id)
 
-
     def __enter__(self):
         self.__cache_io.lock()
         return self
@@ -162,7 +161,6 @@ class DAGRCache():
             self.__last_crawled = None
             self.__files_list_lower = None
             self.downloaded_pages = None
-
 
     def files_gen(self):
         if self.__files_list is None:
@@ -342,10 +340,9 @@ class DAGRCache():
         self.update_artists(True)
 
     def update_artists(self, force=False):
-        base_url = self.dagr_config.get('deviantart', 'baseurl')
         updated_pages = self.existing_pages if force else self.downloaded_pages
-        logger.log(
-            15, 'Sorting {} artist pages'.format(len(updated_pages)))
+        logger.log(15, 'Sorting %s artist pages', len(updated_pages))
+        existing_artists = self.artists
         for page in updated_pages:
             artist_url_p, artist_name, shortname = artist_from_url(page)
             err = f"Cache entry not found {self.base_dir} : {page} : {shortname}"
@@ -357,7 +354,6 @@ class DAGRCache():
             except StopIteration:
                 logger.error(err, exc_info=True)
                 raise
-            existing_artists = self.artists
             if not artist_name in existing_artists:
                 existing_artists[artist_name] = {
                     'Home Page': str(artist_url_p), 'Artworks': {}}
@@ -533,7 +529,8 @@ class DAGRCache():
         result.update((u.lower() for u in self.__premium))
         if self.__httperrors is None:
             self.__httperrors = self.__load_httperrors()
-        errors_404 = [k for k,v in self.__httperrors.items() if any(e.get('error_code', None) == 404 for e in v)]
+        errors_404 = [k for k, v in self.__httperrors.items() if any(
+            e.get('error_code', None) == 404 for e in v)]
         result.update((u.lower() for u in errors_404))
         result.update((u.lower() for u in self.existing_pages))
         return result
@@ -551,8 +548,10 @@ class DAGRCache():
             self.__queue = self.__load_queue()
         exclude = self.q_exclude
         logger.log(level=15, msg=f"Queue exclude length is {len(exclude)}")
-        keep = set(kp for kp in (p.lower() for p in  self.__queue) if not kp in exclude)
-        enqueue = set(ep for ep in (p.lower() for p in  pages) if not ep in exclude and not ep in keep)
+        keep = set(kp for kp in (p.lower()
+                   for p in self.__queue) if not kp in exclude)
+        enqueue = set(ep for ep in (p.lower() for p in pages)
+                      if not ep in exclude and not ep in keep)
         ecount = len(enqueue)
         if ecount > 0:
             self.__queue_stale = True
@@ -664,6 +663,3 @@ class DAGRCache():
 
     def prune_filename(self, fname):
         self.__files_list.discard(fname)
-
-
-
