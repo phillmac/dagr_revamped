@@ -23,6 +23,7 @@ class TestIO(unittest.TestCase):
         setUpTestCase(self)
 
     def test_lock(self):
+        logging.info('Testing lock io')
         result = None
         lockdir = self.results_dir.joinpath('lockdir')
 
@@ -42,6 +43,7 @@ class TestIO(unittest.TestCase):
         self.assertTrue(result is True)
 
     def test_rentrant_lock(self):
+        logging.info('Testing reentrant lock io')
         result = None
         r_lockdir = self.results_dir.joinpath('rlockdir')
 
