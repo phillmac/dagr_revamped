@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 class Response():
     @staticmethod
     def create(p_title, p_source, headers=None):
+        if 'DeviantArt: 401 Unauthorized' in p_title or '401 Unauthorized' in p_source:
+            return Response(content=p_source, headers=headers, status=401)
+
         if '404 Not Found' in p_title or 'DeviantArt: 404' in p_title:
             return Response(content=p_source, headers=headers, status=404)
 
