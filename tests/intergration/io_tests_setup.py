@@ -15,12 +15,14 @@ config = DAGRConfig(
     include=[Path(__file__).parent])
 
 client = docker.from_env()
-client.images.pull('phillmac/dagr_selenium')
+image_tag = environ.get('IMAGE_TAG', 'latest')
+image = f"phillmac/dagr_selenium:{image_tag}"
+client.images.pull(image)
 
 
 def run_container(output_dir=None):
     return client.containers.run(
-        image="phillmac/dagr_selenium",
+        image=image,
         command=["-u", "-m", "dagr_selenium.filenames_server"],
         detach=True,
         environment={},
