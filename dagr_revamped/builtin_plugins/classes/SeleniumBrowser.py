@@ -278,6 +278,8 @@ const done = arguments[0];
         logger.debug("Reponse status is '%s'", status_code)
         if not status_code == 200:
             logger.debug('Bad Reponse staus')
+        elif 'DeviantArt: Deactivated Account' in self.title:
+            logger.debug('Ignoring login on deactivated acct page')
         else:
             logger.debug('Reponse staus ok')
             if self.__login_policy not in ['disable', 'prohibit']:
