@@ -69,4 +69,5 @@ def setUpTestCase(testcase):
 def tearDownTestCase(testcase):
     testcase.container.stop()
     testcase.container.remove()
-    rmtree(testcase.results_dir)
+    if environ.get('DISABLE_DIR_CLEANUP', 'FALSE') != 'TRUE':
+        rmtree(testcase.results_dir)
