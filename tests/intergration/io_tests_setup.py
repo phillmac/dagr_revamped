@@ -19,6 +19,7 @@ image_tag = environ.get('IMAGE_TAG', 'latest')
 image = f"phillmac/dagr_selenium:{image_tag}"
 client.images.pull(image)
 
+io_items = []
 
 def run_container(output_dir=None):
     return client.containers.run(
@@ -53,7 +54,9 @@ def select_io_class():
 
 
 def create_io(testcase, io, base_dir=None, rel_dir=None):
-    return io.create(base_dir or testcase.results_dir, rel_dir or '', config)
+    result = io.create(base_dir or testcase.results_dir, rel_dir or '', config)
+    io_items.append(result)
+    return result
 
 
 def setUpTestCase(testcase):
@@ -67,6 +70,11 @@ def setUpTestCase(testcase):
 
 
 def tearDownTestCase(testcase):
+    for io in io_items:
+        io.close()
+
+    io_items.clear()
+
     testcase.container.stop()
     testcase.container.remove()
     if environ.get('DISABLE_DIR_CLEANUP', 'FALSE') != 'TRUE':
