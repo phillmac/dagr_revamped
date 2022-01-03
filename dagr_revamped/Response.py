@@ -12,14 +12,24 @@ class Response():
         if 'DeviantArt: 500 Internal Server Error' in p_title:
             return Response(content=p_source, headers=headers, status=500)
 
-        if 'DeviantArt: 401 Unauthorized' in p_title or '401 Unauthorized' in p_source:
+        if '502 Bad Gateway' in p_title:
+            return Response(content=p_source, headers=headers, status=502)
+
+        if 'DeviantArt: 401 Unauthorized' in p_title:
             return Response(content=p_source, headers=headers, status=401)
 
-        if '404 Not Found' in p_title or 'DeviantArt: 404' in p_title:
+        if '404 Not Found' in p_title:
             return Response(content=p_source, headers=headers, status=404)
+
+        if 'DeviantArt: 404' in p_title:
+            return Response(content=p_source, headers=headers, status=404)
+
+        if '401 Unauthorized' in p_source:
+            return Response(content=p_source, headers=headers, status=401)
 
         if '403 ERROR' in p_source:
             return Response(content=p_source, headers=headers, status=403)
+
         if '504 Gateway Time-out' in p_source:
             return Response(content=p_source, headers=headers, status=504)
         return Response(content=p_source, headers=headers)
