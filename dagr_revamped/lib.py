@@ -458,7 +458,7 @@ class DAGR():
                 (time() - self.__last_resolved)
             if delay_needed > 0:
                 logger.log(15, 'Need to sleep for %.4f seconds', delay_needed)
-                asyncio.sleep(delay_needed)
+                await asyncio.sleep(delay_needed)
 
         resolver = self.deviant_resolver(self)
         self.__last_resolved = time()
