@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import random
@@ -94,8 +95,11 @@ class DAGR():
         self.init_mimetypes()
         self.init_classes()
 
+        asyncio.run(self.__init_queue())
+
+    async def __init_queue(self):
         if self.deviants or (self.bulk and self.filenames) or (self.modes and 'search' in self.modes):
-            self.__work_queue = self.__build_queue()
+            self.__work_queue = await self.__build_queue()
 
     def __enter__(self):
         return self
@@ -189,12 +193,12 @@ class DAGR():
     def set_queue(self, queue):
         self.__work_queue = queue
 
-    def __build_queue(self):
+    async def __build_queue(self):
         if self.bulk:
             wq = load_bulk_files(self.filenames)
             wq = convert_queue(self.config, wq)
             wq = filter_deviants(self.filter, wq)
-            wq = self.find_refresh(wq)
+            wq = await self.find_refresh(wq)
         else:
             wq = {}
             logger.log(5, 'Deviants: %s', self.deviants)
@@ -217,7 +221,7 @@ class DAGR():
                    'Work queue: %s', wq)
         return wq
 
-    def find_refresh(self, queue):
+    async def find_refresh(self, queue):
         if not (self.refresh_only or self.refresh_only_days):
             return queue
         sq = {**queue}
@@ -239,7 +243,7 @@ class DAGR():
             try:
                 deviant = next(iter(sorted(sq.keys(), reverse=self.reverse())))
                 modes = sq.pop(deviant)
-                deviant, group = self.resolve_deviant(deviant)
+                deviant, group = await self.resolve_deviant(deviant)
                 if group:
                     logger.info('Skipping unsupported group %s', deviant)
                     continue
@@ -294,7 +298,7 @@ class DAGR():
             return not self.stop_check()
         return not self.stop_running.is_set()
 
-    def run(self):
+    async def run(self):
         if not self.get_queue():
             raise ValueError('Empty work queue')
         wq = self.get_queue()
@@ -316,20 +320,20 @@ class DAGR():
         while self.keep_running():
             if None in wq.keys():
                 nd = wq.pop(None)
-                self.rip(nd, None)
+                asyncio.run(self.rip(nd, None))
             try:
                 deviant = next(iter(sorted(wq.keys(), reverse=self.reverse())))
                 modes = wq.pop(deviant)
             except StopIteration:
                 break
-            self.rip(modes, deviant)
+            asyncio.run(self.rip(modes, deviant))
             logger.info('Finished %s', deviant)
 
-    def rip(self, modes, deviant=None):
+    async def rip(self, modes, deviant=None):
         group = None
         if deviant:
             try:
-                deviant, group = self.resolve_deviant(deviant)
+                deviant, group = await self.resolve_deviant(deviant)
             except DagrException as ex:
                 logger.warning(
                     'Deviant %s not found or deactivated!: %s', deviant, str(ex))
@@ -347,13 +351,13 @@ class DAGR():
         for mode, mode_vals in modes.items():
             if mode_vals:
                 for mval in mode_vals:
-                    self._rip(mode, deviant, mval, group)
+                    await self._rip(mode, deviant, mval, group)
             else:
                 self._rip(mode, deviant, group=group)
             if not self.keep_running():
                 return
 
-    def _rip(self, mode, deviant=None, mval=None, group=False):
+    async def _rip(self, mode, deviant=None, mval=None, group=False):
         mode_section = f"deviantart.modes.{mode}"
         if group:
             group_url_fmt = self.config.get(mode_section, 'group_url_fmt')
@@ -365,15 +369,15 @@ class DAGR():
             folder_regex = self.config.get(mode_section, 'folder_regex')
             folders = self.get_folders(group_url_fmt, folder_regex, deviant)
             for folder in folders:
-                self.rip_pages(folder_url_fmt, mode, deviant, folder)
+                await self.rip_pages(folder_url_fmt, mode, deviant, folder)
         else:
             url_fmt = self.config.get(mode_section, 'url_fmt')
             if mode == 'page':
                 self.rip_single(url_fmt, deviant, PurePosixPath(mval).name)
             else:
-                self.rip_pages(url_fmt, mode, deviant, mval)
+                await self.rip_pages(url_fmt, mode, deviant, mval)
 
-    def rip_pages(self, url_fmt, mode, deviant=None, mval=None):
+    async def rip_pages(self, url_fmt, mode, deviant=None, mval=None):
         msg_formatted = ''
         if deviant:
             msg_formatted += f"{deviant} : "
@@ -400,7 +404,7 @@ class DAGR():
                     return
                 logger.log(15, 'Total deviations in %s found: %s',
                            msg_formatted, len(pages))
-                self.process_deviations(cache, pages)
+                await self.process_deviations(cache, pages)
                 if not self.nocrawl and not self.test:
                     cache.save_extras(self.maxpages is None)
         except (DagrCacheLockException):
@@ -411,7 +415,7 @@ class DAGR():
         deviant_lower = deviant.lower()
         try:
             with self.cache.get_cache(self.config, 'gallery', deviant, mval, dagr_io=self.io) as cache:
-                self.process_deviations(cache, [url_fmt.format(**locals())])
+                asyncio.run(self.process_deviations(cache, [url_fmt.format(**locals())]))
         except DagrCacheLockException:
             pass
 
@@ -447,20 +451,20 @@ class DAGR():
         logger.debug('Found folders %s', pformat(folders))
         return folders
 
-    def resolve_deviant(self, deviant):
+    async def resolve_deviant(self, deviant):
         if self.__last_resolved is not None:
             delay_needed = self.resolve_rate_limit() - \
                 (time() - self.__last_resolved)
             if delay_needed > 0:
                 logger.log(15, 'Need to sleep for %.4f seconds', delay_needed)
-                sleep(delay_needed)
+                asyncio.sleep(delay_needed)
 
         resolver = self.deviant_resolver(self)
         self.__last_resolved = time()
         result = resolver.resolve(deviant)
         return result
 
-    def process_deviations(self, cache, pages, **kwargs):
+    async def process_deviations(self, cache, pages, **kwargs):
         logger.log(level=4, msg=pformat(kwargs))
         dl_delay = self.download_delay()
         logger.info('Download delay: %s', dl_delay)
