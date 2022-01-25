@@ -119,7 +119,7 @@ def main():
     logger.log(level=5, msg=pformat(cli.arguments))
     logger.debug(pformat(cli.args))
 
-    with DAGR(config=config, **cli.args) as ripper:
+    with DAGR(config=config, init_queue=True, **cli.args) as ripper:
         ripper.run()
         ripper.print_errors()
         ripper.print_dl_total()

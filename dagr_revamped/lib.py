@@ -95,10 +95,11 @@ class DAGR():
         self.init_mimetypes()
         self.init_classes()
 
-        asyncio.run(self.__init_queue())
+        if kwargs.get('init_queue', False):
+            if self.deviants or (self.bulk and self.filenames) or (self.modes and 'search' in self.modes):
+                asyncio.run(self.__init_queue())
 
     async def __init_queue(self):
-        if self.deviants or (self.bulk and self.filenames) or (self.modes and 'search' in self.modes):
             self.__work_queue = await self.__build_queue()
 
     def __enter__(self):
