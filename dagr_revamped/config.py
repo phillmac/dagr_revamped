@@ -319,7 +319,8 @@ class DAGRConfig(DAGRBaseConf):
             'application/x-lha': '.lzh',
             'application/zip': '.zip',
             'image/x-ms-bmp': '.bmp',
-            'application/x-shockwave-flash': '.swf'
+            'application/x-shockwave-flash': '.swf',
+            'image/webp': '.webp'
         },
         'Dagr.Logging': {
             'Level': 0
