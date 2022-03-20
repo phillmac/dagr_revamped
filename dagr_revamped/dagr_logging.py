@@ -185,7 +185,7 @@ class DagrHTTPHandler(logging.Handler):
             # print(record.__dict__)
             try:
                 resp = self.__session.post(
-                    f"{self.__host}/logger/append", timeout=30, json={'hostMode': self.__host_mode, 'record':
+                    f"{self.__host}/logger/append", timeout=120, json={'hostMode': self.__host_mode, 'record':
                                                                       {
                                                                           kn: record.__dict__[kn] for kn in record.__dict__.keys() if not kn in self.__filtered_keys}
                                                                       })
