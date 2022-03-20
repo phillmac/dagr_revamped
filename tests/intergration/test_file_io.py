@@ -33,8 +33,11 @@ class TestIO(unittest.TestCase):
             except:
                 logging.exception('Failed to write bytes')
                 self.containerLogs()
+            finally:
+                io.close()
 
         self.assertEqual(result , 1000000)
+
 
     def tearDown(self):
         tearDownTestCase(self)
