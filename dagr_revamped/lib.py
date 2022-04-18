@@ -1054,7 +1054,7 @@ class DAGRDeviationProcessor():
             self.__file_link, self.__found_type = img_link, 'download'
             return self.__file_link, self.__found_type
         img_link = current_page.find(
-            'a', {'href': re.compile('deviantart.com/download')})
+            'a', {'href': re.compile(r'.*deviantart.com/download/.*')})
         if img_link:
             logger.log(5, 'Found eclipse download button')
             self.__file_link, self.__found_type = img_link, 'download'
