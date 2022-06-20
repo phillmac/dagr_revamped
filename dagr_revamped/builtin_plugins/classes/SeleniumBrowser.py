@@ -289,8 +289,9 @@ const done = arguments[0];
 let dataUsername = '';
 
 const getUsername = () => {
-    const userLink = document.querySelector('a[data-hook=user_link]')
-    return userLink?.dataset?.username;;
+    const topNav = document.querySelector('header[data-hook=top_nav]');
+    const userLink = topNav?.querySelector('a[data-hook=user_link]');
+    return userLink?.dataset?.username;
 };
 
 (async () => {
