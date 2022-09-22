@@ -9,6 +9,9 @@ logger = logging.getLogger(__name__)
 class Response():
     @staticmethod
     def create(p_title, p_source, headers=None):
+        if 'DeviantArt: Suspended Account' in p_title:
+            return Response(content=p_source, headers=headers, status=404)
+
         if 'DeviantArt: 500 Internal Server Error' in p_title:
             return Response(content=p_source, headers=headers, status=500)
 
