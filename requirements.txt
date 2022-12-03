@@ -5,7 +5,7 @@ calmjs.types==1.0.1
 deviantart @ git+https://github.com/phillmac/deviantart@c21ce195b466618ae16a9146412b3b713be71ef5
 docopt==0.6.2
 easywebdav==1.2.0
-lxml==4.6.5
+lxml==4.9.1
 MechanicalSoup==1.0.0
 pluginbase==1.0.0
 ply==3.11
