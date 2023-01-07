@@ -38,6 +38,9 @@ class SeleniumBrowser():
         self.__reponse = None
         self.__default_script_timeout = self.__config.get('script_timeout', 45)
         self.__login_policy = self.__config.get('login_policy')
+        self.__login_ss_policy = self.__config.get('login_ss_policy')
+        self.__login_dump_policy = self.__config.get('login_dump_policy')
+
         self.__login_urls = self.__config.get(
             'login_url', [
                 'https://deviantart.com/users/login',
@@ -183,16 +186,27 @@ const done = arguments[0];
             self.__driver.find_element_by_id(
                 'loginbutton').send_keys(Keys.RETURN)
         except NoSuchElementException:
-            logger.debug(self.get_current_page().prettify())
-            ss_output = str(
-                self.__app_config.output_dir.joinpath('login-fail.png'))
-            logger.info('Dumping ss to %s', ss_output)
-            self.__driver.save_screenshot(ss_output)
+            # logger.debug(self.get_current_page().prettify())
+            self.dump_html('login-fail.html')
+            self.dump_screenshot('login-fail.png')
             logger.info('Current url is %s', self.get_url())
             raise
         while self.get_url() in self.__login_urls:
             logger.debug('Waiting for page other than login')
             self.wait_ready()
+
+    def dump_screenshot(self, fname):
+        ss_output = str(
+                self.__app_config.output_dir.joinpath(fname))
+        logger.info('Dumping ss to %s', ss_output)
+        self.__driver.save_screenshot(ss_output)
+
+    def dump_html(fname):
+        html_output = str(
+                self.__app_config.output_dir.joinpath(fname))
+        logger.info('Dumping html to %s', str(ss_output))
+        html = self.get_current_page().prettify()
+        html_output.write_text(html)
 
     @property
     def login_policy(self):
@@ -268,6 +282,10 @@ const done = arguments[0];
                 raise LoginDisabledError('Automatic login disabled')
             logger.info(
                 'Detected login required. Reason: current url: %s', current_url)
+            if self.__login_dump_policy in ['always', True]:
+                self.dump_html('login.html')
+            if self.__login_ss_policy in ['always', True]:
+                self.dump_screenshot('login.png')
             self.do_login()
             if self.get_url() != url:
                 self.__driver_get(url)
@@ -315,6 +333,10 @@ const getUsername = () => {
                         logger.warning(
                             'data-username mismatch. %s != %s', data_username, conf_uname)
                 elif self.__login_policy == 'force':
+                    if self.__login_ss_policy in ['always', 'forced']:
+                        self.dump_screenshot('login.png')
+                    if self.__login_dump_policy in ['always', 'forced']:
+                        self.dump_html('login.html')
                     self.do_login()
                 else:
                     current_page = self.get_current_page()
@@ -322,6 +344,10 @@ const getUsername = () => {
                     if found and found.text.lower() == 'log in':
                         logger.info('Detected login required. reason: hyperlink')
                         logger.info(found.prettify())
+                        if self.__login_ss_policy in ['always', True]:
+                            self.dump_screenshot('login.png')
+                        if self.__login_dump_policy in ['always', True]:
+                            self.dump_html('login.html')
                         self.do_login()
 
         if self.get_url() != url:

@@ -16,8 +16,8 @@ from .version import version
 
 def convert_val(val):
     if isinstance(val, str):
-        true_vals = ['true', 'yes', 'on']
-        false_vals = ['false', 'no', 'off']
+        true_vals = ['true', 'yes', 'on', 'enabled']
+        false_vals = ['false', 'no', 'off', 'disabled']
         if val.lower() in true_vals:
             return True
         if val.lower() in false_vals:
@@ -379,7 +379,7 @@ class DAGRConfig(DAGRBaseConf):
         'Dagr.Plugins.Selenium': get_os_options('Dagr.Plugins.Selenium', [
             'Enabled', 'Webdriver_Mode', 'Webdriver_URL', 'Webdriver_Max_Tries', 'Driver_Path', 'Full_Crawl', 'Login_Policy', 'OOM_Max_Pages',
             'Page_Sleep_Time', 'Collect_Sleep_Time_Long', 'Collect_Sleep_Time_Short',  'Local_Cache_Path', 'Remote_Cache_Path', 'Remote_Cache_Type', 'Remote_Breaker_Fail_Max', 'Remote_Breaker_Reset_Timeout',
-            'Unload_Cache_Policy', 'QueueMan_Fetch_Url', 'QueueMan_Enqueue_Url', 'Create_Driver_Policy', 'Crawl_Offset'
+            'Unload_Cache_Policy', 'QueueMan_Fetch_Url', 'QueueMan_Enqueue_Url', 'Create_Driver_Policy', 'Crawl_Offset', 'Login_SS_Policy', 'Login_Dump_Policy'
         ]),
         'Dagr.Io.HTTP.Endpoints': get_os_options('Dagr.Io.HTTP.Endpoints', [
             'Exists', 'Dir_Exists', 'List_Dir', 'Load_Json', 'Save_Json', 'Write_File', 'Utime',
