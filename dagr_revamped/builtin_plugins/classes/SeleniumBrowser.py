@@ -201,7 +201,7 @@ const done = arguments[0];
         logger.info('Dumping ss to %s', ss_output)
         self.__driver.save_screenshot(ss_output)
 
-    def dump_html(fname):
+    def dump_html(self, fname):
         html_output = str(
                 self.__app_config.output_dir.joinpath(fname))
         logger.info('Dumping html to %s', str(ss_output))
