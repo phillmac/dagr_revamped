@@ -197,13 +197,12 @@ const done = arguments[0];
 
     def dump_screenshot(self, fname):
         ss_output = str(
-                self.__app_config.output_dir.joinpath(fname))
+            self.__app_config.output_dir.joinpath(fname))
         logger.info('Dumping ss to %s', ss_output)
         self.__driver.save_screenshot(ss_output)
 
     def dump_html(self, fname):
-        html_output = str(
-                self.__app_config.output_dir.joinpath(fname))
+        html_output = self.__app_config.output_dir.joinpath(fname)
         logger.info('Dumping html to %s', str(html_output))
         html = self.get_current_page().prettify()
         html_output.write_text(html)
@@ -302,7 +301,7 @@ const done = arguments[0];
             logger.debug('Reponse staus ok')
             if self.__login_policy not in ['disable', 'prohibit']:
                 data_username = (self.__driver.execute_async_script(
-                """
+                    """
 const done = arguments[0];
 let dataUsername = '';
 
@@ -342,7 +341,8 @@ const getUsername = () => {
                     current_page = self.get_current_page()
                     found = current_page.find('a', {'href': self.__login_urls})
                     if found and found.text.lower() == 'log in':
-                        logger.info('Detected login required. reason: hyperlink')
+                        logger.info(
+                            'Detected login required. reason: hyperlink')
                         logger.info(found.prettify())
                         if self.__login_ss_policy in ['always', True]:
                             self.dump_screenshot('login.png')
