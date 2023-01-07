@@ -204,7 +204,7 @@ const done = arguments[0];
     def dump_html(self, fname):
         html_output = str(
                 self.__app_config.output_dir.joinpath(fname))
-        logger.info('Dumping html to %s', str(ss_output))
+        logger.info('Dumping html to %s', str(html_output))
         html = self.get_current_page().prettify()
         html_output.write_text(html)
 
