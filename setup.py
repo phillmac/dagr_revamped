@@ -18,7 +18,7 @@ setup(
         'MechanicalSoup >= 0.10.0',
         'docopt == 0.6.2',
         'pluginbase == 1.0.0',
-        'portalocker == 2.3.0',
+        'portalocker == 2.7.0',
         'python-dateutil == 2.7.5',
         'pybreaker == 0.6.0',
         'requests-toolbelt==0.9.1',
