@@ -54,9 +54,8 @@ class TestIO(unittest.TestCase):
             try:
                 logging.info('Creating initial lock')
                 io.lock()
-                with io:
-                    logging.info('Trying re-entrant lock')
-                    io.lock()
+                logging.info('Trying re-entrant lock')
+                io.lock()
                 try:
                     with create_io(self, select_io_class(), base_dir=r_lockdir, rel_dir=r_lockdir.name) as io2:
                         logging.info('Trying duplicate lock')
