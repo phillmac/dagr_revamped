@@ -30,9 +30,11 @@ class TestIO(unittest.TestCase):
         lockdir.mkdir()
         with create_io(self, select_io_class(), base_dir=lockdir, rel_dir=lockdir.name) as io:
             try:
+                logging.info('Creating initial lock')
                 io.lock()
                 try:
                     with create_io(self, select_io_class(), base_dir=lockdir, rel_dir=lockdir.name) as io2:
+                        logging.info('Trying duplicate lock')
                         io2.lock()
                 except DagrCacheLockException:
                     result = True
@@ -50,15 +52,17 @@ class TestIO(unittest.TestCase):
         r_lockdir.mkdir()
         with create_io(self, select_io_class(), base_dir=r_lockdir, rel_dir=r_lockdir.name) as io:
             try:
+                logging.info('Creating initial lock')
                 io.lock()
                 with io:
+                    logging.info('Trying re-entrant lock')
                     io.lock()
                 try:
                     with create_io(self, select_io_class(), base_dir=r_lockdir, rel_dir=r_lockdir.name) as io2:
+                        logging.info('Trying duplicate lock')
                         io2.lock()
                 except DagrCacheLockException:
                     result = True
-                result = True
             except:
                 logging.exception('Failed to lock dir')
                 self.containerLogs()
