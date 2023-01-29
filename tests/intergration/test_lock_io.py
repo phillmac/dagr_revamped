@@ -61,7 +61,7 @@ class TestIO(unittest.TestCase):
                     with create_io(self, select_io_class(), base_dir=r_lockdir, rel_dir=r_lockdir.name) as io2:
                         logging.info('Trying duplicate lock')
                         io2.lock()
-                        logging.warn('Sucessfully aquired erroneous lock')
+                        logging.warning('Sucessfully aquired erroneous lock')
                         is_locked = io.is_locked()
                         logging.info(f"is locked: {is_locked}")
                 except DagrCacheLockException:
