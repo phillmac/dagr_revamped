@@ -196,12 +196,13 @@ class DAGRIo():
 
     def lock(self):
         try:
-            if not self.__lock_path:
-                self.__lock_path = self.__base_dir.joinpath('.lock')
-            new_lock = portalocker.RLock(
-                self.__lock_path, flags=portalocker.LockFlags.EXCLUSIVE | portalocker.LockFlags.NON_BLOCKING)
-            new_lock.acquire(fail_when_locked=True)
-            self.__lock = new_lock
+            if not self.__lock:
+                if not self.__lock_path:
+                    self.__lock_path = self.__base_dir.joinpath('.lock')
+                new_lock = portalocker.RLock(
+                    self.__lock_path, flags=portalocker.LockFlags.EXCLUSIVE | portalocker.LockFlags.NON_BLOCKING)
+                new_lock.acquire(fail_when_locked=True)
+                self.__lock = new_lock
         except (portalocker.exceptions.LockException, portalocker.exceptions.AlreadyLocked, OSError) as ex:
             logger.warning(f"Skipping locked directory {self.base_dir}")
             raise DagrCacheLockException(ex)
@@ -215,7 +216,7 @@ class DAGRIo():
         self.__lock.release()
         if self.__lock._acquire_count == 0:
             unlink_lockfile(self.__lock_path)
-        self.__lock = None
+            self.__lock = None
 
     def __get_subpath(self, fname=None, dest=None, subdir=None):
         fname = get_fname(fname, dest)
