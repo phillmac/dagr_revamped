@@ -207,6 +207,13 @@ class DAGRIo():
             logger.warning(f"Skipping locked directory {self.base_dir}")
             raise DagrCacheLockException(ex)
 
+    def is_locked(self):
+        if not self.__lock:
+            return False
+        if self.__lock._acquire_count == 0:
+            return False
+        return True
+
     def stat(self, fname, subdir=None, dir_name=None):
         statfp = self.__base_dir.joinpath(PurePosixPath(fname).name)
         s_obj = statfp.stat()
