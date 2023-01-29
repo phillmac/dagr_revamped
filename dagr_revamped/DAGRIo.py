@@ -200,7 +200,7 @@ class DAGRIo():
                 self.__lock_path = self.__base_dir.joinpath('.lock')
             self.__lock = portalocker.RLock(
                 self.__lock_path, flags=portalocker.LOCK_EX)
-            self.__lock.acquire(timeout=15, fail_when_locked=True)
+            self.__lock.acquire(fail_when_locked=True)
         except (portalocker.exceptions.LockException, portalocker.exceptions.AlreadyLocked, OSError) as ex:
             logger.warning(f"Skipping locked directory {self.base_dir}")
             raise DagrCacheLockException(ex)
