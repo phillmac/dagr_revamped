@@ -17,8 +17,10 @@ from requests import Request
 from requests import adapters as req_adapters
 # from requests import session as req_session
 from requests_toolbelt import MultipartEncoder
+
+from .exceptions import DagrCacheLockException, DagrException
+from .HTTPLockManager import HTTPLockManager
 from .TCPKeepAliveSession import TCPKeepAliveSession
-from .exceptions import DagrException, DagrCacheLockException
 
 logger = logging.getLogger(__name__)
 
